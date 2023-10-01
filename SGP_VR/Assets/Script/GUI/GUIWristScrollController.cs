@@ -18,7 +18,9 @@ public class GUIWristScrollController : GuiContainer
     [Header("Debug")]
   
     public GameObject _nextGui;
+    private int _nextGuiIndex;
     public GameObject _previousGui;
+    private int _previousGuiIndex;
     public int _indexCurrentGui;
     public float _angle;
     public float _cachedAngleOffset;
@@ -35,15 +37,18 @@ public class GUIWristScrollController : GuiContainer
     public override GameObject CurrentGui { get => base.CurrentGui;
         set
         {
-            if (CurrentGui == value && value != null) return;
+            base.CurrentGui = value;
+            //if (CurrentGui == value && value != null) return;
 
-            if (value != null)
-            {
-                MakeCurrentGui(value);
-                MoveGuiToCentralPosition(value);
-            }
+            //if (value != null)
+            //{
+            //    MakeCurrentGui(value);
+            //    MoveGuiToCentralPosition(value);
+            //}
 
-            else base.CurrentGui = value;}
+            //else base.CurrentGui = value;
+         
+        }
         
     }
 
@@ -156,6 +161,7 @@ public class GUIWristScrollController : GuiContainer
         //Debug.Log("index prev :" + indexPrevGui);
         if (indexPrevGui < 0) return;
         _previousGui = GetGuiByIndex(Guis, indexPrevGui);
+        _previousGuiIndex = indexPrevGui;
     }
 
     private void UpdateNextGuis(bool useIndex = false)
@@ -168,6 +174,7 @@ public class GUIWristScrollController : GuiContainer
        // Debug.Log("index next :" + indexNextGui);
         if (indexNextGui < 0) return;
         _nextGui = GetGuiByIndex(Guis, indexNextGui);
+        _nextGuiIndex = indexNextGui;
 
     }
 
@@ -252,17 +259,18 @@ public class GUIWristScrollController : GuiContainer
             numberOfElements = (int)(360 / angleStep);
         }
 
-        
-        _angle = angleStep;
-        _startAngleOffset = angleStep / 2;
+        if (_angle != angleStep)
+        {
+            _angle = angleStep;
+            _startAngleOffset = angleStep / 2;
+        }
+       
         offset += _startAngleOffset;
 
 
         for (int i = 0; i < numberOfElements; i++)
         {
-
             SetGuiPositionInCircle(allGuis[i], radius ,i * angleStep , offset);
-
         }
     }
 
@@ -349,7 +357,6 @@ public class GUIWristScrollController : GuiContainer
 
         OrganizeGuis(Guis, _radius, _angleOffset);
      
-
         MakeCurrentGui(GetCurrentGuiByPosition(_radius, _angleTolerance = _startAngleOffset));
         
 
@@ -363,41 +370,27 @@ public class GUIWristScrollController : GuiContainer
 
     public void MoveGuiToCentralPosition(int index)
     {
+        if (_guis.Count == 0 || _guis.Count == 1) return;
+
         if (index > _guis.Count) index = 0;
         else if( index < 0 ) index = _guis.Count - 1;
  
         int destinationIndex = index;
-        int diffIndex = _indexCurrentGui - index; 
+        float offset = (_guis.Count -2) *_startAngleOffset/2; // to have the gui centered
 
-        Debug.Log("Destination Index : " + destinationIndex);
-        float destinationAngle = (diffIndex) * _angle; // todo fix - doesnt work properly
+        //Debug.Log("Destination Index : " + destinationIndex);
+        float destinationAngle = -(destinationIndex * _angle) + offset;
 
         StartCoroutine(LerpGuisToAngle(_angleOffset, destinationAngle, 2f));
     }
 
-        public void MoveGuiToCentralPosition(GameObject gui) 
+    public void MoveGuiToCentralPosition(GameObject gui) 
     {
         if (!_guis.Contains(gui)) AddGuiToWristMenu(gui, true);
 
-
         int destinationIndex = _guis.IndexOf(gui);
 
-        Debug.Log("Destination Index : " + destinationIndex);
-        float destinationAngle = _angleOffset + (destinationIndex) * _angle ; // todo fix - doesnt work properly
-
-        StartCoroutine(LerpGuisToAngle(_angleOffset, destinationAngle, 2f));
-       
-        
-        //if((destinationIndex == 0 && _indexCurrentGui == _guis.Count - 1) || (destinationIndex == _guis.Count - 1 && _indexCurrentGui == 0)) 
-        //{
-        //    StartCoroutine(LerpGuisToAngle(_angleOffset, destinationAngle, 2f));
-        //}
-
-        //else StartCoroutine(LerpGuisToAngle(_angleOffset, destinationAngle, 2f)); 
-
-
-
-
+        MoveGuiToCentralPosition(destinationIndex);
     }
 
     private float CalculateAngle(List<GameObject> allGuis)
@@ -409,22 +402,21 @@ public class GUIWristScrollController : GuiContainer
        
     }
 
-    public IEnumerator LerpGuisToAngle(float currentAngle, float angleDestination,float duration ,float delay = 0) 
+    public IEnumerator LerpGuisToAngle(float currentAngle, float angleDestination,float duration, float delay = 0)
     {
         yield return new WaitForSeconds(delay);
 
         float angle;
-        
-      
 
         float currentTime = 0;
-        while (currentTime < duration || _angleOffset != angleDestination)
+        // && (Mathf.Abs(_angleOffset) < Mathf.Abs(angleDestination) + 10 || Mathf.Abs(_angleOffset) > Mathf.Abs(angleDestination) - 10)
+        while (currentTime < duration)
         {
             
            _angleOffset = angle = Mathf.Lerp( currentAngle, angleDestination, currentTime / duration);
            //_angleOffset = _angleOffset > 360 ? _angleOffset-360 : _angleOffset < -360 ? _angleOffset + 360 : _angleOffset;
           //UpdateGuisPosition(angle);
-            Debug.Log("angle : " + angle);
+           // Debug.Log("angle : " + angle);
             currentTime+=Time.deltaTime;
             yield return null;
         }
@@ -476,7 +468,7 @@ public class GUIWristScrollController : GuiContainer
 
     private void Start()
     {
-        GUIManager.Instance.RegisterGuis(Guis);
+        
     }
 
     private void OnEnable()
@@ -496,7 +488,7 @@ public class GUIWristScrollController : GuiContainer
     {
        
            
-        if (useIndex && indexToFront != _indexCurrentGui) MoveGuiToCentralPosition(_guis[indexToFront]);
+        if (useIndex && indexToFront != _indexCurrentGui) MoveGuiToCentralPosition(indexToFront);
           
         if ( _angleOffset != _cachedAngleOffset) UpdateGuisPosition(_angleOffset);
     }
