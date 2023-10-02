@@ -28,6 +28,7 @@ public enum GuiSpawnCondition
     RayPointAtObject,
     LookAt,
     DistanceFromPlayer,
+    Select,
     DoNothing
 
 }
@@ -261,7 +262,8 @@ public class GUIManager : MonoBehaviour
             { // instantiate  wrist menu prefab
             }
 
-            if (CanSpawnGUI(wristMount))
+
+            if (CanSpawnGUI(wristMount , bodyHandler))
             { 
                 guiMounts.Add(wristMount);
             }
@@ -278,6 +280,8 @@ public class GUIManager : MonoBehaviour
             }
         }
 
+        if (guiMounts.Count == 0) return;
+
         var index = 0;
         foreach (var guiMount in guiMounts)
         {
@@ -289,7 +293,10 @@ public class GUIManager : MonoBehaviour
             if (!guiContainer) guiContainer = guiMount.transform.parent.GetComponent<GuiContainer>();
             if (!guiContainer) guiContainer = guiMount.transform.parent.parent.GetComponent<GuiContainer>();
             if (!guiContainer) continue;
-                
+
+          
+
+
             if (guiContainer.CurrentGui == gui) 
             {
                 DestroyGui(bodyHandler);
@@ -303,10 +310,10 @@ public class GUIManager : MonoBehaviour
             /*only if not wrist*/
             bool addScript = _wristMenu ? guiMount != _wristMenu.gameObject : true;
             if(addScript) AddTransformScripts(gui, guiMount, newLocation);
-            
 
-            UpdateGuiText(gui, bodyHandler);
-           
+
+
+            UpdateGuiDescriptor(gui, bodyHandler, guiMount);
 
             objectWithGuisAttached.Add(bodyHandler.gameObject);
 
@@ -321,6 +328,16 @@ public class GUIManager : MonoBehaviour
             index++;
         }
 
+    }
+
+    private void UpdateGuiDescriptor(GameObject gui, AstralBodyHandler bodyHandler, GameObject guiMount)
+    {
+        if (!gui) return;
+        if (!bodyHandler) return;
+        
+        UpdateGuiText(gui, bodyHandler);
+        
+       
     }
 
     private void AddTransformScripts(GameObject gui, GameObject guiMount, GuiLocation newLocation)
@@ -411,7 +428,37 @@ public class GUIManager : MonoBehaviour
 
         return mount;
     }
+    private bool CanSpawnGUI(GameObject obj, AstralBodyHandler handler) 
+    {
 
+        if (!obj) return false;
+
+        var guiContainer = obj.GetComponent<GuiContainer>();
+      
+        if (!guiContainer) guiContainer = obj.transform.parent.GetComponent<GuiContainer>();
+        if (!guiContainer) guiContainer = obj.transform.parent.parent.GetComponent<GuiContainer>();
+
+        if (!guiContainer) return false;
+
+        var wristGui = guiContainer as GUIWristScrollController;
+        if (!wristGui)
+        {
+            return CanSpawnGUI( obj);
+        }
+
+        if (wristGui.Guis.Count == 0) return true;
+
+        foreach (var gui in wristGui.Guis) 
+        {
+            if (gui.GetComponent<BodyDescriptorGUI>()) 
+            {
+                if (gui.GetComponent<BodyDescriptorGUI>()._descriptor._id == handler.ID) return false;
+            }
+        }
+
+        return true;
+
+    }
     private bool CanSpawnGUI(GameObject obj)
     {
         if (!obj) return false;
@@ -422,9 +469,6 @@ public class GUIManager : MonoBehaviour
         if (!guiContainer) guiContainer = obj.transform.parent.parent.GetComponent<GuiContainer>();
 
         if (!guiContainer) return false;
-
-        var wristGui = guiContainer as GUIWristScrollController;
-        if (wristGui) return true;
 
         return guiContainer.CurrentGui == null ? true : false;
     }
@@ -545,7 +589,7 @@ public class GUIManager : MonoBehaviour
     public void MoveGuiToWrist(bool state, AstralBodyHandler body)
     {
         _bodyGuiSpawnCondition = GuiSpawnCondition.DoNothing;
-       // DestroyGui(body);
+        if(_bodyGuiLocation != GuiLocation.OnWrist ) DestroyGui(body);
 
         if (state) 
         {
@@ -557,10 +601,21 @@ public class GUIManager : MonoBehaviour
         }
         else
         {
-            //if (_wristMenu) _wristMenu.DestroyWristGui(WristGui); 
-            //else Destroy(_wristGui);
-            //_wristGui = null;
+
             _bodyGuiSpawnCondition = _chachedGuiSpawnCondition;
+            
+            if (WristGui == null) return;
+            if (!WristGui.GetComponent<BodyDescriptorGUI>()) return;
+
+            if (_wristMenu )         
+            {
+                _wristMenu.DestroyWristGui(WristGui);
+                   
+                WristGui = null; 
+            }
+                
+            else Destroy(WristGui);
+
         }
     }
 
@@ -604,12 +659,13 @@ public class GUIManager : MonoBehaviour
         _chachedGuiSpawnCondition = _bodyGuiSpawnCondition;
         StartCoroutine(CheckWhatToDoWithGuis(1f));
         FindMainCamera();
+        if (_wristMenu) RegisterGuis(_wristMenu.Guis);
 
     }
 
     private void Update()
     {
-        Debug.Log("wrist gui: " + WristGui);
+        //Debug.Log("wrist gui: " + WristGui);
     }
 
     private void OnEnable()

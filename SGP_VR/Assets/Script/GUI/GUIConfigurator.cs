@@ -8,7 +8,7 @@ using UnityEngine;
 public class GUIConfigurator : GUIBehaviour
 {
     public TextMeshProUGUI bodyName;
-   
+    public GameObject mount;
 
     public virtual void UpdateGUIText(TextMeshProUGUI textElement, string newText)
     {
