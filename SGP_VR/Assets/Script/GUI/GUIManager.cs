@@ -61,6 +61,25 @@ public class GUIManager : MonoBehaviour
     [SerializeField] private GameObject _mainMenu;
     public GameObject MainMenu => _mainMenu;
 
+    /*wrist gui*/
+    [Header("Wrist Menu")]
+    [SerializeField] private GUIWristScrollController _wristMenu;
+    public GUIWristScrollController WristMenu => _wristMenu;
+
+    private GameObject _wristGui;
+    public GameObject WristGui
+    {
+        get { return _wristMenu ? _wristMenu.CurrentGui : _wristGui; }
+        set
+        {
+            if (_wristMenu)
+            {
+                _wristGui = value;
+                _wristMenu.CurrentGui = value;
+            }
+            else _wristGui = value;
+        }
+    }
 
     [Header("Fade In/Out")]
     [SerializeField] private bool _fadeIn;
@@ -80,42 +99,13 @@ public class GUIManager : MonoBehaviour
     public List<GameObject> activeGuis = new List<GameObject>();
     public List<GameObject> objectWithGuisAttached = new List<GameObject>();
 
-    /*wrist gui*/
-    public GUIWristScrollController _wristMenu;
-    private GameObject _wristGui;
-    public GameObject WristGui
-    {
-        get { return _wristMenu ? _wristMenu.CurrentGui : _wristGui; }
-        set 
-        { 
-            if (_wristMenu) 
-            {
-                _wristGui = value;
-                _wristMenu.CurrentGui = value;
-            } 
-            else _wristGui = value;
-        }
-    }
-   
-
-    //[Header("Debug")]
-   
-    //public bool _attachToWrist = true;
-    
-   
     private Transform _mainCamera;
-    
-
-    //public Dictionary<GameObject, GameObject> objectWithGui = new Dictionary<GameObject, GameObject>();
-
-
+ 
     #region Spawning 
     public GameObject SpawnGui(GameObject gui, Vector3 position, Quaternion rotation, GameObject parent = null )
     {
         if (gui == null) return null;
         GameObject guiClone;
-
-      
 
         if (parent != null) guiClone = Instantiate(gui, position, rotation, parent.transform);
 
@@ -152,21 +142,7 @@ public class GUIManager : MonoBehaviour
     }
 
 
-    public GameObject AddGuiToWristScrollMenu(GameObject gui, GUIWristScrollController wristMenu, GameObject parent = null) 
-    {
-        if (!wristMenu) return null;
-        var go = wristMenu.gameObject;
-
-
-        var newGui = SpawnGui(gui, go.transform, parent);
-        newGui.transform.localPosition = Vector3.zero;
-        newGui.transform.localRotation = Quaternion.identity;
-
-        wristMenu.AddGuiToWristMenu(newGui, true);
-
-        return newGui;
-    }
-
+  
     private bool AlreadySpawned(GameObject gui, List<GameObject> activeGuis)
     { 
        
@@ -181,7 +157,203 @@ public class GUIManager : MonoBehaviour
         return false;
     }
 
-  
+    private void AssignGuiToBody(AstralBodyHandler bodyHandler, bool overideLocation = false, GuiLocation newLocation = GuiLocation.none)
+    {
+        GuiLocation guiLocation = BodyGuiLocation;
+        if (overideLocation) guiLocation = newLocation;
+        if (guiLocation == GuiLocation.none) return;
+
+
+        Debug.Log("[Gui Manager] " + _bodyGuiSpawnCondition.ToString() + " :  Assign gui to : " + bodyHandler.ID);
+
+        List<GameObject> guiMounts = new List<GameObject>();
+
+
+        if (guiLocation != GuiLocation.OnObject)
+        {
+            /*attach to wrist */
+            GameObject wristMount = _wristMenu.gameObject;
+            if (!wristMount) wristMount = GetGuiMount(bodyHandler.gameObject, true, false);
+            if (!wristMount)
+            { // instantiate  wrist menu prefab
+            }
+
+
+            if (CanSpawnGUI(wristMount, bodyHandler))
+            {
+                guiMounts.Add(wristMount);
+            }
+        }
+
+
+        if (guiLocation != GuiLocation.OnWrist)
+        {
+            GameObject goMount = GetGuiMount(bodyHandler.gameObject, false, false);
+
+            if (CanSpawnGUI(goMount))
+            {
+                guiMounts.Add(goMount);
+            }
+        }
+
+        if (guiMounts.Count == 0) return;
+
+        var index = 0;
+        foreach (var guiMount in guiMounts)
+        {
+
+            var gui = SpawnGui(BodyGuiPopUp, bodyHandler.gameObject, UIsContainer);
+
+            var guiContainer = guiMount.GetComponent<GuiContainer>();
+            //Debug.Log("guiMount.transform.parent : " + guiMount.transform.parent);
+            if (!guiContainer) guiContainer = guiMount.transform.parent.GetComponent<GuiContainer>();
+            if (!guiContainer) guiContainer = guiMount.transform.parent.parent.GetComponent<GuiContainer>();
+            if (!guiContainer) continue;
+
+
+
+
+            if (guiContainer.CurrentGui == gui)
+            {
+                DestroyGui(bodyHandler);
+
+                continue;
+            }
+
+            guiContainer.CurrentGui = gui;
+
+
+            /*only if not wrist*/
+            bool addScript = _wristMenu ? guiMount != _wristMenu.gameObject : true;
+            if (addScript) AddTransformScripts(gui, guiMount, newLocation);
+
+
+
+            UpdateGuiDescriptor(gui, bodyHandler, guiMount);
+
+            objectWithGuisAttached.Add(bodyHandler.gameObject);
+
+
+
+            if (index == 0 && guiLocation != GuiLocation.OnObject)
+            {
+                WristGui = gui;
+                WristGui.transform.localScale = new Vector3(.002f, .002f, .002f);
+            }
+
+            index++;
+        }
+
+    }
+
+    private void AssignGuiToBody(AstralBodyHandler bodyHandler)
+    {
+
+        AssignGuiToBody(bodyHandler, false);
+    }
+
+    private void AssignGuiToBodyOnRayPoint(AstralBodyHandler bodyHandler)
+    {
+
+        if (BodyGuiSpawnCondition != GuiSpawnCondition.RayPointAtObject) return;
+        AssignGuiToBody(bodyHandler, false);
+    }
+
+    public void SpawnGuisInProximityRange()
+    {
+        if (_mainCamera == null) FindMainCamera();
+        if (_mainCamera == null) return;
+
+
+
+        var colliders = CheckWhatIsInProximityRange();
+        if (colliders.Length == 0) return;
+
+        foreach (Collider collider in colliders)
+        {
+            var bodyHandler = collider.gameObject.GetComponent<AstralBodyHandler>();
+            if (bodyHandler == null) continue;
+
+            AssignGuiToBody(bodyHandler);
+        }
+
+    }
+
+    private Collider[] CheckWhatIsInProximityRange()
+    {
+        if (_mainCamera == null) return null;
+
+        var center = _mainCamera.transform.position;
+
+        Collider[] colliderInRange = Physics.OverlapSphere(center, _maxDetectionRange);
+
+        return colliderInRange;
+    }
+
+
+    private GameObject GetGuiMount(GameObject go, bool attachToWrist, bool leftHand)
+    {
+
+        GameObject mount = go;
+
+        if (attachToWrist)
+        {
+            var localPlayer = GameManager.Instance.localPlayer;
+            if (localPlayer) mount = leftHand ? localPlayer.LeftController : localPlayer.RightController;
+
+        }
+
+        var guiContainer = mount.gameObject.GetComponent<GuiContainer>();
+        if (!guiContainer) guiContainer = mount.gameObject.GetComponentInChildren<GuiContainer>();
+
+        if (guiContainer) mount = guiContainer.GuiMount != null ? guiContainer.GuiMount : mount;
+
+        return mount;
+    }
+    private bool CanSpawnGUI(GameObject obj, AstralBodyHandler handler)
+    {
+
+        if (!obj) return false;
+
+        var guiContainer = obj.GetComponent<GuiContainer>();
+
+        if (!guiContainer) guiContainer = obj.transform.parent.GetComponent<GuiContainer>();
+        if (!guiContainer) guiContainer = obj.transform.parent.parent.GetComponent<GuiContainer>();
+
+        if (!guiContainer) return false;
+
+        var wristGui = guiContainer as GUIWristScrollController;
+        if (!wristGui)
+        {
+            return CanSpawnGUI(obj);
+        }
+
+        if (wristGui.Guis.Count == 0) return true;
+
+        foreach (var gui in wristGui.Guis)
+        {
+            if (gui.GetComponent<BodyDescriptorGUI>())
+            {
+                if (gui.GetComponent<BodyDescriptorGUI>()._descriptor._id == handler.ID) return false;
+            }
+        }
+
+        return true;
+
+    }
+    private bool CanSpawnGUI(GameObject obj)
+    {
+        if (!obj) return false;
+
+        var guiContainer = obj.GetComponent<GuiContainer>();
+        //Debug.Log(obj +" gui transform.parent : " + obj.transform.parent);
+        if (!guiContainer) guiContainer = obj.transform.parent.GetComponent<GuiContainer>();
+        if (!guiContainer) guiContainer = obj.transform.parent.parent.GetComponent<GuiContainer>();
+
+        if (!guiContainer) return false;
+
+        return guiContainer.CurrentGui == null ? true : false;
+    }
 
     #endregion
 
@@ -240,96 +412,8 @@ public class GUIManager : MonoBehaviour
         
     }
     #endregion
-    
-    private void AssignGuiToBody(AstralBodyHandler bodyHandler, bool overideLocation = false,GuiLocation newLocation = GuiLocation.none) 
-    {
-        GuiLocation guiLocation = BodyGuiLocation;
-        if (overideLocation) guiLocation = newLocation;
-        if (guiLocation == GuiLocation.none) return;
 
-
-        Debug.Log("[Gui Manager] " + _bodyGuiSpawnCondition.ToString() + " :  Assign gui to : " + bodyHandler.ID);
-
-        List<GameObject> guiMounts = new List<GameObject>();
-
-
-        if (guiLocation != GuiLocation.OnObject)
-        {
-            /*attach to wrist */
-            GameObject wristMount = _wristMenu.gameObject;
-            if(!wristMount) wristMount = GetGuiMount(bodyHandler.gameObject, true, false);
-            if (!wristMount) 
-            { // instantiate  wrist menu prefab
-            }
-
-
-            if (CanSpawnGUI(wristMount , bodyHandler))
-            { 
-                guiMounts.Add(wristMount);
-            }
-        }
-
-
-        if (guiLocation != GuiLocation.OnWrist)
-        {
-            GameObject goMount = GetGuiMount(bodyHandler.gameObject, false, false);
-
-            if (CanSpawnGUI(goMount))
-            {
-                guiMounts.Add(goMount);
-            }
-        }
-
-        if (guiMounts.Count == 0) return;
-
-        var index = 0;
-        foreach (var guiMount in guiMounts)
-        {
-
-            var gui = SpawnGui(BodyGuiPopUp, bodyHandler.gameObject, UIsContainer);
-
-            var guiContainer = guiMount.GetComponent<GuiContainer>();
-            //Debug.Log("guiMount.transform.parent : " + guiMount.transform.parent);
-            if (!guiContainer) guiContainer = guiMount.transform.parent.GetComponent<GuiContainer>();
-            if (!guiContainer) guiContainer = guiMount.transform.parent.parent.GetComponent<GuiContainer>();
-            if (!guiContainer) continue;
-
-          
-
-
-            if (guiContainer.CurrentGui == gui) 
-            {
-                DestroyGui(bodyHandler);
-                    
-                continue;
-            }
-
-            guiContainer.CurrentGui = gui;
-
-
-            /*only if not wrist*/
-            bool addScript = _wristMenu ? guiMount != _wristMenu.gameObject : true;
-            if(addScript) AddTransformScripts(gui, guiMount, newLocation);
-
-
-
-            UpdateGuiDescriptor(gui, bodyHandler, guiMount);
-
-            objectWithGuisAttached.Add(bodyHandler.gameObject);
-
-
-
-            if (index == 0 && guiLocation != GuiLocation.OnObject)
-            {
-                WristGui = gui;
-                WristGui.transform.localScale = new Vector3(.002f, .002f, .002f);
-            }
-
-            index++;
-        }
-
-    }
-
+    #region Gui configuration 
     private void UpdateGuiDescriptor(GameObject gui, AstralBodyHandler bodyHandler, GameObject guiMount)
     {
         if (!gui) return;
@@ -363,118 +447,9 @@ public class GUIManager : MonoBehaviour
         configurator.UpdateGUIText(bodyHandler.bodyDescriptor);
     }
 
-    private void AssignGuiToBody(AstralBodyHandler bodyHandler)
-    {
-       
-        AssignGuiToBody(bodyHandler, false);
-    }
+    #endregion
 
-    private void AssignGuiToBodyOnRayPoint(AstralBodyHandler bodyHandler) 
-    {
-
-        if (BodyGuiSpawnCondition != GuiSpawnCondition.RayPointAtObject) return;
-        AssignGuiToBody(bodyHandler, false);
-    }
-
-    public void SpawnGuisInProximityRange()
-    {
-        if(_mainCamera == null) FindMainCamera();
-        if(_mainCamera == null) return;
-
-
-
-        var colliders = CheckWhatIsInProximityRange();
-        if (colliders.Length == 0) return;
-
-        foreach (Collider collider in colliders) 
-        {
-            var bodyHandler = collider.gameObject.GetComponent<AstralBodyHandler>();
-            if(bodyHandler == null) continue;
-
-            AssignGuiToBody(bodyHandler);
-
-        }
-
-    }
-
-    private Collider[] CheckWhatIsInProximityRange()
-    {
-        if (_mainCamera == null) return null;
-
-        var center = _mainCamera.transform.position;
-
-        Collider[] colliderInRange = Physics.OverlapSphere(center, _maxDetectionRange);
-
-        return colliderInRange;
-    }
-
-
-    private GameObject GetGuiMount(GameObject go, bool attachToWrist, bool leftHand)
-    {
-
-        GameObject mount = go;
-
-        if (attachToWrist)
-        {
-            var localPlayer = GameManager.Instance.localPlayer;
-            if (localPlayer) mount = leftHand ? localPlayer.LeftController : localPlayer.RightController;
-            
-        }
-
-        var guiContainer = mount.gameObject.GetComponent<GuiContainer>();
-        if (!guiContainer) guiContainer = mount.gameObject.GetComponentInChildren<GuiContainer>();
-
-        if (guiContainer) mount = guiContainer.GuiMount != null ? guiContainer.GuiMount : mount;
-
-        return mount;
-    }
-    private bool CanSpawnGUI(GameObject obj, AstralBodyHandler handler) 
-    {
-
-        if (!obj) return false;
-
-        var guiContainer = obj.GetComponent<GuiContainer>();
-      
-        if (!guiContainer) guiContainer = obj.transform.parent.GetComponent<GuiContainer>();
-        if (!guiContainer) guiContainer = obj.transform.parent.parent.GetComponent<GuiContainer>();
-
-        if (!guiContainer) return false;
-
-        var wristGui = guiContainer as GUIWristScrollController;
-        if (!wristGui)
-        {
-            return CanSpawnGUI( obj);
-        }
-
-        if (wristGui.Guis.Count == 0) return true;
-
-        foreach (var gui in wristGui.Guis) 
-        {
-            if (gui.GetComponent<BodyDescriptorGUI>()) 
-            {
-                if (gui.GetComponent<BodyDescriptorGUI>()._descriptor._id == handler.ID) return false;
-            }
-        }
-
-        return true;
-
-    }
-    private bool CanSpawnGUI(GameObject obj)
-    {
-        if (!obj) return false;
-
-        var guiContainer = obj.GetComponent<GuiContainer>();
-        //Debug.Log(obj +" gui transform.parent : " + obj.transform.parent);
-        if (!guiContainer) guiContainer = obj.transform.parent.GetComponent<GuiContainer>();
-        if (!guiContainer) guiContainer = obj.transform.parent.parent.GetComponent<GuiContainer>();
-
-        if (!guiContainer) return false;
-
-        return guiContainer.CurrentGui == null ? true : false;
-    }
-
-  
-
+    #region Toggle/Destroy Gui
     private void ToggleGuisWithPlayerMovement(bool isPlayerMoving)
     {
         //ToggleGuis(!isPlayerMoving);
@@ -551,28 +526,6 @@ public class GUIManager : MonoBehaviour
 
     }
 
-    private float DistanceFromPlayer(GameObject obj) 
-    {
-     if(!obj) return -1;
-    var player = GameManager.Instance.localPlayer;
-     if (player == null) return -1;
-       // Debug.Log("Distance: " + Vector3.Distance(gui.transform.position, player.transform.position));
-        return Vector3.Distance(obj.transform.position, player.transform.position);
-    }
-
-
-    public void FindMainCamera()
-    {
-        if (_mainCamera == null)
-        {
-            // Find By Tag instead of Camera.main as the camera could be disabled
-            if (GameObject.FindGameObjectWithTag("MainCamera") != null)
-            {
-                _mainCamera = GameObject.FindGameObjectWithTag("MainCamera").transform;
-            }
-        }
-    }
-
     private void CheckGuisForDestroy(float distanceToDestroy, List<GameObject> activeGuis)
     {
         if (activeGuis.Count == 0) return;
@@ -584,7 +537,46 @@ public class GUIManager : MonoBehaviour
         }
     }
 
+    private IEnumerator CheckWhatToDoWithGuis(float delay)
+    {
+        do
+        {
+            /*spawn*/
+            if (BodyGuiSpawnCondition == GuiSpawnCondition.DistanceFromPlayer)
+            {
+                SpawnGuisInProximityRange();
+            }
 
+
+            /*destroy*/
+            if (_defaultGuiBehaviour == GuiBehaviour.DestroyIfPlayerTooFar)
+            {
+                CheckGuisForDestroy(DistanceToDestroy, activeGuis);
+
+            }
+
+            yield return new WaitForSeconds(delay);
+
+        } while (true);
+    }
+    
+    #endregion
+
+    #region WristMenu 
+    public void ToggleWristMenu() 
+    {
+       if(!WristMenu) return;
+        bool state = WristMenu.gameObject.activeInHierarchy;
+
+        ToggleGui(WristMenu.gameObject, !state);
+    }
+
+    public void ToggleWristMenu(bool state)
+    {
+        if (!WristMenu) return;
+       
+        ToggleGui(WristMenu.gameObject, state);
+    }
 
     public void MoveGuiToWrist(bool state, AstralBodyHandler body)
     {
@@ -619,35 +611,48 @@ public class GUIManager : MonoBehaviour
         }
     }
 
-
-    public void MoveGuiToWrist(bool state, GameObject gui)
+    public GameObject AddGuiToWristScrollMenu(GameObject gui, GUIWristScrollController wristMenu, GameObject parent = null)
     {
-       
+        if (!wristMenu) return null;
+        var go = wristMenu.gameObject;
+
+
+        var newGui = SpawnGui(gui, go.transform, parent);
+        newGui.transform.localPosition = Vector3.zero;
+        newGui.transform.localRotation = Quaternion.identity;
+
+        wristMenu.AddGuiToWristMenu(newGui, true);
+
+        return newGui;
     }
 
 
-    private IEnumerator CheckWhatToDoWithGuis(float delay)
+    #endregion
+
+    #region Other
+    private float DistanceFromPlayer(GameObject obj)
     {
-        do 
+        if (!obj) return -1;
+        var player = GameManager.Instance.localPlayer;
+        if (player == null) return -1;
+
+        return Vector3.Distance(obj.transform.position, player.transform.position);
+    }
+
+
+    public void FindMainCamera()
+    {
+        if (_mainCamera == null)
         {
-            /*spawn*/
-            if (BodyGuiSpawnCondition == GuiSpawnCondition.DistanceFromPlayer) 
+            // Find By Tag instead of Camera.main as the camera could be disabled
+            if (GameObject.FindGameObjectWithTag("MainCamera") != null)
             {
-                SpawnGuisInProximityRange();
+                _mainCamera = GameObject.FindGameObjectWithTag("MainCamera").transform;
             }
-
-
-            /*destroy*/
-            if (_defaultGuiBehaviour == GuiBehaviour.DestroyIfPlayerTooFar) 
-            {
-                CheckGuisForDestroy(DistanceToDestroy, activeGuis);
-
-            }
-
-            yield return new WaitForSeconds(delay);
-
-        }while (true);
+        }
     }
+
+    #endregion
 
     private void Awake()
     {
@@ -659,7 +664,12 @@ public class GUIManager : MonoBehaviour
         _chachedGuiSpawnCondition = _bodyGuiSpawnCondition;
         StartCoroutine(CheckWhatToDoWithGuis(1f));
         FindMainCamera();
-        if (_wristMenu) RegisterGuis(_wristMenu.Guis);
+        if (_wristMenu)
+        {
+            RegisterGuis(_wristMenu.Guis);
+            ToggleWristMenu(false);
+        }
+
 
     }
 

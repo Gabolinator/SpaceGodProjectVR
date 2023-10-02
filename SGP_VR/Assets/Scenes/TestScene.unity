@@ -306,6 +306,85 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8fcb04cca0e8dfb4fba04ae392dde50f, type: 3}
+--- !u!1 &170505019
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 170505020}
+  - component: {fileID: 170505021}
+  m_Layer: 0
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &170505020
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 170505019}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.07300002, y: 0.23899996, z: -0.25400004}
+  m_LocalScale: {x: 0.21700001, y: 0.21700001, z: 0.21700001}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1026211028}
+  m_Father: {fileID: 7494668094590501547}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &170505021
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 170505019}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 84f6509f3c7fa7b4899c9c767f49e622, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_GazeTransform: {fileID: 7854406106609149525}
+  m_FacingThreshold: 0.31
+  m_FacingEntered:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1720720273}
+        m_TargetAssemblyTypeName: GUIManager, Assembly-CSharp
+        m_MethodName: ToggleWristMenu
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 1
+        m_CallState: 2
+  m_FacingExited:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1720720273}
+        m_TargetAssemblyTypeName: GUIManager, Assembly-CSharp
+        m_MethodName: ToggleWristMenu
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_LargeMovementDistanceThreshold: 0.05
+  m_LargeMovementCoolDownTime: 0.25
 --- !u!1 &209230804
 GameObject:
   m_ObjectHideFlags: 0
@@ -2203,6 +2282,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: GUIManager, Assembly-CSharp
+        m_MethodName: 
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 1
+        m_CallState: 2
   m_FacingExited:
     m_PersistentCalls:
       m_Calls:
@@ -2258,6 +2349,18 @@ MonoBehaviour:
         m_TargetAssemblyTypeName: Unity.VRTemplate.Callout, Assembly-CSharp
         m_MethodName: GazeHoverEnd
         m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: GUIManager, Assembly-CSharp
+        m_MethodName: 
+        m_Mode: 6
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -7722,7 +7825,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 7494668094590501547}
+    m_TransformParent: {fileID: 170505020}
     m_Modifications:
     - target: {fileID: 398944502751904189, guid: 6a4c91a2871f7264382a29ddfca344c8, type: 3}
       propertyPath: m_BlockingMask.m_Bits
@@ -7733,16 +7836,28 @@ PrefabInstance:
       value: 4294967295
       objectReference: {fileID: 0}
     - target: {fileID: 2683735138220947032, guid: 6a4c91a2871f7264382a29ddfca344c8, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2683735138220947032, guid: 6a4c91a2871f7264382a29ddfca344c8, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2683735138220947032, guid: 6a4c91a2871f7264382a29ddfca344c8, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2683735138220947032, guid: 6a4c91a2871f7264382a29ddfca344c8, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.073
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2683735138220947032, guid: 6a4c91a2871f7264382a29ddfca344c8, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.239
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2683735138220947032, guid: 6a4c91a2871f7264382a29ddfca344c8, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.254
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2683735138220947032, guid: 6a4c91a2871f7264382a29ddfca344c8, type: 3}
       propertyPath: m_LocalRotation.w
@@ -10425,7 +10540,7 @@ PrefabInstance:
       addedObject: {fileID: 3657007187192506449}
     - targetCorrespondingSourceObject: {fileID: 665267158092037711, guid: e8fb48b2097a4fe4c9bad4f438c1eae2, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1026211028}
+      addedObject: {fileID: 170505020}
     - targetCorrespondingSourceObject: {fileID: 665267158092037711, guid: e8fb48b2097a4fe4c9bad4f438c1eae2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 209230805}
