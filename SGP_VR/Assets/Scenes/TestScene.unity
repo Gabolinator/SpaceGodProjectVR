@@ -1805,10 +1805,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1452294875}
-  - component: {fileID: 1452294878}
   - component: {fileID: 1452294877}
   - component: {fileID: 1452294876}
-  - component: {fileID: 1452294879}
+  - component: {fileID: 1452294878}
   m_Layer: 0
   m_Name: FragmentGenerationTest
   m_TagString: Untagged
@@ -1888,23 +1887,12 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1452294874}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 86bcad745834d194eb1b479f178f751c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &1452294879
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1452294874}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 85a24418597b3c645b6e3d934a2a9f57, type: 3}
+  m_Script: {fileID: 11500000, guid: f9d3a485a4047f14682880f5a95108ef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  resolution: 1
 --- !u!1 &1544182710
 GameObject:
   m_ObjectHideFlags: 0
