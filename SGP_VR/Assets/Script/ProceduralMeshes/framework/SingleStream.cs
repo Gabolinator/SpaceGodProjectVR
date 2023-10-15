@@ -1,12 +1,29 @@
+using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace ProceduralMeshes.Streams
 {
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct TriangleUInt16
+    {
+
+        public ushort a, b, c;
+
+        public static implicit operator TriangleUInt16(int3 t) => new TriangleUInt16
+        {
+            a = (ushort)t.x,
+            b = (ushort)t.y,
+            c = (ushort)t.z
+        };
+    }
 
     public struct SingleStream : IMeshStreams 
     {
@@ -18,9 +35,13 @@ namespace ProceduralMeshes.Streams
             public float2 texCoord0;
         }
 
+        [NativeDisableContainerSafetyRestriction]
         NativeArray<Stream0> stream0;
 
-        public void Setup(Mesh.MeshData meshData, int vertexCount, int indexCount)
+        [NativeDisableContainerSafetyRestriction]
+        NativeArray<TriangleUInt16> triangles;
+
+        public void Setup(Mesh.MeshData meshData, Bounds bounds, int vertexCount, int indexCount)
         {
             var descriptor = new NativeArray<VertexAttributeDescriptor>( 4, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             
@@ -32,12 +53,16 @@ namespace ProceduralMeshes.Streams
             meshData.SetVertexBufferParams(vertexCount, descriptor);
             descriptor.Dispose();
 
-            meshData.SetIndexBufferParams(indexCount, IndexFormat.UInt32);
+            meshData.SetIndexBufferParams(indexCount, IndexFormat.UInt16);
 
             meshData.subMeshCount = 1;
-            meshData.SetSubMesh(0, new SubMeshDescriptor(0, indexCount));
+
+            meshData.SetSubMesh(0, new SubMeshDescriptor(0, indexCount){ bounds = bounds, vertexCount = vertexCount},
+            MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontValidateIndices);
+           
 
             stream0 = meshData.GetVertexData<Stream0>();
+            triangles = meshData.GetIndexData<ushort>().Reinterpret<TriangleUInt16>(2);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -49,6 +74,6 @@ namespace ProceduralMeshes.Streams
             texCoord0 = vertex.texCoord0
         };
 
-
+        public void SetTriangle(int index, int3 triangle) => triangles[index] = triangle;
     }
 }
