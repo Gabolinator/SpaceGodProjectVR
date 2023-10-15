@@ -151,8 +151,8 @@ public class GUIWristScrollController : GuiContainer
         UpdateNextGuis(useIndex);
         UpdatePreviousGuis(useIndex);
 
-        SetMaxGuiAlpha(_previousGui, neighbourGuiAlpha);
-        SetMaxGuiAlpha(_nextGui, neighbourGuiAlpha);
+        if(_previousGui.gameObject.activeSelf)  SetMaxGuiAlpha(_previousGui, neighbourGuiAlpha);
+        if (_nextGui.gameObject.activeSelf) SetMaxGuiAlpha(_nextGui, neighbourGuiAlpha);
 
         ToggleGui(_previousGui, true, true);
         ToggleGui(_nextGui, true, true);
@@ -358,11 +358,14 @@ public class GUIWristScrollController : GuiContainer
     {
         if (_guis.Count == 0 || _guis.Count == 1) return;
 
-        if (index > _guis.Count) index = 0;
-        else if( index < 0 ) index = _guis.Count - 1;
+      
+        /* Make sure index is in range*/
+        if (index > _guis.Count) index %= _guis.Count;
+        else if( index < 0) index %= -_guis.Count;
  
+
         int destinationIndex = index;
-        float offset = (_guis.Count -2) *_startAngleOffset/2; // to have the gui centered
+        float offset = (_guis.Count -2) *_startAngleOffset/2; // to have the gui centered - else its a bit offset 
 
         //Debug.Log("Destination Index : " + destinationIndex);
         float destinationAngle = -(destinationIndex * _angle) + offset;

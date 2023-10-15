@@ -23,7 +23,7 @@ public class BodyShapeShifter : MonoBehaviour
 
     public bool generateEverythingAtRandom;
 
-    public bool generatePhysicalCharacteristicAtRandom;
+    public bool randomPhysicalCharacteristic;
 
     public bool randomVelocity;
     public bool randomAngularVelocity; 
@@ -44,7 +44,7 @@ public class BodyShapeShifter : MonoBehaviour
     public void Start()
     {
        
-        GenerateBody(transform.position, CreateBody(Body, PltType, StrType, SpectralType), generateEverythingAtRandom, generatePhysicalCharacteristicAtRandom, randomVelocity, randomAngularVelocity);
+        GenerateBody(transform.position, CreateBody(Body, PltType, StrType, SpectralType), generateEverythingAtRandom, randomPhysicalCharacteristic, randomVelocity, randomAngularVelocity);
         this.gameObject.SetActive(false);
 
         var handler = gameObject.GetComponent<AstralBodyHandler>();
