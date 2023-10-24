@@ -1893,7 +1893,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   resolution: 1
-  meshType: 1
+  meshType: 4
+  gizmos: 0
 --- !u!1 &1544182710
 GameObject:
   m_ObjectHideFlags: 0
