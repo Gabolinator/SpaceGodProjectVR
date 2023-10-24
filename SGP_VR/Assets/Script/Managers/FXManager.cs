@@ -21,13 +21,13 @@ public enum FXElement
 }
 
 [System.Serializable]
-public class FX
+public struct FX
 {
 
     public GameObject fxPrefab;
     public List<AudioClip> audios;
     //public List<ParticleSystem> particleSystems;
-    public string keyword = null;
+    public string keyword;
     [HideInInspector]
     public FXCategory category;
 
@@ -35,7 +35,7 @@ public class FX
 }
 
 [System.Serializable]
-public class FXDictionnairy
+public struct FXDictionnairy
 {
     public List<FX> fxList;
     public FXCategory category;

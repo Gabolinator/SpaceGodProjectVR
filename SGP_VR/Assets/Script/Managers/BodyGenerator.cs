@@ -202,8 +202,10 @@ public class BodyGenerator
 
     }
 
-    internal string PredictSubtypeFromCharacteristic(List<AstralBodyPhysicalCharacteristics> astralBodyCharacteristics, AstralBody body, AstralBodyType bodyType)
+
+    public string PredictSubtypeFromCharacteristic(List<AstralBodyPhysicalCharacteristics> astralBodyCharacteristics, AstralBody body, AstralBodyType bodyType)
     {
+        //TODO : implement
         throw new NotImplementedException();
     }
 

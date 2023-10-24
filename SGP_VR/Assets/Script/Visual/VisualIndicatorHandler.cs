@@ -208,8 +208,10 @@ public class VisualIndicatorHandler : MonoBehaviour
     }
     public void DestroyIndividualPull()
     {
-
+        //TODO : implement 
+        throw new NotImplementedException();
     }
+
     private void ResetTrailPoints(SelectExitEventArgs obj) 
     {
         if (obj == null) return;

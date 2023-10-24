@@ -16,7 +16,7 @@ public class FXHandler : MonoBehaviour
         particleSystems = new List<ParticleSystem>(GetComponents<ParticleSystem>());
     }
 
-    public void Initialize(FX efx = null)
+    public void Initialize(FX efx)
     {
         fx = efx;
 
@@ -116,8 +116,9 @@ public class FXHandler : MonoBehaviour
 
     private void Start()
     {
-        Debug.Log("[FX handler] Start to exist"); 
-        if (!initialized) Initialize();
+        Debug.Log("[FX handler] Start to exist");
+        FX efx = new FX();
+        if (!initialized) Initialize(efx);
     }
 
     private void OnDestroy()
