@@ -12,10 +12,19 @@ public class ProceduralMesh : MonoBehaviour
     [SerializeField, Range(1, 50)]
     int resolution = 1;
 
-   
+    [SerializeField, Range(0, 360)]
+    float angle = 0;
 
     [SerializeField]
     MeshType meshType;
+
+    public enum MaterialMode { Flat, Ripple, LatLonMap, CubeMap }
+
+    [SerializeField]
+    MaterialMode material;
+
+    [SerializeField]
+    Material[] materials;
 
     [System.Flags]
     public enum GizmoMode { Nothing = 0, Vertices = 1, Normals = 0b10, Tangents = 0b100 }
@@ -33,7 +42,8 @@ public class ProceduralMesh : MonoBehaviour
         MeshJob<SharedTriangleGrid, SingleStream>.ScheduleParallel,
         MeshJob<PointyHexagonGrid, SingleStream>.ScheduleParallel,
         MeshJob<FlatHexagonGrid, SingleStream>.ScheduleParallel,
-        MeshJob<UVSphere, SingleStream>.ScheduleParallel
+        MeshJob<UVSphere, SingleStream>.ScheduleParallel,
+        MeshJob<SphereFragment, SingleStream>.ScheduleParallel
     };
 
     public enum MeshType
@@ -43,7 +53,8 @@ public class ProceduralMesh : MonoBehaviour
         SharedTriangleGrid,
         PointyHexagonGrid,
         FlatHexagonGrid,
-        UVSphere
+        UVSphere,
+        SphereFragment
     };
 
     void GenerateMesh() 
@@ -124,6 +135,8 @@ public class ProceduralMesh : MonoBehaviour
         vertices = null;
         normals = null;
         tangents = null;
+
+        GetComponent<MeshRenderer>().material = materials[(int)material];
     }
 
 }

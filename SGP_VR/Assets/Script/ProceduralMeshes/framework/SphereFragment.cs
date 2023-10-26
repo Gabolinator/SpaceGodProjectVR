@@ -6,12 +6,17 @@ using static Unity.Mathematics.math;
 namespace ProceduralMeshes.Generators
 {
 
-    public struct UVSphere : IMeshGenerator
+    public struct SphereFragment : IMeshGenerator
     {
+        float Angle { get; set; } //on y axis
+
+        float Fraction => 360 / Angle;
         public int Resolution { get; set; }
         int ResolutionV => 2 * Resolution;
         int ResolutionU => 4 * Resolution;
-        public int VertexCount => (ResolutionU + 1) * (ResolutionV + 1) - 2;
+
+       
+        public int VertexCount => ((ResolutionU + 1) * (ResolutionV + 1) - 2);
 
         public int IndexCount => 6 * ResolutionU * (ResolutionV - 1);
 
@@ -38,7 +43,7 @@ namespace ProceduralMeshes.Generators
 
             var vertex = new Vertex();
             vertex.position.y = vertex.normal.y = -1f;
-            sincos(2f * PI * (u - 0.5f) / ResolutionU,out vertex.tangent.z, out vertex.tangent.x);
+            sincos(2f * PI * (u - 0.5f) / ResolutionU, out vertex.tangent.z, out vertex.tangent.x);
             vertex.tangent.w = -1f;
             vertex.texCoord0.x = (u - 0.5f) / ResolutionU;
             streams.SetVertex(vi, vertex);
@@ -62,7 +67,8 @@ namespace ProceduralMeshes.Generators
 
             for (int v = 1; v < ResolutionV; v++, vi++)
             {
-                sincos(PI + PI * v / ResolutionV,out float circleRadius, out vertex.position.y);
+               
+                sincos(PI + PI * v / ResolutionV, out float circleRadius, out vertex.position.y);
                 vertex.position.xz = circle * -circleRadius;
                 vertex.normal = vertex.position;
                 vertex.texCoord0.y = (float)v / ResolutionV;
@@ -74,6 +80,8 @@ namespace ProceduralMeshes.Generators
                     streams.SetTriangle(ti + 1, vi + int3(-1, shiftLeft, 0));
                     ti += 2;
                 }
+
+                Debug.Log("position vertex : " +v + " = " + vertex.position);
             }
 
             streams.SetTriangle(ti, vi + int3(shiftLeft - 1, 0, -1));
@@ -82,20 +90,21 @@ namespace ProceduralMeshes.Generators
 
         public void ExecuteSeam<S>(S streams) where S : struct, IMeshStreams
         {
-           
+
             var vertex = new Vertex();
-            
+
             vertex.tangent.x = 1f;
             vertex.tangent.w = -1f;
 
 
             for (int v = 1; v < ResolutionV; v++)
             {
-                sincos(PI + PI * v / ResolutionV,out vertex.position.z, out vertex.position.y);
+                sincos(PI + PI * v / ResolutionV, out vertex.position.z, out vertex.position.y);
                 vertex.normal = vertex.position;
                 vertex.texCoord0.y = (float)v / ResolutionV;
-                streams.SetVertex(v-1, vertex);
+                streams.SetVertex(v - 1, vertex);
             }
         }
     }
 }
+

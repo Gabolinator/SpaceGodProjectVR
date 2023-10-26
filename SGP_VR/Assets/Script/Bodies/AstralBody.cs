@@ -79,6 +79,7 @@ public class ChemicalBodyCompositionElement
 [System.Serializable]
 public class AstralBodyDescriptor 
 {
+    
     public string _id;
 
     public string _bodyType;
