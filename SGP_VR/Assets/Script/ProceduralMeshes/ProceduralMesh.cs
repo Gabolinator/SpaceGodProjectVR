@@ -43,6 +43,7 @@ public class ProceduralMesh : MonoBehaviour
         MeshJob<PointyHexagonGrid, SingleStream>.ScheduleParallel,
         MeshJob<FlatHexagonGrid, SingleStream>.ScheduleParallel,
         MeshJob<UVSphere, SingleStream>.ScheduleParallel,
+        MeshJob<CubeSphere, SingleStream>.ScheduleParallel,
         MeshJob<SphereFragment, SingleStream>.ScheduleParallel
     };
 
@@ -54,6 +55,7 @@ public class ProceduralMesh : MonoBehaviour
         PointyHexagonGrid,
         FlatHexagonGrid,
         UVSphere,
+        CubeSphere,
         SphereFragment
     };
 

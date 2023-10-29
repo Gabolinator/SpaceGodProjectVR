@@ -8,101 +8,125 @@ namespace ProceduralMeshes.Generators
 
     public struct SphereFragment : IMeshGenerator
     {
-        float Angle { get; set; } //on y axis
+        public float Angle { get; set; }
 
-        float Fraction => 360 / Angle;
-        public int Resolution { get; set; }
-        int ResolutionV => 2 * Resolution;
-        int ResolutionU => 4 * Resolution;
+        public int Sides => 3;
 
-       
-        public int VertexCount => ((ResolutionU + 1) * (ResolutionV + 1) - 2);
-
-        public int IndexCount => 6 * ResolutionU * (ResolutionV - 1);
-
-        public int JobLength => ResolutionU + 1;
-
-        public Bounds Bounds => new Bounds(Vector3.zero, new Vector3(2f, 2f, 2f));
-
-        public void Execute<S>(int u, S streams) where S : struct, IMeshStreams
+        struct Side
         {
-            if (u == 0)
-            {
-                ExecuteSeam(streams);
-            }
-            else
-            {
-                ExecuteRegular(u, streams);
-            }
+            public int id;
+            public float3 uvOrigin, uVector, vVector;
+            public float3 normal;
+            public float4 tangent;
         }
 
-        public void ExecuteRegular<S>(int u, S streams) where S : struct, IMeshStreams
-        {
-            int vi = (ResolutionV + 1) * u - 2, ti = 2 * (ResolutionV - 1) * (u - 1);
-
-
-            var vertex = new Vertex();
-            vertex.position.y = vertex.normal.y = -1f;
-            sincos(2f * PI * (u - 0.5f) / ResolutionU, out vertex.tangent.z, out vertex.tangent.x);
-            vertex.tangent.w = -1f;
-            vertex.texCoord0.x = (u - 0.5f) / ResolutionU;
-            streams.SetVertex(vi, vertex);
-
-            vertex.position.y = vertex.normal.y = 1f;
-            vertex.texCoord0.y = 1f;
-            streams.SetVertex(vi + ResolutionV, vertex);
-            vi += 1;
-
-            float2 circle;
-            sincos(2f * PI * u / ResolutionU, out circle.x, out circle.y);
-            vertex.tangent.xz = circle.yx;
-            circle.y = -circle.y;
-            vertex.texCoord0.x = (float)u / ResolutionU;
-
-            int shiftLeft = (u == 1 ? 0 : -1) - ResolutionV;
-
-            streams.SetTriangle(ti, vi + int3(-1, shiftLeft, 0));
-            ti += 1;
-
-
-            for (int v = 1; v < ResolutionV; v++, vi++)
+        static Side GetSide(int id) => id switch
+        { 
+            0 => new Side 
             {
-               
-                sincos(PI + PI * v / ResolutionV, out float circleRadius, out vertex.position.y);
-                vertex.position.xz = circle * -circleRadius;
-                vertex.normal = vertex.position;
-                vertex.texCoord0.y = (float)v / ResolutionV;
-                streams.SetVertex(vi, vertex);
+            id = id,
+            uvOrigin = -1f,
+            uVector = 2f * right(),
+            vVector = 2f * up(),
+            normal = back(),
+            tangent = float4(1f, 0f, 0f, -1f)
+            },
 
-                if (v > 1)
+            1 => new Side
+            {
+                id = id,
+                uvOrigin = float3(1f, -1f, -1f),
+                uVector = 2f * forward(),
+                vVector = 2f * up(),
+                normal = right(),
+                tangent = float4(0f, 0f, 1f, -1f)
+            },
+
+            _ => new Side
+            {
+                id = id,
+                uvOrigin = float3(-1f, -1f, 1f),
+                uVector = 2f * back(),
+                vVector = 2f * up(),
+                normal = left(),
+                tangent = float4(0f, 1f, 0f, -1f)
+            },
+        };
+
+        public int Resolution { get; set; }
+
+        public int VertexCount => Sides*4 * Resolution * Resolution;
+
+        public int IndexCount => Sides * 6 * Resolution * Resolution;
+
+        public int JobLength => Sides * Resolution;
+
+        public Bounds Bounds => new Bounds(Vector3.zero, new Vector3(1f, 0f, 1f));
+
+        public void Execute<S>(int i, S streams) where S : struct, IMeshStreams
+        {
+          
+            int u = i / Sides;
+            Side side = GetSide(i - Sides * u);
+            Debug.Log("Side : " + side.id);
+
+            int vi = 4 * Resolution * (Resolution * side.id + u);
+            int ti = 2 * Resolution * (Resolution * side.id + u);
+
+            float3 uA = side.uvOrigin + side.uVector * u / Resolution;
+            float3 uB = side.uvOrigin + side.uVector * (u + 1) / Resolution;
+
+            for (int v = 0; v < Resolution; v++, vi += 4, ti += 2)
+            {
+
+                    float3 pA = uA + side.vVector * v / Resolution;
+                    float3 pB = uB + side.vVector * v / Resolution;
+                    float3 pC = uA + side.vVector * (v + 1) / Resolution;
+                    float3 pD = uB + side.vVector * (v + 1) / Resolution;
+
+                if (side.id == 1)
                 {
-                    streams.SetTriangle(ti + 0, vi + int3(shiftLeft - 1, shiftLeft, -1));
-                    streams.SetTriangle(ti + 1, vi + int3(-1, shiftLeft, 0));
-                    ti += 2;
+
+
+                    pB -= vi / Resolution * new float3(cos(PI / 4), 0, 0);
+
+                    pD -= vi / Resolution * new float3(cos(PI / 4), 0, 0);
                 }
 
-                Debug.Log("position vertex : " +v + " = " + vertex.position);
-            }
-
-            streams.SetTriangle(ti, vi + int3(shiftLeft - 1, 0, -1));
-        }
 
 
-        public void ExecuteSeam<S>(S streams) where S : struct, IMeshStreams
-        {
+                else if (side.id == 2)
+                {
 
-            var vertex = new Vertex();
+                    pA += new float3(cos(PI / 4), 0, 0);
 
-            vertex.tangent.x = 1f;
-            vertex.tangent.w = -1f;
+                    pC += new float3(cos(PI / 4), 0, 0);
+                }
 
 
-            for (int v = 1; v < ResolutionV; v++)
-            {
-                sincos(PI + PI * v / ResolutionV, out vertex.position.z, out vertex.position.y);
-                vertex.normal = vertex.position;
-                vertex.texCoord0.y = (float)v / ResolutionV;
-                streams.SetVertex(v - 1, vertex);
+                    var vertex = new Vertex();
+
+                    vertex.normal = side.normal;
+                    vertex.tangent = side.tangent;
+
+                    vertex.position = pA;
+                    streams.SetVertex(vi + 0, vertex);
+
+                    vertex.position = pB;
+                    vertex.texCoord0 = float2(1f, 0f);
+                    streams.SetVertex(vi + 1, vertex);
+
+                    vertex.position = pC;
+                    vertex.texCoord0 = float2(0f, 1f);
+                    streams.SetVertex(vi + 2, vertex);
+
+                    vertex.position = pD;
+                    vertex.texCoord0 = 1f;
+                    streams.SetVertex(vi + 3, vertex);
+
+                    streams.SetTriangle(ti + 0, vi + int3(0, 2, 1));
+                    streams.SetTriangle(ti + 1, vi + int3(1, 2, 3));
+                
             }
         }
     }
