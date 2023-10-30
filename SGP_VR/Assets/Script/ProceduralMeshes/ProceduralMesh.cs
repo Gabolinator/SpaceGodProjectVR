@@ -27,13 +27,29 @@ public class ProceduralMesh : MonoBehaviour
     Material[] materials;
 
     [System.Flags]
-    public enum GizmoMode { Nothing = 0, Vertices = 1, Normals = 0b10, Tangents = 0b100 }
+    public enum GizmoMode { Nothing = 0, Vertices = 1, Normals = 0b10, Tangents = 0b100, Triangles = 0b1000 }
 
     [SerializeField]
     GizmoMode gizmos;
 
+    [System.NonSerialized]
     Vector3[] vertices, normals;
+
+    [System.NonSerialized]
     Vector4[] tangents;
+
+    [System.NonSerialized]
+    int[] triangles;
+
+
+    [System.Flags]
+    public enum MeshOptimizationMode
+    {
+        Nothing = 0, ReorderIndices = 1, ReorderVertices = 0b10
+    }
+
+    [SerializeField]
+    MeshOptimizationMode meshOptimization;
 
     static MeshJobScheduleDelegate[] jobs =
    {
@@ -44,6 +60,7 @@ public class ProceduralMesh : MonoBehaviour
         MeshJob<FlatHexagonGrid, SingleStream>.ScheduleParallel,
         MeshJob<UVSphere, SingleStream>.ScheduleParallel,
         MeshJob<CubeSphere, SingleStream>.ScheduleParallel,
+        MeshJob<SharedCubeSphere, PositionStream>.ScheduleParallel,
         MeshJob<SphereFragment, SingleStream>.ScheduleParallel
     };
 
@@ -56,6 +73,7 @@ public class ProceduralMesh : MonoBehaviour
         FlatHexagonGrid,
         UVSphere,
         CubeSphere,
+        SharedCubeSphere,
         SphereFragment
     };
 
@@ -67,6 +85,19 @@ public class ProceduralMesh : MonoBehaviour
         jobs[(int)meshType](mesh, meshData, resolution, default).Complete();
 
         Mesh.ApplyAndDisposeWritableMeshData(meshDataArray, mesh);
+
+        if (meshOptimization == MeshOptimizationMode.ReorderIndices)
+        {
+            mesh.OptimizeIndexBuffers();
+        }
+        else if (meshOptimization == MeshOptimizationMode.ReorderVertices)
+        {
+            mesh.OptimizeReorderVertexBuffer();
+        }
+        else if (meshOptimization != MeshOptimizationMode.Nothing)
+        {
+            mesh.Optimize();
+        }
     }
 
 
@@ -83,6 +114,7 @@ public class ProceduralMesh : MonoBehaviour
         bool drawVertices = (gizmos & GizmoMode.Vertices) != 0;
         bool drawNormals = (gizmos & GizmoMode.Normals) != 0;
         bool drawTangents = (gizmos & GizmoMode.Tangents) != 0;
+        bool drawTriangles = (gizmos & GizmoMode.Triangles) != 0;
 
 
         if (vertices == null)
@@ -91,11 +123,23 @@ public class ProceduralMesh : MonoBehaviour
         }
         if (drawNormals && normals == null)
         {
-            normals = mesh.normals;
+            drawNormals = mesh.HasVertexAttribute(VertexAttribute.Normal);
+            if (drawNormals)
+            {
+                normals = mesh.normals;
+            }
         }
         if (drawTangents && tangents == null)
         {
-            tangents = mesh.tangents;
+            drawTangents = mesh.HasVertexAttribute(VertexAttribute.Tangent);
+            if (drawTangents)
+            {
+                tangents = mesh.tangents;
+            }
+        }
+        if (drawTriangles && triangles == null)
+        {
+            triangles = mesh.triangles;
         }
 
         for (int i = 0; i < vertices.Length; i++)
@@ -115,6 +159,25 @@ public class ProceduralMesh : MonoBehaviour
             {
                 Gizmos.color = Color.red;
                 Gizmos.DrawRay(position, t.TransformDirection(tangents[i]) * 0.2f);
+            }
+
+        }
+        if (drawTriangles)
+        {
+           
+            float colorStep = 1f / (triangles.Length - 3);
+            for (int i = 0; i < triangles.Length; i += 3)
+            {
+                float c = i * colorStep;
+                Gizmos.color = new Color(c, 0f, c);
+                Gizmos.DrawSphere(
+                    t.TransformPoint((
+                        vertices[triangles[i]] +
+                        vertices[triangles[i + 1]] +
+                        vertices[triangles[i + 2]]
+                    ) * (1f / 3f)),
+                    0.02f
+                );
             }
         }
     }
@@ -137,6 +200,7 @@ public class ProceduralMesh : MonoBehaviour
         vertices = null;
         normals = null;
         tangents = null;
+        triangles = null;
 
         GetComponent<MeshRenderer>().material = materials[(int)material];
     }

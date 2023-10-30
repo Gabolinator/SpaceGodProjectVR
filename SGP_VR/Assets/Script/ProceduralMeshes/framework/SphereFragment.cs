@@ -75,14 +75,14 @@ namespace ProceduralMeshes.Generators
 
             float3 uA = side.uvOrigin + side.uVector * u / Resolution;
             float3 uB = side.uvOrigin + side.uVector * (u + 1) / Resolution;
+            float3 pA = uA, pB = uB;
 
-            for (int v = 0; v < Resolution; v++, vi += 4, ti += 2)
+            for (int v = 1; v < Resolution; v++, vi += 4, ti += 2)
             {
 
-                    float3 pA = uA + side.vVector * v / Resolution;
-                    float3 pB = uB + side.vVector * v / Resolution;
-                    float3 pC = uA + side.vVector * (v + 1) / Resolution;
-                    float3 pD = uB + side.vVector * (v + 1) / Resolution;
+                    
+                    float3 pC = uA + side.vVector * (v) / Resolution;
+                    float3 pD = uB + side.vVector * (v) / Resolution;
 
                 if (side.id == 1)
                 {
@@ -126,7 +126,10 @@ namespace ProceduralMeshes.Generators
 
                     streams.SetTriangle(ti + 0, vi + int3(0, 2, 1));
                     streams.SetTriangle(ti + 1, vi + int3(1, 2, 3));
-                
+
+
+                pA = pC;
+                pB = pD;
             }
         }
     }
