@@ -9,7 +9,7 @@ namespace ProceduralMeshes.Generators
     public struct PointyHexagonGrid : IMeshGenerator
     {
         public int Resolution { get; set; }
-
+        public int NumOfSides { get; set; }
 
         public int VertexCount => 7 * Resolution * Resolution;
 

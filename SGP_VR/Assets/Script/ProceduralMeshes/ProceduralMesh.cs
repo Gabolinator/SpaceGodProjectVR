@@ -12,8 +12,8 @@ public class ProceduralMesh : MonoBehaviour
     [SerializeField, Range(1, 50)]
     int resolution = 1;
 
-    [SerializeField, Range(0, 360)]
-    float angle = 0;
+    [SerializeField, Range(1, 4)]
+    int numSide = 1;
 
     [SerializeField]
     MeshType meshType;
@@ -41,7 +41,10 @@ public class ProceduralMesh : MonoBehaviour
     [System.NonSerialized]
     int[] triangles;
 
-
+    
+    RandomShapeGenerator shapeGenerator = new RandomShapeGenerator();
+    
+    
     [System.Flags]
     public enum MeshOptimizationMode
     {
@@ -61,6 +64,7 @@ public class ProceduralMesh : MonoBehaviour
         MeshJob<UVSphere, SingleStream>.ScheduleParallel,
         MeshJob<CubeSphere, SingleStream>.ScheduleParallel,
         MeshJob<SharedCubeSphere, PositionStream>.ScheduleParallel,
+        MeshJob<Octasphere, SingleStream>.ScheduleParallel,
         MeshJob<SphereFragment, SingleStream>.ScheduleParallel
     };
 
@@ -74,7 +78,10 @@ public class ProceduralMesh : MonoBehaviour
         UVSphere,
         CubeSphere,
         SharedCubeSphere,
-        SphereFragment
+        
+        Octasphere,
+        SphereFragment, 
+        RandomFragmentTest
     };
 
     void GenerateMesh() 
@@ -82,7 +89,7 @@ public class ProceduralMesh : MonoBehaviour
         Mesh.MeshDataArray meshDataArray = Mesh.AllocateWritableMeshData(1);
         Mesh.MeshData meshData = meshDataArray[0];
 
-        jobs[(int)meshType](mesh, meshData, resolution, default).Complete();
+        jobs[(int)meshType](mesh, meshData, resolution, numSide,default).Complete();
 
         Mesh.ApplyAndDisposeWritableMeshData(meshDataArray, mesh);
 
@@ -100,6 +107,14 @@ public class ProceduralMesh : MonoBehaviour
         }
     }
 
+    void GenerateMesh(int minTriangles, int maxTriangles, float size)
+    {
+        Mesh randomShapeMesh = shapeGenerator.GenerateRandomShape(minTriangles, maxTriangles, size); // Vary min and max triangles and size
+
+        MeshFilter meshFilter = GetComponent<MeshFilter>();
+        meshFilter.mesh = randomShapeMesh;
+       
+    }
 
     void OnDrawGizmos()
     {
@@ -194,8 +209,13 @@ public class ProceduralMesh : MonoBehaviour
 
     void Update()
     {
-        GenerateMesh();
-        enabled = false;
+        if (meshType == MeshType.RandomFragmentTest) GenerateMesh(5, 10 , 1);
+    
+        
+        else GenerateMesh();
+    
+
+    enabled = false;
 
         vertices = null;
         normals = null;
@@ -206,3 +226,46 @@ public class ProceduralMesh : MonoBehaviour
     }
 
 }
+
+public class RandomShapeGenerator
+{
+    public Mesh GenerateRandomShape(int minTriangles, int maxTriangles, float size)
+    {
+        Mesh mesh = new Mesh();
+
+        int triangleCount = Random.Range(minTriangles, maxTriangles); // Randomize number of triangles
+        int vertexCount = triangleCount * 3;
+
+        Vector3[] vertices = new Vector3[vertexCount];
+        int[] triangles = new int[triangleCount * 3];
+        Vector2[] uv = new Vector2[vertexCount];
+
+        for (int i = 0; i < vertexCount; i++)
+        {
+            // Generate random vertices within a cube area
+            vertices[i] = new Vector3(
+                Random.Range(-size, size),
+                Random.Range(-size, size),
+                Random.Range(-size, size)
+            );
+            uv[i] = new Vector2(Random.value, Random.value);
+        }
+
+        for (int i = 0; i < triangles.Length; i++)
+        {
+            triangles[i] = i;
+        }
+
+        mesh.vertices = vertices;
+        mesh.triangles = triangles;
+        mesh.uv = uv;
+
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+
+        return mesh;
+    }
+}
+    
+    
+

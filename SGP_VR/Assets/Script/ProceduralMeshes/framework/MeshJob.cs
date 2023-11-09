@@ -1,6 +1,7 @@
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace ProceduralMeshes
@@ -20,12 +21,12 @@ namespace ProceduralMeshes
         public void Execute(int i) => generator.Execute(i, streams);
 
 
-        public static JobHandle ScheduleParallel(Mesh mesh,Mesh.MeshData meshData, int resolution, JobHandle dependency)
+        public static JobHandle ScheduleParallel(Mesh mesh,Mesh.MeshData meshData, int resolution, int numberOfSide ,JobHandle dependency)
         {
             var job = new MeshJob<G, S>();
            
             job.generator.Resolution = resolution;
-
+            job.generator.NumOfSides = numberOfSide;
             job.streams.Setup(meshData, mesh.bounds = job.generator.Bounds ,job.generator.VertexCount, job.generator.IndexCount);
 
             return job.ScheduleParallel(job.generator.JobLength, 1, dependency);
@@ -33,5 +34,5 @@ namespace ProceduralMeshes
         }
     }
 
-    public delegate JobHandle MeshJobScheduleDelegate(Mesh mesh, Mesh.MeshData meshData, int resolution, JobHandle dependency);
+    public delegate JobHandle MeshJobScheduleDelegate(Mesh mesh, Mesh.MeshData meshData, int resolution, int numOfSides ,JobHandle dependency);
 }

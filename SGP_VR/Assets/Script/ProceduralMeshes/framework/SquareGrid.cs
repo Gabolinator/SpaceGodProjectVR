@@ -9,6 +9,7 @@ namespace ProceduralMeshes.Generators
     public struct SquareGrid : IMeshGenerator
     {
         public int Resolution { get; set; }
+        public int NumOfSides { get; set; }
 
 
         public int VertexCount => 4 * Resolution * Resolution;

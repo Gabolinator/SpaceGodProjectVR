@@ -1893,8 +1893,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   resolution: 1
-  angle: 0
-  meshType: 7
+  numSide: 1
+  meshType: 9
   material: 3
   materials:
   - {fileID: 2100000, guid: bf5e22217a5f1654abbc79df53fa2ff6, type: 2}
