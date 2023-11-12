@@ -64,12 +64,13 @@ public class FormulaLibrairy
 
     public static double CalculateMass(double density, double volume)
     {
-        if (volume == 0) return 0;
+       
         return density * volume;
     }
 
     public static double CalculateDensity(double mass, double volume)
     {
+        if (volume == 0) return 0;
         return mass / volume;
     }
 

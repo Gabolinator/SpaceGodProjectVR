@@ -269,18 +269,41 @@ public class AstralBodiesManager : MonoBehaviour
 
     public List<Rigidbody> GenerateSphereFragments(AstralBodyHandler body)
     {
-        List<Rigidbody> allRb = SpawnFragmentSphere(defaultSphereFragmentPrefab, body.transform);
+        List<Rigidbody> allRb = SpawnFragmentSphere(defaultSphereFragmentPrefab, body);
         Debug.Log("[AstralBodyManager] allRB count: " + allRb.Count);
 
-        float breakTorque =body.InternalResistance;
+        float breakTorque = body.InternalResistance;
         float breakForce = body.InternalResistance;
-        
-        
+
+   
         UpdateFixedJoint(allRb, breakForce, breakTorque);
-        
+
         AddAstralBody(allRb, body);
+
         
-        return allRb;
+        // /*only for debug reason - make sure it make sense - no mass is lost or extra */
+        // if (fragHandler)
+        // {
+        //     double totalVolume = 0;
+        //     double totalMass = 0;
+        //     if (bodies.Count != 0)
+        //     {
+        //         foreach (var  bodyHandler in bodies)
+        //         {
+        //             totalVolume += bodyHandler.Volume;
+        //             totalMass += bodyHandler.Mass;
+        //         }
+        //         fragHandler.volumeBody = body.Volume;
+        //         fragHandler.volumeFragment = totalVolume;
+        //         Debug.Log("%volume : " + totalVolume / totalVolume);
+        //         fragHandler.massBody = body.Mass;
+        //         fragHandler.massFragment = totalMass;
+        //         Debug.Log("%mass : " + totalMass /body.Mass);
+        //     }
+        // }
+    
+
+    return allRb;
     }
 
     private void UpdateFixedJoint(List<Rigidbody> allRb, float breakForce, float breakTorque)
@@ -310,9 +333,10 @@ public class AstralBodiesManager : MonoBehaviour
         }
     }
 
-    List<Rigidbody> SpawnFragmentSphere(GameObject prefab, Transform target)
+    List<Rigidbody> SpawnFragmentSphere(GameObject prefab, AstralBodyHandler targetBody)
     {
         if(!prefab) return null;
+        var target = targetBody.transform;
         
         var prefabClone = Instantiate(prefab,target.position, target.rotation, _universeContainer.transform);
         
@@ -321,9 +345,13 @@ public class AstralBodiesManager : MonoBehaviour
         prefabClone.transform.localScale = target.localScale;
         prefabClone.transform.localScale /= 2;
 
+        prefabClone.gameObject.name = "Fragments_"+targetBody.ID;
+        
         var fragmentHandler = prefabClone.GetComponent<FragmentHandler>();
+        
         if(!fragmentHandler)   return new List<Rigidbody>(prefabClone.GetComponentsInChildren<Rigidbody>());
-
+        
+        
         return fragmentHandler.allRb.Count != 0  ? fragmentHandler.allRb : new List<Rigidbody>(prefabClone.GetComponentsInChildren<Rigidbody>());
     }
     
@@ -344,10 +372,14 @@ public class AstralBodiesManager : MonoBehaviour
             bodyHandler.EnableCollision = false;
             
             bodyHandler.body = new AstralBody( AstralBodyType.other);
-            bodyHandler.EstimateVolume();
+            bodyHandler.EstimateVolume(targetBody.Volume);
+            bodyHandler.Density = targetBody.Density;
+            bodyHandler.CalculateMass();
+            
             bodyHandler.thisRb = rb;
            
             bodyHandler.ID += "_Fragment_Of_"+targetBody.ID;
+            bodyHandler.SetBodyName();
             
             allBodyHandlers.Add(bodyHandler);
         }
@@ -425,17 +457,21 @@ public class AstralBodiesManager : MonoBehaviour
 
         if (bodyHandler == null) return;
 
-       
+
 
         if (astralBody is Planet)
         {
             Planet planet = (Planet)astralBody;
             newBodyClone.GetComponent<AstralBodyHandler>().body = new Planet(planet);
             Planet planetToSet = newBodyClone.GetComponent<AstralBodyHandler>().body as Planet;
+            Debug.Log("[AstralBodyManager] planet resistance: " + planet.InternalResistance);
 
+            if (planetToSet != null)
+            {
+                planetToSet.PltType = planet.PltType;
+                Debug.Log("[AstralBodyManager] planet to set resistance: " + planetToSet.InternalResistance);
+            }
 
-            if (planetToSet != null) planetToSet.PltType = planet.PltType;
-   
         }
 
         else if (astralBody is Star)

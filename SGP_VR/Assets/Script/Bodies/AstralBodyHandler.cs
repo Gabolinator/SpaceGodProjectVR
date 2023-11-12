@@ -327,9 +327,13 @@ public class AstralBodyHandler : MonoBehaviour
     }
 
     private double CalculateDensity(double mass, double volume) => body.CalculateDensity(mass, volume);
+    
+    private double CalculateDensity() => Density = body.CalculateDensity(Mass, Volume);
 
-    private double CalculateMass(double density, double volume) => body.CalculateMass(density, volume);
+    public double CalculateMass(double density, double volume) => body.CalculateMass(density, volume);
 
+    public double CalculateMass() => Mass = body.CalculateMass(Density, Volume);
+    
     public void UpdateBody()
     {
         UpdateBody(body);
@@ -345,7 +349,7 @@ public class AstralBodyHandler : MonoBehaviour
     }
 
 
-    private void SetBodyName()
+    public void SetBodyName()
     {
         this.gameObject.name = body.GetBodyName();
     }
@@ -638,7 +642,7 @@ public class AstralBodyHandler : MonoBehaviour
     }
 
 
-    public void EstimateVolume()
+    public void EstimateVolume(double originalBodyVolume = 1)
     {
         Debug.LogWarning("[Astral Body] Estimating body volume based on triangle count not yet implemented");
         var meshFilter = GetComponent<MeshFilter>();
@@ -648,6 +652,10 @@ public class AstralBodyHandler : MonoBehaviour
 
         var volume = FormulaLibrairy.EstimateMeshVolume(mesh);
         Debug.LogWarning("[Astral Body] Estimating body volume based on triangle : " + volume);
-        if (volume > 0) Volume = volume;
+        if (volume <= 0) return;
+        
+        
+        
+        Volume = volume*250000*originalBodyVolume / 1.0027; //to make sure volume ratio is respected - will have a tiny bit of loss 
     }
 }

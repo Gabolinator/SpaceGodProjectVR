@@ -314,10 +314,10 @@ public class BodyGenerator
         else  generateBody.astralBody = body;
 
 
-
+        generateBody.astralBody.InternalResistance = body.InternalResistance; //TODO: generate resistance based on body characterisitics 
 
         Debug.Log("[Body Generator] Velocity : " + body.StartVelocity);
-
+        Debug.Log("[Body Generator] Resistance : " + body.InternalResistance);
         return generateBody;
     }
 

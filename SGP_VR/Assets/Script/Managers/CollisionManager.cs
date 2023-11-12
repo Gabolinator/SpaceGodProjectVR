@@ -31,7 +31,8 @@ public class CollidingBody
     public Vector3 _bodyImpactAngularVelocity;
     public double _impactEnergy; 
     public Vector3 _impactEnergyDirection;
-
+    
+    
     public CollidingBody(AstralBodyHandler body, CollidingBodyRole role = CollidingBodyRole.Other) 
     {
         _body = body;
@@ -98,11 +99,7 @@ public class CollisionData
             _projectileBody = _collidingBodies[0];
         }
 
-        //// _body1 = body1;
-        // //_body2 = body2;
-        // _collisionEnergy = body1.KyneticEnergy + body2.KyneticEnergy;
-        // Vector3 energyDirection1 = ((float)body1.KyneticEnergy * body1.Velocity);
-        // Vector3 energyDirection2 = ((float)body2.KyneticEnergy * body2.Velocity);
+    
         _collisionEnergy = _targetBody._impactEnergy + _projectileBody._impactEnergy;
         _collisionEnergyDirection = (_targetBody._impactEnergyDirection + _projectileBody._impactEnergyDirection).normalized;
 
@@ -110,18 +107,9 @@ public class CollisionData
         _collisionEnergy *= 1-_energyLoss;
 
         impactImpulse = impulse;
-        // _id = "Collision " + _projectile + " on " + _target;
+         _id = "Collision " + _projectile + " on " + _target;
         _impactPoint = contactPoint;
 
-        // _body1ImpactVelocity = new Vector3(body1.Velocity.x, body1.Velocity.y, body1.Velocity.z);
-
-        // _body2ImpactVelocity = new Vector3(body2.Velocity.x, body2.Velocity.y, body2.Velocity.z);
-
-        // _projectileImpactVelocity = _body1ImpactVelocity.magnitude > _body2ImpactVelocity.magnitude ? _body2ImpactVelocity : _body1ImpactVelocity;
-        // _targetImpactVelocity = _body1ImpactVelocity.magnitude < _body2ImpactVelocity.magnitude ? _body2ImpactVelocity : _body1ImpactVelocity;
-
-        // _target = _body1ImpactVelocity.magnitude > _body2ImpactVelocity.magnitude ? _body2 : _body1;
-        // _projectile = _body1ImpactVelocity.magnitude < _body2ImpactVelocity.magnitude ? _body2 : _body1;
 
         _showDebugLog = showDebug;
 
@@ -161,6 +149,9 @@ public class CollisionManager : MonoBehaviour
     public float _processRate = 0.1f;
     public float _lossOfEnergyOnImpact = .15f;
 
+    public float _explosionEnergyMultiplier = 0.1f;
+    
+    
     public bool testMode = true;
     public CollisionType testCollisionType = CollisionType.PerfectMerge;
 
@@ -363,12 +354,12 @@ public class CollisionManager : MonoBehaviour
        var collisionEnergy = collision._collisionEnergy;
        float energy = (float)collisionEnergy ;
        
-       float forceMultiplier = .5f; //useless for now - might need to tweek force a some point
-       energy *= forceMultiplier;
+      
+       energy *= _explosionEnergyMultiplier;
        
        ExplosionImpact(fragmentsTarget, collision._target,point,energy, collision._collisionEnergyDirection); 
        
-       ExplosionImpact(fragmentsProjectile, collision._projectile, point,  energy/10, -collision._collisionEnergyDirection);
+       ExplosionImpact(fragmentsProjectile, collision._projectile, point,  energy, -collision._collisionEnergyDirection);
        
            
        return true;
@@ -577,7 +568,7 @@ public class CollisionManager : MonoBehaviour
     private IEnumerator DelayedForce(float delay, List<Rigidbody> allRb,Vector3 impactPoint, float forceMagnitude, Vector3 forceDirection)
     {
         yield return new WaitForSeconds(delay);
-        Debug.Log("Adding force of "+ forceMagnitude +" to rb ");
+        //Debug.Log("Adding force of "+ forceMagnitude +" to rb ");
         AddForceToAllRb(allRb, impactPoint, forceMagnitude, forceDirection);
        
     }
@@ -588,11 +579,11 @@ public class CollisionManager : MonoBehaviour
         foreach (var rb in allRb)
         {
             
-            AddExplosionForceToRb(rb, forceMagnitude,forceDirection ,point, 1);
+            AddExplosionForceToRb(rb, forceMagnitude,forceDirection ,point);
         }
     }
     
-    void AddExplosionForceToRb(Rigidbody rb, float force, Vector3 forceDir, Vector3 position, float radius)
+    void AddExplosionForceToRb(Rigidbody rb, float force, Vector3 forceDir, Vector3 position)
     {
         if (!rb) return;
         

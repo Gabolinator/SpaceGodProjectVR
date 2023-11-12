@@ -28,9 +28,10 @@ public class Planet : AstralBody
         PltType = planet.PltType;
 
         SubType = planet.PltType.ToString();
-        
+        InternalResistance = planet.InternalResistance;
 
-   
+
+
 
     }
 
