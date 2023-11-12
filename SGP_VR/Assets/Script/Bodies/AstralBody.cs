@@ -152,6 +152,10 @@ public class AstralBody
     [SerializeField]
     private float _temperature; 
     public float Temperature { get => _temperature; set => _temperature = value; }
+    
+    [SerializeField]
+    private float _internalResistance; //how well does the structure hold together
+    public float InternalResistance { get => _internalResistance; set => _internalResistance = value; }
 
     public bool ShowDebugLog => AstralBodiesManager.Instance._showDebugLog;
 
@@ -163,7 +167,7 @@ public class AstralBody
     }
 
 
-    public AstralBody(double mass, double density, Vector3 velocity, Vector3 angularVelocity)
+    public AstralBody(double mass, double density, Vector3 velocity, Vector3 angularVelocity, string id = "")
     {
 
         _mass = mass;
@@ -171,11 +175,13 @@ public class AstralBody
         StartVelocity = velocity;
         StartAngularVelocity = angularVelocity;
 
+        //_internalResistance = 0.001f; 
+        
         _volume = CalculateVolume(mass, density);
         _radius = CalculateRadius(_volume);
-
-        _id = AstralBodiesManager.Instance.GenerateName();
-
+        _id = id == "" ? AstralBodiesManager.Instance.GenerateName() : id;
+        
+        
         _bodyType = AstralBodyType.other;
 
         if (ShowDebugLog) Debug.Log("[AstralBody] Creating new body : " + _id + " of mass :" + mass + " of density : " + density + "  of velocity " + velocity);
@@ -195,7 +201,10 @@ public class AstralBody
         _bodyType = astralBody._bodyType;
         StartAngularVelocity = astralBody.StartAngularVelocity;
         _id = astralBody._id;
-
+        
+        _internalResistance = astralBody._internalResistance;
+        
+        
         _volume = CalculateVolume(_mass, _density);
         _radius = CalculateRadius(_volume);
     }

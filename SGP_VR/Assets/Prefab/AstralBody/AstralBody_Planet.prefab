@@ -468,7 +468,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: e8f1f461c46ef3b46911ce2ed1bbfc0d, type: 2}
+  - {fileID: 2100000, guid: bacf46d930564d04194bc99d83db6bf5, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -562,6 +562,7 @@ MonoBehaviour:
     _subType: 
     _bodyComposition: []
     _temperature: 0
+    _internalResistance: 0
   bodyDescriptor:
     _id: 
     _bodyType: 

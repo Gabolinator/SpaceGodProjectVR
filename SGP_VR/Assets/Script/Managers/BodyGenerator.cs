@@ -415,6 +415,8 @@ public class BodyGenerator
 
             Planet planet = new Planet(body);
             planet.PltType = planetType;
+            
+            
             return planet;
         }
 
@@ -441,7 +443,7 @@ public class BodyGenerator
                 return star;
             }
         }
-
+        
         return body;
     }
 

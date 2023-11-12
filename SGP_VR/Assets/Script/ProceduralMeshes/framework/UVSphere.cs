@@ -9,9 +9,11 @@ namespace ProceduralMeshes.Generators
     public struct UVSphere : IMeshGenerator
     {
         public int Resolution { get; set; }
-        public int NumOfSides { get; set; }
-        int ResolutionV => 2 * Resolution;
-        int ResolutionU => 4 * Resolution;
+        public int AngleLat { get; set; }
+        public int AngleLong { get; set; }
+        int ResolutionV => 2 * Resolution; //resolution longitude
+        int ResolutionU => 4 * Resolution; //resolution latitude
+        
         public int VertexCount => (ResolutionU + 1) * (ResolutionV + 1) - 2;
 
         public int IndexCount => 6 * ResolutionU * (ResolutionV - 1);

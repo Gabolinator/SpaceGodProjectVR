@@ -2,6 +2,7 @@ using Sirenix.OdinInspector;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using UnityEngine;
 
@@ -115,14 +116,17 @@ public class AstralBodiesManager : MonoBehaviour
         }
     }
 
+    
 
-    //public List<AstralBodyDictionnaryEntry> astralBodyDictionnary = new List<AstralBodyDictionnaryEntry>();
 
     [SerializeField] private List<AstralBodyDictionnary> _astralBodyDictionnary = new List<AstralBodyDictionnary>();
     [SerializeField] private List<PlanetDictionnary> _planetDictionnary = new List<PlanetDictionnary>();
     [SerializeField] private List<StarDictionnary> _starDictionnary = new List<StarDictionnary>();
 
+    [SerializeField]
+    private GameObject defaultSphereFragmentPrefab;
 
+    public GameObject fragmentPrefab => defaultSphereFragmentPrefab;
 
     [SerializeField] private List<AstralBodyPhysicalCharacteristics> _astralBodyCharacteristics = new List<AstralBodyPhysicalCharacteristics>();
     public List<AstralBodyPhysicalCharacteristics> AstralBodyCharacteristics => _astralBodyCharacteristics;
@@ -262,6 +266,135 @@ public class AstralBodiesManager : MonoBehaviour
            
         } 
     }
+
+    public List<Rigidbody> GenerateSphereFragments(AstralBodyHandler body)
+    {
+        List<Rigidbody> allRb = SpawnFragmentSphere(defaultSphereFragmentPrefab, body.transform);
+        Debug.Log("[AstralBodyManager] allRB count: " + allRb.Count);
+
+        float breakTorque =body.InternalResistance;
+        float breakForce = body.InternalResistance;
+        
+        
+        UpdateFixedJoint(allRb, breakForce, breakTorque);
+        
+        AddAstralBody(allRb, body);
+        
+        return allRb;
+    }
+
+    private void UpdateFixedJoint(List<Rigidbody> allRb, float breakForce, float breakTorque)
+    {
+        if(allRb.Count == 0) return;
+
+        List<FixedJoint> allFixedJoints = new List<FixedJoint>();
+        foreach (var rb in allRb)
+        {
+            var fixedJoints = rb.GetComponents<FixedJoint>();
+            if(fixedJoints.Length == 0) continue;
+            
+            allFixedJoints.AddRange(fixedJoints.ToArray());
+        }
+
+        UpdateFixedJoint(allFixedJoints, breakForce, breakTorque);
+    }
+
+    private void UpdateFixedJoint(List<FixedJoint> allFixedJoints, float breakForce, float breakTorque)
+    {
+        if(allFixedJoints.Count == 0) return;
+
+        foreach (var joint in allFixedJoints)
+        {
+            joint.breakForce = breakForce;
+            joint.breakTorque = breakTorque;
+        }
+    }
+
+    List<Rigidbody> SpawnFragmentSphere(GameObject prefab, Transform target)
+    {
+        if(!prefab) return null;
+        
+        var prefabClone = Instantiate(prefab,target.position, target.rotation, _universeContainer.transform);
+        
+        if(!prefabClone) return null;
+        
+        prefabClone.transform.localScale = target.localScale;
+        prefabClone.transform.localScale /= 2;
+
+        var fragmentHandler = prefabClone.GetComponent<FragmentHandler>();
+        if(!fragmentHandler)   return new List<Rigidbody>(prefabClone.GetComponentsInChildren<Rigidbody>());
+
+        return fragmentHandler.allRb.Count != 0  ? fragmentHandler.allRb : new List<Rigidbody>(prefabClone.GetComponentsInChildren<Rigidbody>());
+    }
+    
+     private List<AstralBodyHandler> AddAstralBody(List<Rigidbody> allRb, AstralBodyHandler targetBody)
+    {
+        
+        if(allRb.Count == 0) return null;
+        List<AstralBodyHandler> allBodyHandlers = new List<AstralBodyHandler>();
+        
+        foreach (var rb in allRb)
+        {
+            var bodyHandler = rb.GetComponent<AstralBodyHandler>();
+            if(bodyHandler) continue;
+            
+            
+            bodyHandler = rb.gameObject.AddComponent<AstralBodyHandler>();
+            bodyHandler.ShouldInitialize = false;
+            bodyHandler.EnableCollision = false;
+            
+            bodyHandler.body = new AstralBody( AstralBodyType.other);
+            bodyHandler.EstimateVolume();
+            bodyHandler.thisRb = rb;
+           
+            bodyHandler.ID += "_Fragment_Of_"+targetBody.ID;
+            
+            allBodyHandlers.Add(bodyHandler);
+        }
+
+        return allBodyHandlers;
+    }
+     
+    
+    void AddFixedJoints(List<Rigidbody> allRb, float breakForce, float breakTorque)
+    {
+        if(allRb.Count == 0) return;
+
+        foreach (var rb in allRb)
+        {
+            var go = rb.gameObject;
+            AddFixedJointsToGo(go, allRb, breakForce, breakTorque);
+        }
+    }
+
+    void AddFixedJointsToGo(GameObject go, List<Rigidbody> allRb, float breakForce,  float breakTorque)
+    {
+        if(!go || allRb.Count == 0) return;
+        foreach (var rb in allRb)
+        {
+            AddFixedJointToGo(go, rb, breakForce, breakTorque);
+        }
+    }
+    
+    void AddFixedJointToGo(GameObject go, Rigidbody otherRb, float breakForce,  float breakTorque)
+    {
+        if(!go || !otherRb) return;
+        if(go.GetComponent<Rigidbody>() == otherRb)return;
+        
+        FixedJoint fixedJoint = go.AddComponent<FixedJoint>();
+        fixedJoint.connectedBody = otherRb;
+
+        fixedJoint.breakForce = breakForce;
+        fixedJoint.breakTorque = breakTorque;
+    }
+
+    
+    
+    
+    
+    
+    
+    
 
     private IEnumerator DestroyBodyCoroutine(AstralBodyHandler body, float delay)
     {

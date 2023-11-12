@@ -9,7 +9,8 @@ namespace ProceduralMeshes.Generators
     public struct SharedTriangleGrid : IMeshGenerator
     {
         public int Resolution { get; set; }
-        public int NumOfSides { get; set; }
+        public int AngleLat { get; set; }
+        public int AngleLong { get; set; }
 
         public int VertexCount => (Resolution + 1) * (Resolution + 1);
 

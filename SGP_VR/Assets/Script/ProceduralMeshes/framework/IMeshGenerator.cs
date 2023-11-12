@@ -15,6 +15,8 @@ namespace ProceduralMeshes
 
         int Resolution { get; set; }
         
-        int NumOfSides { get; set; }
+        int AngleLat { get; set; }
+        
+        int AngleLong { get; set; }
     }
 }

@@ -63,6 +63,10 @@ namespace ProceduralMeshes.Streams
         }
 
         public void SetTriangle(int index, int3 triangle) => triangles[index] = triangle;
+        public int GetVertexIndex(float3 position)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
 

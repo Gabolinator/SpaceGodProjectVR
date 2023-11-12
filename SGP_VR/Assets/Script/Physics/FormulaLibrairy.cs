@@ -64,6 +64,7 @@ public class FormulaLibrairy
 
     public static double CalculateMass(double density, double volume)
     {
+        if (volume == 0) return 0;
         return density * volume;
     }
 
@@ -91,6 +92,7 @@ public class FormulaLibrairy
 
     public static double CalculateVolume(double mass, double density)
     {
+        if (density == 0) return 0;
         return mass / density;
     }
 
@@ -159,6 +161,35 @@ public class FormulaLibrairy
         double kyneticEnergy = .5f * mass * velocity.magnitude * velocity.magnitude;
      
         return kyneticEnergy;
+    }
+
+
+    public static double EstimateMeshVolume(Mesh mesh)
+    {
+        if (!mesh) return -1;
+        
+        if (!mesh.isReadable)
+        {
+            // Make the mesh readable
+            mesh.MarkDynamic();
+        }
+        
+        float volume = 0f;
+        Vector3[] vertices = mesh.vertices;
+        int[] triangles = mesh.triangles;
+
+        if (vertices.Length == 0 || triangles.Length == 0) return -1;
+        
+        for (int i = 0; i < triangles.Length; i += 3)
+        {
+            Vector3 p1 = vertices[triangles[i]];
+            Vector3 p2 = vertices[triangles[i + 1]];
+            Vector3 p3 = vertices[triangles[i + 2]];
+
+            volume += Vector3.Dot(Vector3.Cross(p1, p2), p3) / 6f;
+        }
+
+        return Mathf.Abs(volume); // Volume should be positive
     }
 
 }

@@ -11,13 +11,16 @@ public class AstralBodyHandler : MonoBehaviour
 
     public AstralBody body;
 
-    [HideInInspector]
-    public AstralBodyDescriptor bodyDescriptor;
+    [HideInInspector] public AstralBodyDescriptor bodyDescriptor;
 
     public PhysicsProperties physicsProperties => UniverseManager.Instance.PhysicsProperties;
 
 
-    public string ID { get => body.ID; set => body.ID = value; }
+    public string ID
+    {
+        get => body.ID;
+        set => body.ID = value;
+    }
 
     [SerializeField] protected bool _setRandomVelocity;
     public bool SetRandomVelocity => _setRandomVelocity;
@@ -26,7 +29,12 @@ public class AstralBodyHandler : MonoBehaviour
     public bool SetRandomAngularVelocity => _setRandomAngularVelocity;
 
     [SerializeField] protected Vector3 _angularVelocity;
-    public Vector3 AngularVelocity { get => _angularVelocity; set => _angularVelocity = value; }
+
+    public Vector3 AngularVelocity
+    {
+        get => _angularVelocity;
+        set => _angularVelocity = value;
+    }
 
 
     [SerializeField] protected float _influenceRange = -1; //0  = no influence ,  -1 =  total influence
@@ -43,22 +51,53 @@ public class AstralBodyHandler : MonoBehaviour
     public float _processRate = 0.1f;
 
 
-    public AstralBodyType BodyType { get => body.BodyType; set => body.BodyType = value; }
+    public AstralBodyType BodyType
+    {
+        get => body.BodyType;
+        set => body.BodyType = value;
+    }
 
-    public double Mass { get => body.Mass; set => body.Mass = value; }
+    public double Mass
+    {
+        get => body.Mass;
+        set => body.Mass = value;
+    }
 
     [SerializeField] protected Vector3 _velocity;
-    public Vector3 Velocity { get => _velocity; set => _velocity = value; }
+
+    public Vector3 Velocity
+    {
+        get => _velocity;
+        set => _velocity = value;
+    }
 
     //public Vector3 starVelocity { get => body.Velocity; set => body.Velocity = value; }
 
 
-    public double Density { get => body.Density; set => body.Density = value; }
+    public double Density
+    {
+        get => body.Density;
+        set => body.Density = value;
+    }
 
-    public double Radius { get => body.Radius; set => body.Radius = value; }
+    public double Radius
+    {
+        get => body.Radius;
+        set => body.Radius = value;
+    }
 
-    public double Volume { get => body.Volume; set => body.Volume = value; }
+    public double Volume
+    {
+        get => body.Volume;
+        set => body.Volume = value;
+    }
 
+    
+    public float InternalResistance 
+    {
+        get => body.InternalResistance ;
+        set => body.InternalResistance  = value;
+    }
     public Rigidbody thisRb;
 
 
@@ -66,14 +105,16 @@ public class AstralBodyHandler : MonoBehaviour
 
     Action<AstralBodyHandler> OnAstralBodyStartToExist => EventBus.OnAstralBodyStartToExist;
     Action<AstralBody> OnBodyUpdate => EventBus.OnBodyUpdated;
-    Action<AstralBodyHandler, Vector3, Vector3> OnAstralBodyAnyVelocityChange => EventBus.OnAstralBodyAnyVelocitiesChanged;
+
+    Action<AstralBodyHandler, Vector3, Vector3> OnAstralBodyAnyVelocityChange =>
+        EventBus.OnAstralBodyAnyVelocitiesChanged;
+
     Action<AstralBodyHandler, Vector3> OnAstralBodyAngularVelocityChange => EventBus.OnAstralBodyAngularVelocityChange;
 
     Action<AstralBodyDescriptor> OnBodyDescriptorUpdate => EventBus.OnBodyDescriptorUpdated;
 
 
-    [Header("Debug")]
-    public Transform _centerOfRotation;
+    [Header("Debug")] public Transform _centerOfRotation;
     public List<AstralBodyHandler> allBodiesInRange = new List<AstralBodyHandler>();
     public Vector3 totalForceOnObject = Vector3.zero;
     public List<Vector3> positions = new List<Vector3>();
@@ -84,18 +125,34 @@ public class AstralBodyHandler : MonoBehaviour
     private bool firstUpdate = true;
     public bool gravityDisabled;
 
-    protected bool enableGravity => UniverseManager.Instance.enableGravity && !isGrabbed && !gravityDisabled;
+   private bool _shouldInitialize = true;
+   
+   public bool ShouldInitialize
+    {
+        get => _shouldInitialize;
+        set => _shouldInitialize = value;
+    }
+
+   private bool _enableCollision = true;
+
+   public bool EnableCollision
+   {
+       get => _enableCollision;
+       set => _enableCollision = value;
+   }
+
+   protected bool enableGravity => UniverseManager.Instance.enableGravity && !isGrabbed && !gravityDisabled;
 
 
     public bool showDebugLog => AstralBodiesManager.Instance._showDebugLog;
 
-    
+
 
     public void UpdateMass(double delta)
     {
-       // Debug.Log("[Body Handler] Updating mass : " + ((Mass * delta) * UniverseManager.Instance.PhysicsProperties.MassFactor));
+        // Debug.Log("[Body Handler] Updating mass : " + ((Mass * delta) * UniverseManager.Instance.PhysicsProperties.MassFactor));
 
-        if ((Mass * delta * UniverseManager.Instance.PhysicsProperties.MassFactor)  < 0.01f) return;
+        if ((Mass * delta * UniverseManager.Instance.PhysicsProperties.MassFactor) < 0.01f) return;
         Mass *= delta;
 
         thisRb.mass = (float)Mass;
@@ -105,35 +162,35 @@ public class AstralBodyHandler : MonoBehaviour
 
     private void Initialize()
     {
-
+        if(!_shouldInitialize) return;
         //if (body == null) return;
-            if (Radius == 0) Radius = body.CalculateRadius(transform.localScale);
-            else SetScaleFromRadius(Radius);
+        if (Radius == 0) Radius = body.CalculateRadius(transform.localScale);
+        else SetScaleFromRadius(Radius);
 
-            if (Volume == 0) Volume = body.CalculateVolume(Radius);
+        if (Volume == 0) Volume = body.CalculateVolume(Radius);
 
-            if (Density == 0 && Mass == 0)
-            {
-                Density = 1000;
-                Mass = body.CalculateMass(Density, Volume);
-            }
+        if (Density == 0 && Mass == 0)
+        {
+            Density = 1000;
+            Mass = body.CalculateMass(Density, Volume);
+        }
 
-            else if (Density == 0 && Mass != 0) Density = body.CalculateDensity(Mass, Volume);
+        else if (Density == 0 && Mass != 0) Density = body.CalculateDensity(Mass, Volume);
 
-            if (thisRb == null) thisRb = GetComponent<Rigidbody>();
-            if (Mass != 0) thisRb.mass = (float)Mass;
+        if (thisRb == null) thisRb = GetComponent<Rigidbody>();
+        if (Mass != 0) thisRb.mass = (float)Mass;
 
-            if(ID == "") ID = GenerateId();
+        if (ID == "") ID = GenerateId();
 
-          
 
-         
-        SetBodyName(); 
-        
+
+
+        SetBodyName();
+
         if (SetRandomVelocity) Velocity = GetRandomVelocity(-0.5f, 0.5f);
         else Velocity = body.StartVelocity;
-           
-        if(SetRandomAngularVelocity) AngularVelocity = GetRandomVelocity(-0.5f, 0.5f);
+
+        if (SetRandomAngularVelocity) AngularVelocity = GetRandomVelocity(-0.5f, 0.5f);
         else AngularVelocity = body.StartAngularVelocity;
         AddVelocity(Velocity);
 
@@ -142,29 +199,30 @@ public class AstralBodyHandler : MonoBehaviour
         Debug.Log("[Astral body] Initialized " + this);
     }
 
-   
+
 
     public void InjectMassOverTime(double mass, float duration)
     {
         var totalMass = mass + Mass;
-      //  StartCoroutine(LerpOverTime(totalMass, duration));
+        //  StartCoroutine(LerpOverTime(totalMass, duration));
 
     }
 
-    public IEnumerator LerpToBodyOverTimeCoroutine(AstralBody astralBody, float delay, bool setScale = true) 
+    public IEnumerator LerpToBodyOverTimeCoroutine(AstralBody astralBody, float delay, bool setScale = true)
     {
         float t = 0;
-            
-        do { 
-           
+
+        do
+        {
+
             LerpToBodyOverTime(astralBody, t, delay, false);
 
-       
+
             t += Time.deltaTime;
-        
+
             yield return null;
 
-        } while (t<delay);
+        } while (t < delay);
 
 
     }
@@ -179,11 +237,11 @@ public class AstralBodyHandler : MonoBehaviour
             Density = LerpOverTime(Density, astralBody.Density, t, delay);
             Volume = body.CalculateVolume(Mass, Density);
             Radius = body.CalculateRadius(Volume);
-            thisRb.velocity = Velocity = LerpVectorOverTime(Velocity, astralBody.StartVelocity, t/10, delay);
+            thisRb.velocity = Velocity = LerpVectorOverTime(Velocity, astralBody.StartVelocity, t / 10, delay);
 
         }
 
-        else 
+        else
         {
             Mass = astralBody.Mass;
             Density = astralBody.Density;
@@ -194,16 +252,16 @@ public class AstralBodyHandler : MonoBehaviour
         }
 
         CalculateBodyEnergy();
-        if(setScale) SetScaleFromRadius(Radius);
+        if (setScale) SetScaleFromRadius(Radius);
 
         //UpdateBody();
     }
 
     public double LerpOverTime(double currentValue, double targetValue, float t, float duration)
     {
-        
-        float lerpProgress = t/ duration;
-        if (t < duration)return Mathf.Lerp((float)currentValue, (float)targetValue, lerpProgress);
+
+        float lerpProgress = t / duration;
+        if (t < duration) return Mathf.Lerp((float)currentValue, (float)targetValue, lerpProgress);
         return targetValue;
     }
 
@@ -215,7 +273,7 @@ public class AstralBodyHandler : MonoBehaviour
         else return targetVector;
     }
 
-    private IEnumerator LerpOverTime(double targetValue , float lerpDuration)
+    private IEnumerator LerpOverTime(double targetValue, float lerpDuration)
     {
         float currentTime = 0f;
 
@@ -236,14 +294,15 @@ public class AstralBodyHandler : MonoBehaviour
 
         Mass = targetValue;
     }
+
     public void ScaleBody()
     {
         Volume = body.CalculateVolume(Mass, Density);
-        SetScaleFromRadius(Radius = body.CalculateRadius(Volume)) ;
+        SetScaleFromRadius(Radius = body.CalculateRadius(Volume));
         UpdateBody();
     }
-        
-    public void ScaleBody(bool keepMassConstant = true) 
+
+    public void ScaleBody(bool keepMassConstant = true)
     {
         //if we keep mass constant , density will vary
         //if we change mass density will stay constant
@@ -269,14 +328,14 @@ public class AstralBodyHandler : MonoBehaviour
 
     private double CalculateDensity(double mass, double volume) => body.CalculateDensity(mass, volume);
 
-    private double CalculateMass(double  density, double volume) => body.CalculateMass(density, volume);
+    private double CalculateMass(double density, double volume) => body.CalculateMass(density, volume);
 
-    public void UpdateBody() 
+    public void UpdateBody()
     {
         UpdateBody(body);
     }
 
-    public void UpdateBody(AstralBody body) 
+    public void UpdateBody(AstralBody body)
     {
         /*update descriptor*/
         bodyDescriptor = new AstralBodyDescriptor(body);
@@ -285,7 +344,7 @@ public class AstralBodyHandler : MonoBehaviour
         OnBodyDescriptorUpdate?.Invoke(bodyDescriptor);
     }
 
-    
+
     private void SetBodyName()
     {
         this.gameObject.name = body.GetBodyName();
@@ -294,12 +353,12 @@ public class AstralBodyHandler : MonoBehaviour
     private string GenerateId() => ID != "" ? ID : AstralBodiesManager.Instance.GenerateName();
 
     public void AddVelocity(Vector3 velocity)
-       
-    {
-            if (thisRb == null) return;
-            if (thisRb.velocity != Vector3.zero || velocity == Vector3.zero) return;
 
-            thisRb.velocity = velocity;
+    {
+        if (thisRb == null) return;
+        if (thisRb.velocity != Vector3.zero || velocity == Vector3.zero) return;
+
+        thisRb.velocity = velocity;
     }
 
     private void AddAngularVelocity(Vector3 angularVelocity)
@@ -307,72 +366,75 @@ public class AstralBodyHandler : MonoBehaviour
         if (thisRb == null) return;
         if (thisRb.angularVelocity != Vector3.zero || angularVelocity == Vector3.zero) return;
 
-        
+
         thisRb.angularVelocity = angularVelocity;
     }
 
     private Vector3 GetRandomVelocity(float min, float max) => AstralBodiesManager.Instance.GenerateVelocity(min, max);
 
-    public void SetScaleFromRadius(double radius)  
+    public void SetScaleFromRadius(double radius)
     {
-            
-        float diameter = (float)radius * 2;
+        if(radius == 0) return;
         
+        float diameter = (float)radius * 2;
+
         if (diameter > AstralBodiesManager.Instance.MaxAstralBodyScale)
         {
             diameter = AstralBodiesManager.Instance.MaxAstralBodyScale;
             Radius = diameter / 2;
         }
-           
+
         transform.localScale = new Vector3(diameter, diameter, diameter);
 
     }
 
     public void SetInfluence(float directGravityPullMultiplier)
     {
-       _influenceStrength = directGravityPullMultiplier;
+        _influenceStrength = directGravityPullMultiplier;
     }
 
-    public Vector3 CalculateTotalGravityPull(List<AstralBodyHandler> listOfBody, Vector3 position, float timeStep = 0) => FormulaLibrairy.CalculateTotalGravityPull(listOfBody, this ,position, timeStep);
+    public Vector3
+        CalculateTotalGravityPull(List<AstralBodyHandler> listOfBody, Vector3 position, float timeStep = 0) =>
+        FormulaLibrairy.CalculateTotalGravityPull(listOfBody, this, position, timeStep);
 
     public List<AstralBodyHandler> GetAllBodyInRange(float range, List<AstralBodyHandler> listOfBody, Vector3 position)
-        {
-            
+    {
+
         listOfBody.Clear();
 
-            Collider[] hitColliders = Physics.OverlapSphere(position, range);
+        Collider[] hitColliders = Physics.OverlapSphere(position, range);
 
-            if (hitColliders.Length == 0) return listOfBody;
+        if (hitColliders.Length == 0) return listOfBody;
 
-            foreach (Collider hitCollider in hitColliders)
-            {
-                AstralBodyHandler body = hitCollider.GetComponent<AstralBodyHandler>();
+        foreach (Collider hitCollider in hitColliders)
+        {
+            AstralBodyHandler body = hitCollider.GetComponent<AstralBodyHandler>();
 
-                if (!body || hitCollider.gameObject == gameObject) continue;
+            if (!body || hitCollider.gameObject == gameObject) continue;
 
-                listOfBody.Add(body);
-            }
-
-            return listOfBody;
+            listOfBody.Add(body);
         }
+
+        return listOfBody;
+    }
 
     private void RegisterSelf() => AstralBodiesManager.Instance.RegisterBody(this);
 
     private IEnumerator CalculateGravityPullCoroutine(float delay)
+    {
+        do
         {
-            do
-            {
-                     float range = InfluenceRange < 0 ? MaxDetectionRange : InfluenceRange;
+            float range = InfluenceRange < 0 ? MaxDetectionRange : InfluenceRange;
 
-                     allBodiesInRange = GetAllBodyInRange(range, allBodiesInRange, transform.position);
+            allBodiesInRange = GetAllBodyInRange(range, allBodiesInRange, transform.position);
 
-                     totalForceOnObject = CalculateTotalGravityPull(allBodiesInRange, this.transform.position);
-                
+            totalForceOnObject = CalculateTotalGravityPull(allBodiesInRange, this.transform.position);
 
-                yield return new WaitForSeconds(delay);
 
-            } while (true);
-        }
+            yield return new WaitForSeconds(delay);
+
+        } while (true);
+    }
 
     public double CalculateBodyEnergy() => FormulaLibrairy.CalculateKineticEnergy(Mass, Velocity);
 
@@ -383,11 +445,11 @@ public class AstralBodyHandler : MonoBehaviour
         return thisRb.velocity;
     }
 
-        
+
     private Vector3 GetAngularVelocity()
     {
         if (!thisRb) return Vector3.zero;
-  
+
         return thisRb.angularVelocity;
     }
 
@@ -403,64 +465,69 @@ public class AstralBodyHandler : MonoBehaviour
 
             float deltaTime = Time.fixedDeltaTime;
             timeElapsed += deltaTime;
-            
+
             Vector3 currentAcceleration = GetAcceleration();
 
             accelerations.Add(currentAcceleration);
-           
-                
-            Vector3 currentVelocity = velocities.Count >0 ? velocities[velocities.Count - 1] :Vector3.zero+ currentAcceleration * deltaTime;
-                
+
+
+            Vector3 currentVelocity = velocities.Count > 0
+                ? velocities[velocities.Count - 1]
+                : Vector3.zero + currentAcceleration * deltaTime;
+
             velocities.Add(currentVelocity);
 
 
-               
-            Vector3 currentPosition = positions.Count > 0 ? positions[positions.Count - 1] : Vector3.zero  + currentVelocity * deltaTime;
-                
+
+            Vector3 currentPosition = positions.Count > 0
+                ? positions[positions.Count - 1]
+                : Vector3.zero + currentVelocity * deltaTime;
+
             positions.Add(currentPosition);
 
-                
+
             currentRadiusOfTrajectory = currentPosition.magnitude;
-            
+
 
             yield return new WaitForSeconds(processRate);
 
-        }while (true);
+        } while (true);
 
     }
 
-  
+
 
     public bool PredictCollisionAtPosition(AstralBodyHandler bodyHandler, Vector3 position, float buffer = 0.5f)
     {
-            var radius = bodyHandler.Radius;
-            if (body == null) Debug.LogWarning("[Astral Body] Trying to test collision at : " + position + "but body is null");
-            if (radius == 0)
+        var radius = bodyHandler.Radius;
+        if (body == null)
+            Debug.LogWarning("[Astral Body] Trying to test collision at : " + position + "but body is null");
+        if (radius == 0)
+        {
+
+            Debug.LogWarning("[Astral Body] Trying to test collision at : " + position + "but no body.Radius is set");
+            //radius = 10;
+        }
+
+
+
+        Collider[] colliders = Physics.OverlapSphere(position, (float)radius + buffer);
+
+        if (colliders.Length == 0) return false;
+
+        foreach (Collider collider in colliders)
+        {
+            if (collider != bodyHandler.GetComponent<Collider>())
             {
-
-                Debug.LogWarning("[Astral Body] Trying to test collision at : " + position + "but no body.Radius is set");
-                //radius = 10;
+                //Debug.Log("[Trajectory Predictor] Body: " + body + " Collision predicted at  " + position + "  on " + collider);
+                return true;
             }
+        }
+
+        return false;
+    }
 
 
-
-            Collider[] colliders = Physics.OverlapSphere(position, (float)radius + buffer);
-
-            if (colliders.Length == 0) return false;
-
-            foreach (Collider collider in colliders)
-            {
-                if (collider != bodyHandler.GetComponent<Collider>())
-                {
-                    //Debug.Log("[Trajectory Predictor] Body: " + body + " Collision predicted at  " + position + "  on " + collider);
-                    return true;
-                }
-            }
-
-            return false;
-     }
-
-        
     public bool PredictCollisionAtPosition(Vector3 position, float buffer = 0.5f)
     {
         return PredictCollisionAtPosition(this, position, buffer);
@@ -479,7 +546,7 @@ public class AstralBodyHandler : MonoBehaviour
     private void UpdateVelocities(bool firstTime = false)
     {
 
-        var velocityChanged =  firstTime;
+        var velocityChanged = firstTime;
 
         if (_velocity != GetVelocity())
         {
@@ -498,14 +565,20 @@ public class AstralBodyHandler : MonoBehaviour
 
     }
 
-    public void DestroySelf() 
+    public void ToggleSelf(bool state)
+    {
+        var meshRenderer = GetComponent<MeshRenderer>();
+        if (meshRenderer) meshRenderer.enabled = state;
+    }
+
+    public void DestroySelf()
     {
         AstralBodiesManager.Instance.DestroyBody(this);
     }
 
     public virtual void Awake()
     {
-       
+
 
         StartCoroutine(RegisterSelfCoroutince());
     }
@@ -521,31 +594,34 @@ public class AstralBodyHandler : MonoBehaviour
         bodyDescriptor._angularVelocity = GetAngularVelocity();
 
         OnAstralBodyStartToExist?.Invoke(this);
-       
+
         StartCoroutine(CalculateGravityPullCoroutine(_processRate));
 
         StartCoroutine(CollectData(_processRate));
     }
 
-   
+
     protected virtual void FixedUpdate()
     {
         UpdateVelocities(firstUpdate);
         firstUpdate = false;
 
-        
 
-        if (thisRb && enableGravity)
+
+        if (thisRb && enableGravity && totalForceOnObject != Vector3.zero)
         {
             var ratioMass = Mass / thisRb.mass; // if we lost mass cause of the cast to float , compensate force applied
-            thisRb.AddForce(totalForceOnObject = ratioMass == 1 ? totalForceOnObject : totalForceOnObject / (float)ratioMass);
+   
+            thisRb.AddForce(totalForceOnObject =
+                ratioMass == 1 ? totalForceOnObject : totalForceOnObject / (float)ratioMass);
         }
     }
 
-   
+
 
     protected virtual void OnCollisionEnter(Collision collision)
     {
+        if(!_enableCollision) return;
         AstralBodyHandler otherBodyHandler = collision.gameObject.GetComponent<AstralBodyHandler>();
 
         if (otherBodyHandler == null) return;
@@ -554,7 +630,7 @@ public class AstralBodyHandler : MonoBehaviour
 
         if (otherBody.BodyType != AstralBodyType.Uninitialized)
         {
-  
+
             CollisionManager.Instance.CreatingCollision(otherBodyHandler, this, collision);
         }
 
@@ -562,4 +638,16 @@ public class AstralBodyHandler : MonoBehaviour
     }
 
 
+    public void EstimateVolume()
+    {
+        Debug.LogWarning("[Astral Body] Estimating body volume based on triangle count not yet implemented");
+        var meshFilter = GetComponent<MeshFilter>();
+        if (!meshFilter) return;
+        var mesh = meshFilter.sharedMesh;
+        if(!mesh) return;
+
+        var volume = FormulaLibrairy.EstimateMeshVolume(mesh);
+        Debug.LogWarning("[Astral Body] Estimating body volume based on triangle : " + volume);
+        if (volume > 0) Volume = volume;
+    }
 }

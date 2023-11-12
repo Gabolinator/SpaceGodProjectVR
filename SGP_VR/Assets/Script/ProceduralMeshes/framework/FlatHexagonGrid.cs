@@ -9,7 +9,8 @@ namespace ProceduralMeshes.Generators
     public struct FlatHexagonGrid : IMeshGenerator
     {
         public int Resolution { get; set; }
-        public int NumOfSides { get; set; }
+        public int AngleLat { get; set; }
+        public int AngleLong { get; set; }
 
         public int VertexCount => 7 * Resolution * Resolution;
 

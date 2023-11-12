@@ -12,9 +12,12 @@ public class ProceduralMesh : MonoBehaviour
     [SerializeField, Range(1, 50)]
     int resolution = 1;
 
-    [SerializeField, Range(1, 4)]
-    int numSide = 1;
+    [SerializeField, Range(1, 360)]
+    int angleLat = 1;
 
+    [SerializeField, Range(1, 360)]
+    int angleLong = 1;
+    
     [SerializeField]
     MeshType meshType;
 
@@ -62,10 +65,10 @@ public class ProceduralMesh : MonoBehaviour
         MeshJob<PointyHexagonGrid, SingleStream>.ScheduleParallel,
         MeshJob<FlatHexagonGrid, SingleStream>.ScheduleParallel,
         MeshJob<UVSphere, SingleStream>.ScheduleParallel,
-        MeshJob<CubeSphere, SingleStream>.ScheduleParallel,
+        //MeshJob<CubeSphere, SingleStream>.ScheduleParallel,
         MeshJob<SharedCubeSphere, PositionStream>.ScheduleParallel,
         MeshJob<Octasphere, SingleStream>.ScheduleParallel,
-        MeshJob<SphereFragment, SingleStream>.ScheduleParallel
+        MeshJob<SphereFragment_UV, SingleStream>.ScheduleParallel
     };
 
     public enum MeshType
@@ -76,7 +79,7 @@ public class ProceduralMesh : MonoBehaviour
         PointyHexagonGrid,
         FlatHexagonGrid,
         UVSphere,
-        CubeSphere,
+        //CubeSphere,
         SharedCubeSphere,
         
         Octasphere,
@@ -89,7 +92,7 @@ public class ProceduralMesh : MonoBehaviour
         Mesh.MeshDataArray meshDataArray = Mesh.AllocateWritableMeshData(1);
         Mesh.MeshData meshData = meshDataArray[0];
 
-        jobs[(int)meshType](mesh, meshData, resolution, numSide,default).Complete();
+        jobs[(int)meshType](mesh, meshData, resolution, angleLat,angleLong ,default).Complete();
 
         Mesh.ApplyAndDisposeWritableMeshData(meshDataArray, mesh);
 
@@ -223,8 +226,24 @@ public class ProceduralMesh : MonoBehaviour
         triangles = null;
 
         GetComponent<MeshRenderer>().material = materials[(int)material];
+
+        UpdateOtherScripts();
     }
 
+    private void UpdateOtherScripts()
+    {
+        var meshDeformer =GetComponent<MeshDeformer>();
+        if (meshDeformer)
+        {
+            meshDeformer.Setup();
+        }
+        var collider =GetComponent<MeshCollider>();
+        if (collider)
+        {
+            collider.sharedMesh = mesh;
+        }
+        
+    }
 }
 
 public class RandomShapeGenerator

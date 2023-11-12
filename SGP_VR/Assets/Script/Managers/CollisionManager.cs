@@ -151,7 +151,8 @@ public class CollisionManager : MonoBehaviour
 {
     static CollisionManager _instance;
     public static CollisionManager Instance => _instance;
-
+    
+    
     public AstralBodiesManager _astralBodyManager => AstralBodiesManager.Instance;
 
     public List<CollisionData> _unProcessedCollisions;
@@ -352,19 +353,38 @@ public class CollisionManager : MonoBehaviour
     private bool ProcessSuperCatastrophic(CollisionData collision)
     {
         if (collision == null) return false;
-        if (showDebugLog) Debug.Log("[Collision Manager] Super Catastrophic Regime not yet implemented");
-        return true;
+        if (showDebugLog) Debug.Log("[Collision Manager] Processing Super Catastrophic Regime");
+        
+       var fragmentsTarget =  _astralBodyManager.GenerateSphereFragments(collision._target);
+       var fragmentsProjectile = _astralBodyManager.GenerateSphereFragments(collision._projectile);
+       
+       var point = collision._impactPoint.point;
+     
+       var collisionEnergy = collision._collisionEnergy;
+       float energy = (float)collisionEnergy ;
+       
+       float forceMultiplier = .5f; //useless for now - might need to tweek force a some point
+       energy *= forceMultiplier;
+       
+       ExplosionImpact(fragmentsTarget, collision._target,point,energy, collision._collisionEnergyDirection); 
+       
+       ExplosionImpact(fragmentsProjectile, collision._projectile, point,  energy/10, -collision._collisionEnergyDirection);
+       
+           
+       return true;
+
     }
 
+    
     private bool ProcessCatastrophic(CollisionData collision)
     {
         if (collision == null) return false;
-        if (showDebugLog) Debug.Log("[Collision Manager] Catastrophic Regime not yet implemented");
+        if (showDebugLog) Debug.Log("[Collision Manager] Catastrophic Regime not yet implemented- doing super catastrophic");
 
-
+        
         //AstralBody newBody = new AstralBody(collision._target.Mass + collision._projectile.Mass, (collision._target.Density + collision._target.Density)) / 2, collision._target.Velocity + collision._projectile.Velocity);
 
-        return true;
+        return ProcessSuperCatastrophic(collision) ;
     }
 
     private bool ProcessPerfectMerge(CollisionData collision)
@@ -545,6 +565,46 @@ public class CollisionManager : MonoBehaviour
 
     #endregion
 
+    public void ExplosionImpact(List<Rigidbody> allRb, AstralBodyHandler targetBody, Vector3 impactPoint, float force,  Vector3 forceDirection  )
+    {
+       
+        targetBody.DestroySelf();
+        
+        StartCoroutine(DelayedForce(.01f, allRb, impactPoint, force, forceDirection));
+        
+    }
+    
+    private IEnumerator DelayedForce(float delay, List<Rigidbody> allRb,Vector3 impactPoint, float forceMagnitude, Vector3 forceDirection)
+    {
+        yield return new WaitForSeconds(delay);
+        Debug.Log("Adding force of "+ forceMagnitude +" to rb ");
+        AddForceToAllRb(allRb, impactPoint, forceMagnitude, forceDirection);
+       
+    }
+    
+    void AddForceToAllRb(List<Rigidbody> allRb, Vector3 point, float forceMagnitude, Vector3 forceDirection)
+    {
+        if(allRb.Count == 0) return;
+        foreach (var rb in allRb)
+        {
+            
+            AddExplosionForceToRb(rb, forceMagnitude,forceDirection ,point, 1);
+        }
+    }
+    
+    void AddExplosionForceToRb(Rigidbody rb, float force, Vector3 forceDir, Vector3 position, float radius)
+    {
+        if (!rb) return;
+        
+        Vector3 vectorForce = forceDir*force;
+        Vector3 centerOfMassToPoint = position - rb.position;
+        Vector3 torque = Vector3.Cross(centerOfMassToPoint, vectorForce);
+    
+        rb.AddTorque(torque, ForceMode.Impulse);
+       
+        rb.AddForceAtPosition(vectorForce, position, ForceMode.Impulse);
+        //Debug.Log("Adding force of "+ vectorForce +" to : "+rb );
+    }
     private void ToggleFX(CollisionData collisionData)
     {
         /*dont do any fx if player not there*/
@@ -559,6 +619,9 @@ public class CollisionManager : MonoBehaviour
 
     }
 
+    
+    
+    
     private bool CanPlayerSee()
     {
         //TODO set to instant when player is not looking 

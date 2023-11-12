@@ -19,7 +19,8 @@ namespace ProceduralMeshes.Generators
        
 
         public int Resolution { get; set; }   
-        public int NumOfSides { get; set; }
+        public int AngleLat { get; set; }
+        public int AngleLong { get; set; }
 
         public int VertexCount => 6 * 4 * Resolution * Resolution;
 

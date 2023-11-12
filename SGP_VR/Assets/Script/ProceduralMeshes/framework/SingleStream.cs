@@ -66,14 +66,44 @@ namespace ProceduralMeshes.Streams
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SetVertex(int index, Vertex vertex) => stream0[index] = new Stream0
+        public void SetVertex(int index, Vertex vertex)
         {
-            position = vertex.position,
-            normal = vertex.normal,
-            tangent = vertex.tangent,
-            texCoord0 = vertex.texCoord0
-        };
+            Debug.Log("Setting vertex: "+index+ " at : " + vertex.position );
 
-        public void SetTriangle(int index, int3 triangle) => triangles[index] = triangle;
+            stream0[index] = new Stream0
+            {
+                position = vertex.position,
+                normal = vertex.normal,
+                tangent = vertex.tangent,
+                texCoord0 = vertex.texCoord0
+
+            };
+        }
+
+        public void SetTriangle(int index, int3 triangle)
+        {
+        
+            Debug.Log("Setting triangle: "+triangle+ "index at : " + index );
+            triangles[index] = triangle;
+        }
+
+        public int GetVertexIndex(float3 position)
+        {
+           
+            for(int i = 0 ; i< stream0.Length; i++)
+            {
+               
+                if (stream0[i].position.x == position.x && stream0[i].position.y == position.y && stream0[i].position.z == position.z)
+                {
+                    Debug.Log("Found vertex at position: " + position +" at index: " + i );
+                   return i;
+                }
+            }
+            
+            Debug.Log("Didnt Found vertex at position: " + position +" set default return index to : " +  0 );
+            
+
+            return 0;
+        }
     }
 }

@@ -3,8 +3,8 @@ using UnityEngine;
 
 using static Unity.Mathematics.math;
 
-namespace ProceduralMeshes.Generators
-{
+namespace ProceduralMeshes.Generators {
+
 	public struct Octasphere : IMeshGenerator {
 
 		struct Rhombus {
@@ -21,8 +21,8 @@ namespace ProceduralMeshes.Generators
 		public int JobLength => 4 * Resolution + 1;
 
 		public int Resolution { get; set; }
-		
-		public int NumOfSides { get; set; }
+		public int AngleLat { get; set; }
+		public int AngleLong { get; set; }
 
 		public void Execute<S> (int i, S streams) where S : struct, IMeshStreams {
 			if (i == 0) {
@@ -65,7 +65,7 @@ namespace ProceduralMeshes.Generators
 			vertex.normal = vertex.position = normalize(columnBottomStart);
 			vertex.tangent.xz = GetTangentXZ(vertex.position);
 			vertex.tangent.w = -1f;
-			vertex.texCoord0 = GetTexCoord(vertex.position);
+			vertex.texCoord0 = GetTextCoord(vertex.position);
 			streams.SetVertex(vi, vertex);
 			vi += 1;
 
@@ -80,11 +80,11 @@ namespace ProceduralMeshes.Generators
 				}
 				vertex.normal = vertex.position = normalize(vertex.position);
 				vertex.tangent.xz = GetTangentXZ(vertex.position);
-				vertex.texCoord0 = GetTexCoord(vertex.position);
+				vertex.texCoord0 = GetTextCoord(vertex.position);
 				streams.SetVertex(vi, vertex);
 				streams.SetTriangle(ti + 0, quad.xyz);
 				streams.SetTriangle(ti + 1, quad.xzw);
-
+			
 				quad.y = quad.z;
 				quad += int4(1, 0, firstColumn && rhombus.id != 0 ? Resolution : 1, 1);
 			}
@@ -124,7 +124,7 @@ namespace ProceduralMeshes.Generators
 						lerp(back(), up(), (float)(v - Resolution) / Resolution);
 				}
 				vertex.normal = vertex.position = normalize(vertex.position);
-				vertex.texCoord0.y = GetTexCoord(vertex.position).y;
+				vertex.texCoord0.y = GetTextCoord(vertex.position).y;
 				streams.SetVertex(v + 7, vertex);
 			}
 		}
@@ -152,9 +152,9 @@ namespace ProceduralMeshes.Generators
 			}
 		};
 
-		static float2 GetTangentXZ(float3 p) => normalize(float2(-p.z, p.x));
+		static float2 GetTangentXZ (float3 p) => normalize(float2(-p.z, p.x));
 
-		static float2 GetTexCoord(float3 p) {
+		static float2 GetTextCoord (float3 p) {
 			var texCoord = float2(
 				atan2(p.x, p.z) / (-2f * PI) + 0.5f,
 				asin(p.y) / PI + 0.5f
