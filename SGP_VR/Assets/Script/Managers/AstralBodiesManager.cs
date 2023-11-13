@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using DinoFracture;
 using UnityEngine;
 
 
@@ -267,8 +268,18 @@ public class AstralBodiesManager : MonoBehaviour
         } 
     }
 
-    public List<Rigidbody> GenerateSphereFragments(AstralBodyHandler body)
+    public List<Rigidbody> FractureBody(AstralBodyHandler body, Vector3 pos)
     {
+       
+
+
+        // var fractureScript = body.GetComponent<RuntimeFracturedGeometry>();
+        // if (fractureScript)
+        // {
+        //     fractureScript.FractureAndForget(pos);
+        //     return new List<Rigidbody>();
+        // }
+        
         List<Rigidbody> allRb = SpawnFragmentSphere(defaultSphereFragmentPrefab, body);
         Debug.Log("[AstralBodyManager] allRB count: " + allRb.Count);
 
@@ -630,7 +641,14 @@ public class AstralBodiesManager : MonoBehaviour
 
     public void RegisterBody(AstralBodyHandler body) 
     {
-        if (!_allBodies.Contains(body))  _allBodies.Add(body);
+        if (!_allBodies.Contains(body))
+        {
+ 
+        _allBodies.Add(body);
+        
+        var count = _allBodies.Count;
+        body._delayStart = count % 5;
+        }
     }
 
     public void UnRegisterBody(AstralBodyHandler body)

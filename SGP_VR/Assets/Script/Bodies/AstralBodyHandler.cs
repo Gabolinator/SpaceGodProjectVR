@@ -49,7 +49,7 @@ public class AstralBodyHandler : MonoBehaviour
     public double KyneticEnergy => CalculateBodyEnergy();
 
     public float _processRate = 0.1f;
-
+    public int _delayStart = 0;
 
     public AstralBodyType BodyType
     {
@@ -133,7 +133,7 @@ public class AstralBodyHandler : MonoBehaviour
         set => _shouldInitialize = value;
     }
 
-   private bool _enableCollision = true;
+   public bool _enableCollision = false;
 
    public bool EnableCollision
    {
@@ -424,8 +424,15 @@ public class AstralBodyHandler : MonoBehaviour
 
     private void RegisterSelf() => AstralBodiesManager.Instance.RegisterBody(this);
 
-    private IEnumerator CalculateGravityPullCoroutine(float delay)
+    private IEnumerator CalculateGravityPullCoroutine(float delay, int numFrames)
     {
+
+        for (int i = 0; i < numFrames; i++)
+        {
+            yield return new WaitForEndOfFrame();
+        }
+
+        
         do
         {
             float range = InfluenceRange < 0 ? MaxDetectionRange : InfluenceRange;
@@ -461,8 +468,14 @@ public class AstralBodyHandler : MonoBehaviour
     private Vector3 GetAcceleration() => FormulaLibrairy.CalculateAcceleration(Mass, totalForceOnObject);
 
 
-    private IEnumerator CollectData(float processRate)
+    private IEnumerator CollectData(float processRate, int numFrames)
     {
+        
+        for (int i = 0; i < numFrames; i++)
+        {
+            yield return new WaitForEndOfFrame();
+        }
+        
         do
         {
             yield return new WaitForEndOfFrame();
@@ -582,7 +595,7 @@ public class AstralBodyHandler : MonoBehaviour
 
     public virtual void Awake()
     {
-
+        
 
         StartCoroutine(RegisterSelfCoroutince());
     }
@@ -591,6 +604,8 @@ public class AstralBodyHandler : MonoBehaviour
     {
         //body = new AstralBodyInternal(2000, 2000, new Vector3(0, 0, 0));
 
+        _enableCollision = false;
+        
         Initialize();
 
         bodyDescriptor = new AstralBodyDescriptor(body);
@@ -599,9 +614,9 @@ public class AstralBodyHandler : MonoBehaviour
 
         OnAstralBodyStartToExist?.Invoke(this);
 
-        StartCoroutine(CalculateGravityPullCoroutine(_processRate));
+        StartCoroutine(CalculateGravityPullCoroutine(_processRate, _delayStart));
 
-        StartCoroutine(CollectData(_processRate));
+        StartCoroutine(CollectData(_processRate,_delayStart));
     }
 
 

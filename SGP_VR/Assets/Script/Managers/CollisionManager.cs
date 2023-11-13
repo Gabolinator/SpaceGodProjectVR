@@ -80,7 +80,8 @@ public class CollisionData
     public CollisionData(AstralBodyHandler body1, AstralBodyHandler body2, ContactPoint contactPoint, Vector3 impulse ,float lossOfEnergy, bool showDebug)
     {
 
-
+        if(!body1 || !body2) return;
+        
         var collidingBody1 = new CollidingBody(body1, DetermineCollidingRole(body1, body2));
         var collidingBody2 = new CollidingBody(body2, DetermineCollidingRole(body2, body1));
 
@@ -160,6 +161,8 @@ public class CollisionManager : MonoBehaviour
 
     public void CreatingCollision(AstralBodyHandler body1, AstralBodyHandler body2, Collision collision)
     {
+        if(!body1 || !body2) return;
+        
         CollisionData collisionData = new CollisionData(body1, body2, collision.GetContact(0), collision.impulse ,_lossOfEnergyOnImpact, showDebugLog);
 
         if (CollisionAlreadyPresent(collisionData))
@@ -346,22 +349,24 @@ public class CollisionManager : MonoBehaviour
         if (collision == null) return false;
         if (showDebugLog) Debug.Log("[Collision Manager] Processing Super Catastrophic Regime");
         
-       var fragmentsTarget =  _astralBodyManager.GenerateSphereFragments(collision._target);
-       var fragmentsProjectile = _astralBodyManager.GenerateSphereFragments(collision._projectile);
+        var point = collision._impactPoint.point;
+        var collisionEnergy = collision._collisionEnergy;
+        float energy = (float)collisionEnergy ;
+        energy *= _explosionEnergyMultiplier;
+        
+       var fragmentsTarget =  _astralBodyManager.FractureBody(collision._target,  point);
+       var fragmentsProjectile = _astralBodyManager.FractureBody(collision._projectile,  point);
+
+       if (fragmentsTarget.Count != 0)
+       {ExplosionImpact(fragmentsTarget, collision._target,point,energy, collision._collisionEnergyDirection); 
+       }
+
+       if (fragmentsProjectile.Count != 0)
+       {
+           ExplosionImpact(fragmentsProjectile, collision._projectile, point,  energy, -collision._collisionEnergyDirection);
+       }
+
        
-       var point = collision._impactPoint.point;
-     
-       var collisionEnergy = collision._collisionEnergy;
-       float energy = (float)collisionEnergy ;
-       
-      
-       energy *= _explosionEnergyMultiplier;
-       
-       ExplosionImpact(fragmentsTarget, collision._target,point,energy, collision._collisionEnergyDirection); 
-       
-       ExplosionImpact(fragmentsProjectile, collision._projectile, point,  energy, -collision._collisionEnergyDirection);
-       
-           
        return true;
 
     }

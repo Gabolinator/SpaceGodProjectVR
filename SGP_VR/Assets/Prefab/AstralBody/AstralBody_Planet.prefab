@@ -416,6 +416,7 @@ GameObject:
   - component: {fileID: 774464203943016157}
   - component: {fileID: 6907926857871000812}
   - component: {fileID: 5313848743172170669}
+  - component: {fileID: 172005879356218510}
   m_Layer: 0
   m_Name: AstralBody_Planet
   m_TagString: Untagged
@@ -468,7 +469,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: ec99e4d33b5de804f91280cdbdb61466, type: 2}
+  - {fileID: 2100000, guid: 1ed28e16c94976543831ed38672299b1, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -580,6 +581,7 @@ MonoBehaviour:
   _influenceRange: -1
   _influenceStrength: 100
   _processRate: 0.1
+  _delayStart: 0
   _velocity: {x: 0, y: 0, z: 0}
   thisRb: {fileID: 3551926682635928206}
   isGrabbed: 0
@@ -591,6 +593,7 @@ MonoBehaviour:
   accelerations: []
   currentRadiusOfTrajectory: 0
   gravityDisabled: 0
+  _enableCollision: 0
 --- !u!114 &5811864621561004374
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -792,6 +795,46 @@ MonoBehaviour:
   m_ScaleMultiplier: 0.25
   previousInteractorCount: 0
   firstFrameSinceTwoHandeGab: 0
+--- !u!114 &172005879356218510
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6975080124717213768}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 16e941d03cfc53b4c925e03193f9a54b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  InsideMaterial: {fileID: 2100000, guid: 235dbe708cf96e6449872a548521f2fe, type: 2}
+  OptimizeMaterialUsage: 1
+  FractureTemplate: {fileID: 0}
+  PiecesParent: {fileID: 0}
+  FractureType: 0
+  SlicePlanes: []
+  NumFracturePieces: 5
+  NumIterations: 2
+  EvenlySizedPieces: 0
+  NumGenerations: 1
+  FractureRadius: -3.4028235e+38
+  FractureSize:
+    Space: 0
+    Value: 0
+  UVScale: 1
+  UVBounds:
+    StartUV: {x: 0, y: 0}
+    EndUV: {x: 1, y: 1}
+  DistributeMass: 1
+  SeparateDisjointPieces: 0
+  RandomSeed: 0
+  OnFractureCompleted:
+    m_PersistentCalls:
+      m_Calls: []
+  _uniqueId: 07712e1c60934a19a271b858aae0eddc
+  _meshValidity: 1
+  SkipMeshCleaning: 0
+  Asynchronous: 1
 --- !u!1 &7639278997976779354
 GameObject:
   m_ObjectHideFlags: 0
