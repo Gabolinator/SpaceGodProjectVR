@@ -22,6 +22,9 @@ public class InputManager : MonoBehaviour
     [SerializeField] InputActionReference _createProtoBodyRef;
     private InputAction _createProtoBodyInput;
 
+    [SerializeField] InputActionReference _toggleMainMenuRef;
+    private InputAction _toggleMainMenuInput;
+    
     Action OnToggleEditMode => EventBus.OnToggleEditModeInput;
     Action<float> OnInjectMassInput => EventBus.OnInjectInput;
 
@@ -29,6 +32,8 @@ public class InputManager : MonoBehaviour
     Action OnInjectStopped => EventBus.OnInjectionStopped;
 
     Action OnCreateProtoBody => EventBus.OnCreateProtoBody;
+    
+    Action OnToggleMainMenu => EventBus.OnToggleMainMenu;
 
     //from  ActionBasedControllerManager
     InputAction GetInputAction(InputActionReference actionReference)
@@ -38,27 +43,28 @@ public class InputManager : MonoBehaviour
 #pragma warning restore IDE0031
     }
 
-  
-
-    private void InjectMass(float input)
+    public void ToggleAction(InputAction action, bool state) 
     {
-        OnInjectMassInput?.Invoke(input);
+        if (action == null) return;
+        Debug.Log("[Input Manager] Toggle Action : " + action.name +"/ state: " + state);
+       
+        if(state) action.Enable();
+        else action.Disable();
     }
 
-    
+
+    public void ToggleMainMenu(InputAction.CallbackContext obj)
+    {
+        OnToggleMainMenu?.Invoke();
+    }
+
 
     private void ToggleEditMode(InputAction.CallbackContext obj)
     {
         if(obj.action.IsPressed()) OnToggleEditMode?.Invoke();
     }
 
-    public void ToggleAction(InputAction action, bool state) 
-    {
-       if (action == null) return;
-
-        if(state) action.Enable();
-        else action.Disable();
-    }
+   
 
     private void CreateProtoBody(InputAction.CallbackContext obj)
     {
@@ -67,6 +73,14 @@ public class InputManager : MonoBehaviour
         OnCreateProtoBody?.Invoke();
     }
 
+    private void InjectMass(float input)
+    {
+        OnInjectMassInput?.Invoke(input);
+    }
+    
+    private void InjectMass(InputAction.CallbackContext obj) => InjectMass( obj.ReadValue<Vector2>().y);
+
+    
     private void InjectionStarted(InputAction.CallbackContext obj)
     {
         OnInjectStarted?.Invoke();
@@ -76,6 +90,19 @@ public class InputManager : MonoBehaviour
         OnInjectStopped?.Invoke();
     }
 
+    private void InjectionStopped(InputAction.CallbackContext obj) => InjectionStopped();
+    
+    private void DisableAnchorTransform(bool state)
+    {
+        
+        ToggleAction(_translateAnchorInput, !state);
+        ToggleAction(_rotateAnchorInput, !state);
+    }
+
+    private void DisableAnchorTransform(bool state, AstralBodyHandler arg2) => DisableAnchorTransform(state);
+   
+   
+    
     public void Awake()
     {
         _editModeInput = GetInputAction(_toggleEditModeRef);
@@ -83,25 +110,30 @@ public class InputManager : MonoBehaviour
         _translateAnchorInput = GetInputAction(_translateAnchorRef);
         _rotateAnchorInput = GetInputAction(_rotateAnchorRef);
         _createProtoBodyInput = GetInputAction(_createProtoBodyRef);
+        _toggleMainMenuInput = GetInputAction(_toggleMainMenuRef);
+        
+        DisableAnchorTransform(false);
     }
+
+ 
 
     private void OnEnable()
     {
 
         _editModeInput.performed += ToggleEditMode;
-        _injectMassInput.performed += InjectionStarted;
-        _createProtoBodyInput.performed += CreateProtoBody; 
-
+        _injectMassInput.started += InjectionStarted;
+        _injectMassInput.performed += InjectMass;
+        _injectMassInput.canceled += InjectionStopped;
+        
+        _createProtoBodyInput.performed += CreateProtoBody;
+        _toggleMainMenuInput.performed += ToggleMainMenu;
+       
         EventBus.OnBodyEdit += DisableAnchorTransform;
     }
 
    
 
-    private void DisableAnchorTransform(bool state, AstralBodyHandler arg2)
-    {
-        ToggleAction(_translateAnchorInput, !state);
-        ToggleAction(_rotateAnchorInput, !state);
-    }
+   
 
     private void OnDisable()
     {
@@ -109,14 +141,15 @@ public class InputManager : MonoBehaviour
         EventBus.OnBodyEdit -= DisableAnchorTransform;
         _injectMassInput.performed -= InjectionStarted;
         _createProtoBodyInput.performed -= CreateProtoBody;
+        _toggleMainMenuInput.performed -= ToggleMainMenu;
     }
 
 
-    private void Update()
-    {
-        if (_injectMassInput.IsPressed()) InjectMass(_injectMassInput.ReadValue<Vector2>().y);
-        if (_injectMassInput.WasReleasedThisFrame()) InjectionStopped();
-    }
+    // private void Update()
+    // {
+    //  //   if (_injectMassInput.IsPressed()) InjectMass(_injectMassInput.ReadValue<Vector2>().y);
+    //    // if (_injectMassInput.WasReleasedThisFrame()) InjectionStopped();
+    // }
 
   
 }

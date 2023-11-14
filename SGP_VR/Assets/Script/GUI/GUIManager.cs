@@ -59,7 +59,12 @@ public class GUIManager : MonoBehaviour
 
     [Header("Main Menu")]
     [SerializeField] private GameObject _mainMenu;
-    public GameObject MainMenu => _mainMenu;
+    public GameObject MainMenu
+    {
+        get { return _mainMenu ? _mainMenu : WristMenu.gameObject; }
+        set => _mainMenu = value;
+    }
+    
 
     /*wrist gui*/
     [Header("Wrist Menu")]
@@ -673,9 +678,11 @@ public class GUIManager : MonoBehaviour
 
     }
 
-    private void Update()
+    public void ToggleMainMenu()
     {
-        //Debug.Log("wrist gui: " + WristGui);
+        bool currentState = MainMenu.activeSelf;
+        ToggleGui(MainMenu, !currentState);
+        
     }
 
     private void OnEnable()
@@ -686,6 +693,7 @@ public class GUIManager : MonoBehaviour
         EventBus.OnPlayerStoppedMoving += ToggleGuisWithPlayerMovement;
         EventBus.OnAstralBodyDestroyed += DestroyGui;
         EventBus.OnBodyEdit += MoveGuiToWrist;
+        EventBus.OnToggleMainMenu += ToggleMainMenu;
         //EventBus.OnAstralBodyStartToExist += AssignGuiToBody;
     }
 
@@ -698,6 +706,8 @@ public class GUIManager : MonoBehaviour
         EventBus.OnPlayerStoppedMoving -= ToggleGuisWithPlayerMovement;
         EventBus.OnAstralBodyDestroyed -= DestroyGui;
         EventBus.OnBodyEdit -= MoveGuiToWrist;
+        EventBus.OnToggleMainMenu -= ToggleMainMenu;
+        
         //EventBus.OnAstralBodyStartToExist -= AssignGuiToBody;
     }
 }

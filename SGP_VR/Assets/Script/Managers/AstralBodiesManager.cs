@@ -140,6 +140,8 @@ public class AstralBodiesManager : MonoBehaviour
     private GameObject _universeContainer => UniverseManager.Instance.UniverseContainer;
 
     public bool _showDebugLog = true;
+    public bool runtimeFracturing;
+    
     private float t;
 
     public bool generateRandomBodies => UniverseManager.Instance.generateRandomBodies;
@@ -271,14 +273,17 @@ public class AstralBodiesManager : MonoBehaviour
     public List<Rigidbody> FractureBody(AstralBodyHandler body, Vector3 pos)
     {
        
+        if (runtimeFracturing)
+        {
 
 
-        // var fractureScript = body.GetComponent<RuntimeFracturedGeometry>();
-        // if (fractureScript)
-        // {
-        //     fractureScript.FractureAndForget(pos);
-        //     return new List<Rigidbody>();
-        // }
+            var fractureScript = body.GetComponent<RuntimeFracturedGeometry>();
+            if (fractureScript)
+            {
+                fractureScript.FractureAndForget(pos);
+                return new List<Rigidbody>();
+            }
+        }
         
         List<Rigidbody> allRb = SpawnFragmentSphere(defaultSphereFragmentPrefab, body);
         Debug.Log("[AstralBodyManager] allRB count: " + allRb.Count);

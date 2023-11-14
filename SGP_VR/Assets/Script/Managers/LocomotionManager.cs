@@ -41,8 +41,8 @@ public class LocomotionManager : MonoBehaviour
     private InputAction _inputYaw;
     public float rotationSpeed = 5f;
     public GameObject _player;
-    private bool enableRotation;
-    private bool enableLocomotion;
+    private bool enableRotation = true;
+    private bool enableLocomotion = true;
 
     public static Action<InputAction.CallbackContext> OnLeftControllerInput => EventBus.OnLeftControllerInput;
     public static Action<InputAction.CallbackContext> OnRightControllerInput => EventBus.OnRightControllerInput;
@@ -114,11 +114,12 @@ public class LocomotionManager : MonoBehaviour
 
     private void OnLeftHandInput(InputAction.CallbackContext obj)
     {
+        _isMoving = true;
         //Debug.Log("[Locomotion Manager] Left hand input : " + obj.performed);
         Accelerate(LocomotionController, MoveAcceleration, MaxSpeed, ClampSpeed);
         _currentSpeed = GetMoveSpeed(LocomotionController);
         OnPlayerMoving?.Invoke(IsMoving);
-
+        
         OnLeftControllerInput?.Invoke(obj);
         
     }
@@ -147,6 +148,16 @@ public class LocomotionManager : MonoBehaviour
 #pragma warning restore IDE0031
     }
 
+    
+    private void OnLeftHandInputStopped(InputAction.CallbackContext obj)
+    {
+        _isMoving = false;
+        ResetSpeed(LocomotionController, _initialMoveSpeed);
+        _currentSpeed = GetMoveSpeed(LocomotionController);
+        OnPlayerStopped?.Invoke(IsMoving);
+    }
+
+    
     private void RotatePlayer(Vector2 input, GameObject player, bool enable = true)
     {
 
@@ -162,6 +173,10 @@ public class LocomotionManager : MonoBehaviour
         player.transform.eulerAngles += new Vector3(yawRotation, pitchRotation, 0);
     }
 
+    private void RotatePlayer(InputAction.CallbackContext obj) =>
+        RotatePlayer(obj.ReadValue<Vector2>(), _player, enableRotation);
+  
+    
     private void ToggleLocomotion(bool state, AstralBodyHandler body)
     {
         LocomotionController.enabled =  enableLocomotion = enableRotation = !state;
@@ -190,7 +205,10 @@ public class LocomotionManager : MonoBehaviour
         //LocomotionController.endLocomotion += OnLocomotionStop;
         //LocomotionController.beginLocomotion += OnLocomotionStart;
         LocomotionController.leftHandMoveAction.action.performed += OnLeftHandInput;
+        LocomotionController.leftHandMoveAction.action.canceled += OnLeftHandInputStopped;
         LocomotionController.rightHandMoveAction.action.performed += OnRightHandInput;
+        _inputYaw.performed += RotatePlayer;
+        
         EventBus.OnBodyEdit += ToggleLocomotion;
 
 
@@ -201,24 +219,28 @@ public class LocomotionManager : MonoBehaviour
         //LocomotionController.endLocomotion -= OnLocomotionStop;
         //LocomotionController.beginLocomotion -= OnLocomotionStart;
         LocomotionController.leftHandMoveAction.action.performed -= OnLeftHandInput;
+        LocomotionController.leftHandMoveAction.action.canceled -= OnLeftHandInputStopped;
         LocomotionController.rightHandMoveAction.action.performed -= OnRightHandInput;
+        _inputYaw.performed -= RotatePlayer;
+        
         EventBus.OnBodyEdit -= ToggleLocomotion;
 
     }
 
+    
 
-    private void Update()
-    {
-        if (LocomotionController) if (!(_isMoving = LocomotionController.leftHandMoveAction.action.IsPressed()))
-        {
-                ResetSpeed(LocomotionController, _initialMoveSpeed);
-                _currentSpeed = GetMoveSpeed(LocomotionController);
-                OnPlayerStopped?.Invoke(IsMoving);
-        }
-    }
+    // private void Update()
+    // {
+    //     if (LocomotionController) if (!(_isMoving = LocomotionController.leftHandMoveAction.action.IsPressed()))
+    //     {
+    //             ResetSpeed(LocomotionController, _initialMoveSpeed);
+    //             _currentSpeed = GetMoveSpeed(LocomotionController);
+    //             OnPlayerStopped?.Invoke(IsMoving);
+    //     }
+    // }
 
-    private void FixedUpdate()
-    {
-        if (_inputYaw.IsPressed()) RotatePlayer(_inputYaw.ReadValue<Vector2>(), _player, enableRotation);
-    }
+    // private void FixedUpdate()
+    // {
+    //     //if (_inputYaw.IsPressed()) RotatePlayer(_inputYaw.ReadValue<Vector2>(), _player, enableRotation);
+    // }
 }

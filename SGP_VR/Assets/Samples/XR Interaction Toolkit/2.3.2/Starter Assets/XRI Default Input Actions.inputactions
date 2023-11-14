@@ -1550,19 +1550,19 @@
                 },
                 {
                     "name": "Yaw Pivot",
-                    "type": "Button",
+                    "type": "Value",
                     "id": "9117649b-fbc1-44f7-834a-6fca2800742c",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "Axis",
                     "processors": "",
                     "interactions": "",
-                    "initialStateCheck": false
+                    "initialStateCheck": true
                 }
             ],
             "bindings": [
                 {
                     "name": "",
                     "id": "d6c08c3d-3d41-4695-994d-1ac9016a5a9e",
-                    "path": "<XRController>{RightHand}/Primary2DAxis",
+                    "path": "<Joystick>/stick",
                     "interactions": "Sector(directions=12,sweepBehavior=1),Sector(directions=2,sweepBehavior=2)",
                     "processors": "",
                     "groups": "Generic XR Controller",
@@ -2076,12 +2076,12 @@
             "actions": [
                 {
                     "name": "Inject",
-                    "type": "Button",
+                    "type": "Value",
                     "id": "7d3b36af-cb18-4503-b73d-9249d5f2fe59",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "Axis",
                     "processors": "",
                     "interactions": "",
-                    "initialStateCheck": false
+                    "initialStateCheck": true
                 },
                 {
                     "name": "ToggleEditMode",
@@ -2144,6 +2144,34 @@
                     "processors": "",
                     "groups": "",
                     "action": "CreateProtoBody",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "GUI",
+            "id": "da15c7e7-2907-4776-9f7c-475525838736",
+            "actions": [
+                {
+                    "name": "ToggleMainMenu",
+                    "type": "Button",
+                    "id": "c9b6d3cf-baeb-4dea-acd0-38c7d936a20a",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "8da347cb-eaf5-44fa-bb38-79f27ce7f85c",
+                    "path": "<XRController>{RightHand}/secondaryButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleMainMenu",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

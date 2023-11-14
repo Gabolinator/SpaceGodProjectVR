@@ -8,6 +8,7 @@ using UnityEngine.XR.Interaction.Toolkit;
 public class EventBus : MonoBehaviour
 {
     #region Player
+
     public static Action<PlayerController> OnPlayerStart;
 
     #region LocomotionEvent
@@ -28,6 +29,7 @@ public class EventBus : MonoBehaviour
     #endregion
 
     #region AstralBody events
+
     public static Action<AstralBodyHandler> OnAstralBodyStartToExist;
     public static Action<AstralBodyHandler> OnAstralBodyDestroyed;
 
@@ -41,6 +43,7 @@ public class EventBus : MonoBehaviour
     #endregion
 
     #region AstralBody Edit events
+
     public static Action<AstralBody> OnBodyUpdated;
     public static Action<AstralBodyDescriptor> OnBodyDescriptorUpdated;
     public static Action<bool, AstralBodyHandler> OnBodyEdit;
@@ -51,9 +54,11 @@ public class EventBus : MonoBehaviour
     public static Action OnInjectionStarted;
     public static Action<AstralBodyHandler, GeneratedBody> OnPredictBody;
     public static Action OnCreateProtoBody;
+
     #endregion
 
     #region GrabEvents
+
     public static Action<SelectEnterEventArgs> OnObjectGrabbed;
     public static Action<SelectExitEventArgs> OnObjectReleased;
     public static Action<XRGrabInteractable> OnGrabbableProcess; // i.e. scaling
@@ -70,11 +75,15 @@ public class EventBus : MonoBehaviour
     public static Action<Color> OnPathColorChange;
     public static Action<float> OnTrajectoryMaxLengthChange;
 
-   
+
 
 
 
     #endregion
 
+    #region GUIEvents
 
+    public static Action OnToggleMainMenu;
+
+    #endregion
 }
