@@ -29,25 +29,32 @@ public class GuiContainer : MonoBehaviour
 
     }
 
+    public GUIBehaviour GetGuiScript(GameObject go)
+    {
+        if (!go) return null;
+        return go.GetComponent<GUIBehaviour>();
+    }
+    
     public void SetGuiAlpha(GameObject gui, float alpha)
     {
         if (!gui) return;
 
-        var guiLogic = gui.GetComponent<GUIBehaviour>();
+        var guiLogic = GetGuiScript(gui);
 
-        if (guiLogic) return;
+        if (!guiLogic) return;
         guiLogic.SetAlpha(alpha);
 
     }
-    public void SetMaxGuiAlpha(GameObject gui, float alpha)
+    public void SetMaxGuiAlpha(GameObject gui, float alpha, bool fade = true)
     {
         if (!gui) return;
 
-        var guiLogic = gui.GetComponent<GUIBehaviour>();
+        //Debug.Log("Setting alpha");
+        var guiLogic = GetGuiScript(gui);
 
         if (!guiLogic) return;
         guiLogic.SetMaxAlpha(alpha);
-        guiLogic.SetAlpha(alpha);
+        guiLogic.SetAlpha(alpha, fade);
 
     }
 

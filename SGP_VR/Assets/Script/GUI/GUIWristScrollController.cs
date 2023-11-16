@@ -8,16 +8,40 @@ public class GUIWristScrollController : GuiContainer
 {
 
     private float _startAngleOffset;
-    public float _angleOffset;
+    private float _angleOffset;
     public float _radius = 1;
     private float _angleTolerance;
     public float neighbourGuiAlpha = .3f;
    
     [Range(0.1f, 10f)]
     public float _scrollSpeed;
-
+    
+    [Header("FallBack Gui")]
+    [SerializeField] private GameObject _fallBackPrefab;
     [SerializeField] private GameObject _fallBackGui;
-    public GameObject FallBackGui { get => _fallBackGui; set => _fallBackGui = value; }
+    
+    public GameObject FallBackGui
+    {
+        get
+        {
+            if (!_fallBackGui)
+            {
+                if (_fallBackPrefab)
+                {
+                    Debug.Log("[WristMenu] instantiating FallBack GUI ");
+                    return _fallBackGui = Instantiate(_fallBackPrefab, this.transform);
+                }
+
+                
+                return null;
+            }
+
+            return _fallBackGui;
+
+        }
+
+        set => _fallBackGui = value;
+    }
 
     [Header("Debug")]
     public bool testMode = false;
@@ -32,11 +56,17 @@ public class GUIWristScrollController : GuiContainer
     
 
     [SerializeField] private List<GameObject> _guis;
+    private int numberOfTurn = 0;
     public List<GameObject> Guis { get => _guis; set => _guis = value; }
 
-    public override GameObject CurrentGui { 
-        
-        get => base.CurrentGui;
+    public override GameObject CurrentGui {
+
+        get
+        {
+            if(base.CurrentGui == null) return _previousGui ? _previousGui : FallBackGui;
+            
+            return base.CurrentGui;
+        }
         set
         {
             if (CurrentGui == value && value != null) return;
@@ -49,9 +79,10 @@ public class GUIWristScrollController : GuiContainer
 
             else
             {
-                base.CurrentGui = _fallBackGui ? _fallBackGui : _previousGui;
+                base.CurrentGui = _previousGui ? _previousGui : FallBackGui;
                 UpdateGuisPosition(_angleOffset);
                 MoveGuiToCentralPosition(base.CurrentGui);
+                
             }
         }
         
@@ -253,6 +284,14 @@ public class GUIWristScrollController : GuiContainer
         if (allGuis.Count == 1)
         {
             /*dont need to organise if just one element*/
+            if (!allGuis[0])
+            {
+                allGuis[0] = CurrentGui; //make sure the element is not missing - > CurrentGui is gonna be fallback if null
+                
+                return;
+            }
+
+            
             if(allGuis[0].transform.localPosition != Vector3.zero) allGuis[0].transform.localPosition = Vector3.zero;
             return;
         }
@@ -329,22 +368,11 @@ public class GUIWristScrollController : GuiContainer
     public void UpdateGuisPosition(float value) 
     {
         if (Guis.Count == 0) return ;
-
-        if (Guis.Count == 1) 
-        {
-            if (_currentGui == Guis[0]) return;
+        
+        OrganizeGuis(Guis, _radius,  _angleOffset = value);
+        
+        if (Guis.Count == 1) return;
             
-            MakeCurrentGui(Guis[0]);
-            OrganizeGuis(Guis, _radius, _angleOffset);
-            UpdateNeighbouringGuis(true);
-
-            return;
-        }
-
-        _angleOffset = value;
-
-        OrganizeGuis(Guis, _radius, _angleOffset);
-     
         MakeCurrentGui(GetCurrentGuiByPosition(_radius, _angleTolerance = _startAngleOffset));
         
         SetMaxGuiAlpha(CurrentGui, 1f);
@@ -356,9 +384,10 @@ public class GUIWristScrollController : GuiContainer
 
     public void MoveGuiToCentralPosition(int index)
     {
-        if (_guis.Count == 0 || _guis.Count == 1) return;
+        if (_guis.Count == 0|| _guis.Count == 1) return;
+        //if (_guis.Count == 1) index = 0;
+        
 
-      
         /* Make sure index is in range*/
         if (index > _guis.Count) index %= _guis.Count;
         else if( index < 0) index %= -_guis.Count;
@@ -366,10 +395,29 @@ public class GUIWristScrollController : GuiContainer
 
         int destinationIndex = index;
         float offset = (_guis.Count -2) *_startAngleOffset/2; // to have the gui centered - else its a bit offset 
-
+       
+        
         //Debug.Log("Destination Index : " + destinationIndex);
         float destinationAngle = -(destinationIndex * _angle) + offset;
-
+        
+        /*Count the number of turn  - numberOfTurn > 0 : turn left : numberOfTurn < 0 turn right*/
+        if (index - _indexCurrentGui == _guis.Count -1 )
+        {
+            numberOfTurn++;
+        }
+        
+        else if (index - _indexCurrentGui == -(_guis.Count -1) )
+        {
+            numberOfTurn--;
+        }
+        
+       
+        //Debug.Log("[ScrollGUI] Addoffset to destination angle : " +angleOffset + "* numberofturn : " + numberOfTurn );
+       
+        /*Add 360 degres to number when we increment number of turn*/ 
+        destinationAngle += numberOfTurn*360f;
+        
+        
         StartCoroutine(LerpGuisToAngle(_angleOffset, destinationAngle, 1/_scrollSpeed));
     }
 
@@ -378,7 +426,7 @@ public class GUIWristScrollController : GuiContainer
         if (!_guis.Contains(gui)) AddGuiToWristMenu(gui, true);
 
         int destinationIndex = _guis.IndexOf(gui);
-
+        
         MoveGuiToCentralPosition(destinationIndex);
     }
 
@@ -448,12 +496,43 @@ public class GUIWristScrollController : GuiContainer
 
     public void DestroyCurrentGUI() 
     {
-        if (!CurrentGui || Guis.Count <= 1 ) return;
+        if (!CurrentGui || Guis.Count == 0)
+        {
+            Debug.Log("[WristScrollGUI] No gui to close");
+            return;
+        }
 
-        if(CurrentGui == _fallBackGui) return;
+       
+      
+        
+        if(CurrentGui == _fallBackGui) 
+        {
+            Debug.Log("[WristScrollGUI] wont close : is fall back gui ");
+            return;
+        }
+        
+        if (!GetGuiScript(CurrentGui).isClosable)
+        {
+            Debug.Log("[WristScrollGUI] Gui not Closable");
+            return;
+        }
+
+       
 
         DestroyWristGui(CurrentGui);
         CurrentGui = null;
+        
+        if (Guis.Count == 1)
+        {
+           
+           
+
+            UpdateGuisPosition(_angleOffset = 0);
+            SetMaxGuiAlpha(CurrentGui, 1, false);
+        }
+
+     
+
     }
 
     void Awake()
@@ -484,7 +563,7 @@ public class GUIWristScrollController : GuiContainer
     {  
         if (useIndex && indexToFront != _indexCurrentGui) MoveGuiToCentralPosition(indexToFront);
           
-        if ( _angleOffset != _cachedAngleOffset) UpdateGuisPosition(_angleOffset);
+        if ( _angleOffset != _cachedAngleOffset) UpdateGuisPosition(_angleOffset); //TODO: move to a coroutine ? 
     }
 
     

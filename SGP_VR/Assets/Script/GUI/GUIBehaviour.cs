@@ -28,6 +28,7 @@ public class GUIBehaviour : MonoBehaviour
     public float maxAlpha = 1;
     public float minAlpha = 0;
     public float currentAlpha;
+    public bool isClosable = true;
 
     public virtual void Fade(CanvasGroup canvasGroup, bool fadeIn, float fadeDuration = 1, float delay = 0.0f)
     {
@@ -96,10 +97,18 @@ public class GUIBehaviour : MonoBehaviour
         if (maxAlpha != alpha) maxAlpha = alpha;
     }
 
-    public virtual void SetAlpha(float alpha)
+    public virtual void SetAlpha(float alpha, bool fade = true)
     {
-        if(canvasGroup.alpha != alpha) StartCoroutine(FadeCoroutine(canvasGroup, canvasGroup.alpha, alpha, .2f,0));
+        if (fade)
+        {
 
+
+            if (canvasGroup.alpha != alpha)
+                StartCoroutine(FadeCoroutine(canvasGroup, canvasGroup.alpha, alpha, .2f, 0));
+        }
+
+        else canvasGroup.alpha = alpha;
+        
         //if (backGround) 
         //{
         //    Color color = backGround.color;

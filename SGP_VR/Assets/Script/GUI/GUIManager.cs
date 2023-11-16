@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.XR.Interaction.Toolkit;
 
 public enum GuiLocation 
@@ -105,7 +106,8 @@ public class GUIManager : MonoBehaviour
     public List<GameObject> objectWithGuisAttached = new List<GameObject>();
 
     private Transform _mainCamera;
- 
+    [FormerlySerializedAs("keepMainMenuOn")] public bool forceMainMenuOn = true;
+
     #region Spawning 
     public GameObject SpawnGui(GameObject gui, Vector3 position, Quaternion rotation, GameObject parent = null )
     {
@@ -659,6 +661,16 @@ public class GUIManager : MonoBehaviour
 
     #endregion
 
+   
+
+    public void ToggleMainMenu()
+    {
+        if(forceMainMenuOn) return;
+        bool currentState = MainMenu.activeSelf;
+        ToggleGui(MainMenu, !currentState);
+        
+    }
+
     private void Awake()
     {
         _instance = this;
@@ -672,18 +684,13 @@ public class GUIManager : MonoBehaviour
         if (_wristMenu)
         {
             RegisterGuis(_wristMenu.Guis);
-            ToggleWristMenu(false);
+            ToggleWristMenu(true);
         }
 
 
     }
 
-    public void ToggleMainMenu()
-    {
-        bool currentState = MainMenu.activeSelf;
-        ToggleGui(MainMenu, !currentState);
-        
-    }
+ 
 
     private void OnEnable()
     {
