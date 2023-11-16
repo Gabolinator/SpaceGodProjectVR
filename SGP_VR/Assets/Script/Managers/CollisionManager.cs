@@ -140,7 +140,8 @@ public class CollisionManager : MonoBehaviour
 {
     static CollisionManager _instance;
     public static CollisionManager Instance => _instance;
-    
+
+    public FractureManager _fractureManager = new FractureManager();
     
     public AstralBodiesManager _astralBodyManager => AstralBodiesManager.Instance;
 
@@ -304,7 +305,7 @@ public class CollisionManager : MonoBehaviour
     private void UnregisterCollision(CollisionData collision , List<CollisionData> collisionList)
     {
 
-        if(collision == null|| collisionList.Count == 0) return ;
+        if(collision == null||Â collisionList.Count == 0) return ;
 
         if (!collisionList.Contains(collision)) return;
         collisionList.Remove(collision);
@@ -353,10 +354,17 @@ public class CollisionManager : MonoBehaviour
         var collisionEnergy = collision._collisionEnergy;
         float energy = (float)collisionEnergy ;
         energy *= _explosionEnergyMultiplier;
-        
-       var fragmentsTarget =  _astralBodyManager.FractureBody(collision._target,  point);
-       var fragmentsProjectile = _astralBodyManager.FractureBody(collision._projectile,  point);
 
+        
+        var fractureLogic = _fractureManager.AssignFractureComponent(collision._target.gameObject);
+        List<Rigidbody> fragmentsTarget = fractureLogic != null ?  fractureLogic.FractureBody(point) : new List<Rigidbody>();
+        
+        fractureLogic = _fractureManager.AssignFractureComponent(collision._projectile.gameObject);
+        List<Rigidbody>  fragmentsProjectile =  fractureLogic != null ? fractureLogic.FractureBody(point): new List<Rigidbody>();
+        
+       //var fragmentsTarget =  _astralBodyManager.FractureBody(collision._target,  point);
+       //var fragmentsProjectile = _astralBodyManager.FractureBody(collision._projectile,  point);
+       
        if (fragmentsTarget.Count != 0)
        {ExplosionImpact(fragmentsTarget, collision._target,point,energy, collision._collisionEnergyDirection); 
        }
@@ -573,7 +581,7 @@ public class CollisionManager : MonoBehaviour
     private IEnumerator DelayedForce(float delay, List<Rigidbody> allRb,Vector3 impactPoint, float forceMagnitude, Vector3 forceDirection)
     {
         yield return new WaitForSeconds(delay);
-        //Debug.Log("Adding force of "+ forceMagnitude +" to rb ");
+        Debug.Log("Adding force of "+ forceMagnitude +" to rb ");
         AddForceToAllRb(allRb, impactPoint, forceMagnitude, forceDirection);
        
     }
@@ -583,7 +591,7 @@ public class CollisionManager : MonoBehaviour
         if(allRb.Count == 0) return;
         foreach (var rb in allRb)
         {
-            
+            Debug.Log("Adding force of "+ forceMagnitude +" to rb: " + rb);
             AddExplosionForceToRb(rb, forceMagnitude,forceDirection ,point);
         }
     }
