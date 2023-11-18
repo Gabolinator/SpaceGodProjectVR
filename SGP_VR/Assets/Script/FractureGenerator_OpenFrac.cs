@@ -1,55 +1,67 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class FractureGenerator_OpenFrac : Fracture, IFractureGenerator
 {
-    
-    
-    
-    public List<Rigidbody> FractureBody(AstralBodyHandler body, Vector3 impactPoint)
+    public CollisionData ColData { get; set; }
+    public List<Rigidbody> AllFragment { get; set; }
+
+    public void FractureBody(AstralBodyHandler body, Vector3 impactPoint)
     {
         throw new System.NotImplementedException();
     }
 
-    public List<Rigidbody> FractureBody(AstralBodyHandler body, Vector3 impactPoint, int numberOfFragment)
+    public void FractureBody(AstralBodyHandler body, Vector3 impactPoint, int numberOfFragment)
     {
         throw new System.NotImplementedException();
     }
 
-    public List<Rigidbody> FractureBody(Vector3 impactPoint) => FractureBody();
+    public void FractureBody(Vector3 impactPoint) => FractureBody();
 
+    public void FractureBody(CollisionData collisionData)
+    {
 
-    public List<Rigidbody> FractureBody()
+        ColData = collisionData;
+        FractureBody();
+    }
+
+    public void FractureBody()
     {
         
         
         ComputeFracture();
         
 
-        List<Rigidbody> allRb = new List<Rigidbody>( GetFragmentRoot() ? GetFragmentRoot().GetComponentsInChildren<Rigidbody>() : null);
+        AllFragment = new List<Rigidbody>( GetFragmentRoot() ? GetFragmentRoot().GetComponentsInChildren<Rigidbody>() : null);
+        Explode(ColData);
         
-        
-        return allRb;
     }
 
 
-    public List<Rigidbody> FractureBody(List<Fragment> fragments, Vector3 impactPoint)
+    public void FractureBody(List<Fragment> fragments, Vector3 impactPoint)
     {
         throw new System.NotImplementedException();
     }
 
-    public List<Rigidbody> FractureBody(List<Fragment> fragments)
+    public void FractureBody(List<Fragment> fragments)
     {
         throw new System.NotImplementedException();
+    }
+
+    public void Explode(CollisionData collisionData)
+    {
+        
+        CollisionManager.Instance.ExplosionImpact(AllFragment, GetComponent<AstralBodyHandler>(), collisionData);
     }
 
 
     private void Awake()
     {
         fractureOptions.insideMaterial = CollisionManager.Instance._fractureManager.InsideMaterial;
-        refractureOptions.enableRefracturing = true;
+        refractureOptions.enableRefracturing = false;
         refractureOptions.maxRefractureCount = 1;
     }
 

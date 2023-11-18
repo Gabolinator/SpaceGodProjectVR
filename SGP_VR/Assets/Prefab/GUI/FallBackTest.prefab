@@ -12,9 +12,13 @@ PrefabInstance:
       propertyPath: isClosable
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: -2095431495407323723, guid: 89f63fc731eb5a94683c6d8d19833e4a, type: 3}
+      propertyPath: isNotClosable
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 2703328845927555862, guid: 89f63fc731eb5a94683c6d8d19833e4a, type: 3}
       propertyPath: m_Name
-      value: TestGUI (5) Variant
+      value: FallBackTest
       objectReference: {fileID: 0}
     - target: {fileID: 6363009570584815693, guid: 89f63fc731eb5a94683c6d8d19833e4a, type: 3}
       propertyPath: m_text

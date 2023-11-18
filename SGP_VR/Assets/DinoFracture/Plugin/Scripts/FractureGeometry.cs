@@ -277,7 +277,7 @@ namespace DinoFracture
         [UnityEngine.Tooltip("Unity event that fires whenever a fracture on this object completes")]
         public OnFractureEvent OnFractureCompleted;
 
-        private AsyncFractureResult _runningFracture = null;
+        protected AsyncFractureResult _runningFracture = null;
 
         [SerializeField]
         private string _uniqueId = Guid.NewGuid().ToString("N");

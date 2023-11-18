@@ -1,8 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using DinoFracture;
 using UnityEngine;
-
+using UnityEngine.Events;
 
 
 public enum CollisionType 
@@ -31,8 +32,7 @@ public class CollidingBody
     public Vector3 _bodyImpactAngularVelocity;
     public double _impactEnergy; 
     public Vector3 _impactEnergyDirection;
-    
-    
+   
     public CollidingBody(AstralBodyHandler body, CollidingBodyRole role = CollidingBodyRole.Other) 
     {
         _body = body;
@@ -142,7 +142,7 @@ public class CollisionManager : MonoBehaviour
     public static CollisionManager Instance => _instance;
 
     public FractureManager _fractureManager = new FractureManager();
-    
+
     public AstralBodiesManager _astralBodyManager => AstralBodiesManager.Instance;
 
     public List<CollisionData> _unProcessedCollisions;
@@ -152,8 +152,8 @@ public class CollisionManager : MonoBehaviour
     public float _lossOfEnergyOnImpact = .15f;
 
     public float _explosionEnergyMultiplier = 0.1f;
-    
-    
+
+
     public bool testMode = true;
     public CollisionType testCollisionType = CollisionType.PerfectMerge;
 
@@ -162,9 +162,10 @@ public class CollisionManager : MonoBehaviour
 
     public void CreatingCollision(AstralBodyHandler body1, AstralBodyHandler body2, Collision collision)
     {
-        if(!body1 || !body2) return;
-        
-        CollisionData collisionData = new CollisionData(body1, body2, collision.GetContact(0), collision.impulse ,_lossOfEnergyOnImpact, showDebugLog);
+        if (!body1 || !body2) return;
+
+        CollisionData collisionData = new CollisionData(body1, body2, collision.GetContact(0), collision.impulse,
+            _lossOfEnergyOnImpact, showDebugLog);
 
         if (CollisionAlreadyPresent(collisionData))
         {
@@ -195,44 +196,45 @@ public class CollisionManager : MonoBehaviour
 
     private bool CollisionAlreadyPresent(CollisionData collisionData)
     {
-        if(_unProcessedCollisions.Count == 0 ) return false;
+        if (_unProcessedCollisions.Count == 0) return false;
 
-        if(_unProcessedCollisions.Contains(collisionData)) return true;
+        if (_unProcessedCollisions.Contains(collisionData)) return true;
 
-        foreach (CollisionData collision in _unProcessedCollisions) 
+        foreach (CollisionData collision in _unProcessedCollisions)
         {
-            if(collision._target == collisionData._target && collision._projectile == collisionData._projectile) return true;
+            if (collision._target == collisionData._target &&
+                collision._projectile == collisionData._projectile) return true;
         }
 
         return false;
     }
 
     #region ProcessColision
+
     private IEnumerator ProcessCollisionCoroutine(float delay)
     {
         do
         {
             ProcessCollisions(_unProcessedCollisions);
             yield return new WaitForSeconds(delay);
-        }
-        while (true);
+        } while (true);
     }
 
-    public bool ProcessCollision(CollisionData collision) 
+    public bool ProcessCollision(CollisionData collision)
     {
         bool processed = false;
-      
-        
-        if(collision == null) return processed;
+
+
+        if (collision == null) return processed;
         if (showDebugLog) Debug.Log("[Collision Manager] Processing : " + collision._id);
-        
+
         if (collision._inProcess) return processed;
 
         var collisionType = collision._collisionType;
-        
+
         processed = true;
-       
-        switch (collisionType) 
+
+        switch (collisionType)
         {
             case CollisionType.PerfectMerge:
                 if (showDebugLog) Debug.Log("[Collision Manager] Processing Collision type: PerfectMerge");
@@ -264,7 +266,7 @@ public class CollisionManager : MonoBehaviour
                 if (showDebugLog) Debug.Log("[Collision Manager] Cant process collision type");
                 processed = false;
                 break;
-        
+
         }
 
 
@@ -284,16 +286,19 @@ public class CollisionManager : MonoBehaviour
             {
                 CollisionProcessed(collision);
             }
+
             index++;
         }
     }
+
     #endregion
+
     private void UnregisterCollision(List<CollisionData> collisionList, int index)
     {
         if (collisionList.Count == 0) return;
         if (index < 0 || index > collisionList.Count) return;
-        
-       
+
+
 
         if (collisionList[index] == null) return;
 
@@ -302,10 +307,10 @@ public class CollisionManager : MonoBehaviour
 
     }
 
-    private void UnregisterCollision(CollisionData collision , List<CollisionData> collisionList)
+    private void UnregisterCollision(CollisionData collision, List<CollisionData> collisionList)
     {
 
-        if(collision == null|| collisionList.Count == 0) return ;
+        if (collision == null || collisionList.Count == 0) return;
 
         if (!collisionList.Contains(collision)) return;
         collisionList.Remove(collision);
@@ -331,11 +336,12 @@ public class CollisionManager : MonoBehaviour
     }
 
     #region Regimes
+
     private bool ProcessHitAndRun(CollisionData collision)
-    {   
+    {
         if (collision == null) return false;
         if (showDebugLog) Debug.Log("[Collision Manager] Hit and run regime not yet implemented");
-        return true; 
+        return true;
     }
 
     private bool ProcessGrazing(CollisionData collision)
@@ -349,46 +355,52 @@ public class CollisionManager : MonoBehaviour
     {
         if (collision == null) return false;
         if (showDebugLog) Debug.Log("[Collision Manager] Processing Super Catastrophic Regime");
-        
+
         var point = collision._impactPoint.point;
         var collisionEnergy = collision._collisionEnergy;
-        float energy = (float)collisionEnergy ;
+        float energy = (float)collisionEnergy;
         energy *= _explosionEnergyMultiplier;
 
-        
+
         var fractureLogic = _fractureManager.AssignFractureComponent(collision._target.gameObject);
-        List<Rigidbody> fragmentsTarget = fractureLogic != null ?  fractureLogic.FractureBody(point) : new List<Rigidbody>();
-        
+        if (fractureLogic != null) fractureLogic.FractureBody(collision);
+
         fractureLogic = _fractureManager.AssignFractureComponent(collision._projectile.gameObject);
-        List<Rigidbody>  fragmentsProjectile =  fractureLogic != null ? fractureLogic.FractureBody(point): new List<Rigidbody>();
-        
-       //var fragmentsTarget =  _astralBodyManager.FractureBody(collision._target,  point);
-       //var fragmentsProjectile = _astralBodyManager.FractureBody(collision._projectile,  point);
-       
-       if (fragmentsTarget.Count != 0)
-       {ExplosionImpact(fragmentsTarget, collision._target,point,energy, collision._collisionEnergyDirection); 
-       }
+        if (fractureLogic != null) fractureLogic.FractureBody(collision);
 
-       if (fragmentsProjectile.Count != 0)
-       {
-           ExplosionImpact(fragmentsProjectile, collision._projectile, point,  energy, -collision._collisionEnergyDirection);
-       }
 
-       
-       return true;
+        //  if (fragmentsTarget == null || fragmentsProjectile == null)
+        //  {
+        //      return true;
+        //  }
+        //
+        //  if (fragmentsTarget.Count != 0)
+        // {
+        //     ExplosionImpact(fragmentsTarget, collision._target,point,energy, collision._collisionEnergyDirection); 
+        // }
+        //
+        // if(fragmentsProjectile != null)
+        // if (fragmentsProjectile.Count != 0)
+        // {
+        //     ExplosionImpact(fragmentsProjectile, collision._projectile, point,  energy, -collision._collisionEnergyDirection);
+        // }
 
+        return true;
     }
 
-    
+
+
+
     private bool ProcessCatastrophic(CollisionData collision)
     {
         if (collision == null) return false;
-        if (showDebugLog) Debug.Log("[Collision Manager] Catastrophic Regime not yet implemented- doing super catastrophic");
+        if (showDebugLog)
+            Debug.Log("[Collision Manager] Catastrophic Regime not yet implemented- doing super catastrophic");
 
-        
+
         //AstralBody newBody = new AstralBody(collision._target.Mass + collision._projectile.Mass, (collision._target.Density + collision._target.Density)) / 2, collision._target.Velocity + collision._projectile.Velocity);
 
-        return ProcessSuperCatastrophic(collision) ;
+        return ProcessSuperCatastrophic(collision);
     }
 
     private bool ProcessPerfectMerge(CollisionData collision)
@@ -396,35 +408,40 @@ public class CollisionManager : MonoBehaviour
         if (collision == null) return false;
         if (showDebugLog) Debug.Log("[Collision Manager] Perfect Merge");
 
-     
+
         double mass = collision._target.Mass + collision._projectile.Mass;
-        double density = mass / (collision._target.Volume + collision._projectile.Volume)  ; // TODO not right, fix with ratio
-       
-        Vector3 velocity = Mathf.Sqrt(2 * (float)collision._collisionEnergy / (float)mass) * collision._collisionEnergyDirection;
+        double density =
+            mass / (collision._target.Volume + collision._projectile.Volume); // TODO not right, fix with ratio
+
+        Vector3 velocity = Mathf.Sqrt(2 * (float)collision._collisionEnergy / (float)mass) *
+                           collision._collisionEnergyDirection;
         Vector3 angularVelocity = Vector3.zero;
 
-        AstralBody astralBody = CreateNewBody(mass, density, velocity, angularVelocity ,DetermineResultingBodyType(collision));
+        AstralBody astralBody =
+            CreateNewBody(mass, density, velocity, angularVelocity, DetermineResultingBodyType(collision));
 
-        if (showDebugLog) Debug.Log("[Collision Manager] Perfect Merge : resulting Body (" + astralBody.BodyType+ ") : " + collision._target.ID);
+        if (showDebugLog)
+            Debug.Log("[Collision Manager] Perfect Merge : resulting Body (" + astralBody.BodyType + ") : " +
+                      collision._target.ID);
 
         collision._resultingBodies.Add(astralBody);
 
-        if (showDebugLog) Debug.Log("[Collision Manager] Resulting Bodies:" + collision._resultingBodies.Count );
+        if (showDebugLog) Debug.Log("[Collision Manager] Resulting Bodies:" + collision._resultingBodies.Count);
 
         collision._inProcess = true;
 
         return MergingBodies(collision, !CanPlayerSee());
     }
 
-    
 
-    public bool MergingBodies(CollisionData collision, bool instant = false) 
+
+    public bool MergingBodies(CollisionData collision, bool instant = false)
     {
         /*are we mergin instantly or are we doing it over time */
-        if (!instant) 
-        { 
-            StartCoroutine(MergingCoroutine(collision, 2f)); 
-        } 
+        if (!instant)
+        {
+            StartCoroutine(MergingCoroutine(collision, 2f));
+        }
         else MergingBodies(collision);
 
         return instant;
@@ -445,12 +462,13 @@ public class CollisionManager : MonoBehaviour
 
         return true;
     }
+
     private IEnumerator MergingCoroutine(CollisionData collision, float delay)
     {
-      
+
         if (collision._collidingBodies.Count == 0) yield return null;
-        
-        foreach(var collidingBody in collision._collidingBodies) 
+
+        foreach (var collidingBody in collision._collidingBodies)
         {
             var collider = collidingBody._body.gameObject.GetComponent<Collider>();
             if (collider)
@@ -464,28 +482,31 @@ public class CollisionManager : MonoBehaviour
         collision._projectile.thisRb.velocity = collision._projectileBody._bodyImpactVelocity;
         collision._projectile.gravityDisabled = true;
         var visualIndicator = collision._projectile.GetComponent<VisualIndicatorHandler>();
-        
+
         visualIndicator.forceDisableTrail = visualIndicator.forceDisableTrajectory = true;
 
         var velocityLoss = MathF.Sqrt(collision._energyLoss / (float)collision._projectile.Mass);
-        float velocityMagnitude = collision._projectileBody._bodyImpactVelocity.magnitude/200 * (1-velocityLoss);
+        float velocityMagnitude = collision._projectileBody._bodyImpactVelocity.magnitude / 200 * (1 - velocityLoss);
 
         collision._projectile.thisRb.isKinematic = true;
 
         collision._projectile.transform.parent = collision._target.transform;
         collision._projectile.transform.localRotation = Quaternion.identity;
-        
+
         var drag = 0;
         float t = 0;
         do
         {
             Vector3 targetCenter = collision._target.transform.position;
             Vector3 direction = (targetCenter - collision._projectile.transform.position).normalized;
-            
-            Vector3 newPosition = collision._projectile.transform.position + direction * velocityMagnitude * (1 - drag * t);
-            if (Vector3.Distance(collision._projectile.transform.position, targetCenter) >= (collision._target.transform.localScale.x - collision._projectile.transform.localScale.x)*.5 ) collision._projectile.transform.position = newPosition;
 
-            collision._target.LerpToBodyOverTime(collision._resultingBodies[0], t ,delay, false);
+            Vector3 newPosition = collision._projectile.transform.position +
+                                  direction * velocityMagnitude * (1 - drag * t);
+            if (Vector3.Distance(collision._projectile.transform.position, targetCenter) >=
+                (collision._target.transform.localScale.x - collision._projectile.transform.localScale.x) * .5)
+                collision._projectile.transform.position = newPosition;
+
+            collision._target.LerpToBodyOverTime(collision._resultingBodies[0], t, delay, false);
 
             t += Time.deltaTime;
             yield return null;
@@ -493,17 +514,17 @@ public class CollisionManager : MonoBehaviour
         } while (t < delay);
 
         collision._projectile.thisRb.drag = 0;
-       // collision._projectile.thisRb.velocity = collision._target.thisRb.velocity;
+        // collision._projectile.thisRb.velocity = collision._target.thisRb.velocity;
 
         AstralBodiesManager.Instance.DestroyBody(collision._projectile, 30);
 
-        
+
         CollisionProcessed(collision);
     }
 
-   
 
-        
+
+
     private void CollisionProcessed(CollisionData collision)
     {
         if (showDebugLog) Debug.Log("[Collision Manager] " + collision._id + " Succesfully processed");
@@ -512,7 +533,8 @@ public class CollisionManager : MonoBehaviour
         UnregisterCollision(collision, _unProcessedCollisions);
     }
 
-    private AstralBody CreateNewBody(double mass, double density, Vector3 velocity, Vector3 angularVelocity , AstralBodyType bodyType)
+    private AstralBody CreateNewBody(double mass, double density, Vector3 velocity, Vector3 angularVelocity,
+        AstralBodyType bodyType)
     {
         //var bodyType = DetermineResultingBodyType(collision._target, collision._projectile);
         AstralBody astralBody;
@@ -521,24 +543,25 @@ public class CollisionManager : MonoBehaviour
 
         if (bodyType == AstralBodyType.Planet)
         {
-             planet = new Planet(mass, density, velocity, angularVelocity);
-             planet.BodyType = bodyType;
-            
+            planet = new Planet(mass, density, velocity, angularVelocity);
+            planet.BodyType = bodyType;
+
             return planet;
         }
         else if (bodyType == AstralBodyType.Star)
         {
             star = new Star(mass, density, velocity, angularVelocity);
             star.BodyType = bodyType;
-            return star;    
+            return star;
         }
 
-        
-            astralBody = new AstralBody(mass, density, velocity, angularVelocity);
-       
+
+        astralBody = new AstralBody(mass, density, velocity, angularVelocity);
+
 
         return astralBody;
     }
+
     private AstralBodyType DetermineResultingBodyType(CollisionData collision)
     {
         return DetermineResultingBodyType(collision._target, collision._projectile);
@@ -553,11 +576,13 @@ public class CollisionManager : MonoBehaviour
         //TODO:  all cases for becoming a planet or not, a black hole or not, etc - now just for testing
 
         /*star conditions*/
-        if (targetBody == AstralBodyType.Star || projectileBody == AstralBodyType.Star ) resultingType = AstralBodyType.Star;
+        if (targetBody == AstralBodyType.Star || projectileBody == AstralBodyType.Star)
+            resultingType = AstralBodyType.Star;
         // if(targetBody == projectileBody) 
 
         /*planet condition*/
-        if (targetBody == AstralBodyType.Planet && projectileBody == AstralBodyType.Planet) resultingType = AstralBodyType.Planet;
+        if (targetBody == AstralBodyType.Planet && projectileBody == AstralBodyType.Planet)
+            resultingType = AstralBodyType.Planet;
 
         /*planetoid condition*/
 
@@ -569,15 +594,33 @@ public class CollisionManager : MonoBehaviour
 
     #endregion
 
-    public void ExplosionImpact(List<Rigidbody> allRb, AstralBodyHandler targetBody, Vector3 impactPoint, float force,  Vector3 forceDirection  )
+    public void ExplosionImpact(List<Rigidbody> allRb, AstralBodyHandler targetBody, Vector3 impactPoint, float force,
+        Vector3 forceDirection)
     {
-       
+
         targetBody.DestroySelf();
+
+        StartCoroutine(DelayedForce(.001f, allRb, impactPoint, force, forceDirection));
+
+    }
+
+    public void ExplosionImpact(List<Rigidbody> allRb, AstralBodyHandler targetBody, CollisionData collision)
+    {
         
-        StartCoroutine(DelayedForce(.01f, allRb, impactPoint, force, forceDirection));
+        var point = collision._impactPoint.point;
+        var collisionEnergy = collision._collisionEnergy;
+        float energy = (float)collisionEnergy;
+        energy *= _explosionEnergyMultiplier;
+
+
+        energy *= (targetBody == collision._target) ? 1 : -.5f;
+        
+        ExplosionImpact(allRb, targetBody,point,energy, collision._collisionEnergyDirection); 
         
     }
     
+
+
     private IEnumerator DelayedForce(float delay, List<Rigidbody> allRb,Vector3 impactPoint, float forceMagnitude, Vector3 forceDirection)
     {
         yield return new WaitForSeconds(delay);

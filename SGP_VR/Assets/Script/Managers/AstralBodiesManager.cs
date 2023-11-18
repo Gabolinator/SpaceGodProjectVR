@@ -16,6 +16,7 @@ public enum AstralBodyType
     Planetoid,
     BlackHole,
     ProtoBody,
+    Fragment,
     other,
     Uninitialized
 }

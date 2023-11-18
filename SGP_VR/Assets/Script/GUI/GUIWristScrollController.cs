@@ -511,7 +511,7 @@ public class GUIWristScrollController : GuiContainer
             return;
         }
         
-        if (!GetGuiScript(CurrentGui).isClosable)
+        if (GetGuiScript(CurrentGui).isNotClosable)
         {
             Debug.Log("[WristScrollGUI] Gui not Closable");
             return;

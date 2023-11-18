@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using DinoFracture;
 using UnityEngine;
 
@@ -9,54 +10,70 @@ public class FractureGenerator_Base : MonoBehaviour, IFractureGenerator
     private GameObject defaultSphereFragmentPrefab => CollisionManager.Instance._fractureManager.DefaultFragmentPrefab; 
     
     
-    public List<Rigidbody> FractureBody(AstralBodyHandler body, Vector3 impactPoint, int numberOfFragment)
+    public void FractureBody(AstralBodyHandler body, Vector3 impactPoint, int numberOfFragment)
     {
         throw new System.NotImplementedException();
     }
 
-    public List<Rigidbody> FractureBody(Vector3 impactPoint)
+    public void FractureBody(Vector3 impactPoint)
     {
         var body = GetComponent<AstralBodyHandler>();
-        if (!body) return null;
+        if (!body) return ;
 
-       return FractureBody(body, impactPoint);
+       FractureBody(body, impactPoint);
     }
 
-    public List<Rigidbody> FractureBody()
+    public void FractureBody(CollisionData collisionData)
     {
-        throw new System.NotImplementedException();
-    }
+        var body = GetComponent<AstralBodyHandler>();
+        if (!body) return ;
 
-    public List<Rigidbody> FractureBody(List<Fragment> fragments, Vector3 impactPoint)
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public List<Rigidbody> FractureBody(List<Fragment> fragments)
-    {
-        throw new System.NotImplementedException();
-    }
-    
-    
-    
-    public List<Rigidbody> FractureBody(AstralBodyHandler body, Vector3 pos)
-    {
-        if (!body) return null;
+        ColData = collisionData;
         
-        List<Rigidbody> allRb = SpawnFragmentSphere(defaultSphereFragmentPrefab, body, UniverseManager.Instance.UniverseContainer ?  UniverseManager.Instance.UniverseContainer.transform : null);
-        Debug.Log("[AstralBodyManager] allRB count: " + allRb.Count);
+        FractureBody(body, collisionData._impactPoint.point);
+        Explode(ColData);
+        
+    }
+
+    public void FractureBody()
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void FractureBody(List<Fragment> fragments, Vector3 impactPoint)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void FractureBody(List<Fragment> fragments)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void Explode(CollisionData collisionData)
+    {
+        CollisionManager.Instance.ExplosionImpact(AllFragment, GetComponent<AstralBodyHandler>(), collisionData);
+    }
+
+
+    public CollisionData ColData { get; set; }
+    public List<Rigidbody> AllFragment { get; set; }
+
+    public void FractureBody(AstralBodyHandler body, Vector3 pos)
+    {
+        if (!body) return;
+        
+        AllFragment = SpawnFragmentSphere(defaultSphereFragmentPrefab, body, UniverseManager.Instance.UniverseContainer ?  UniverseManager.Instance.UniverseContainer.transform : null);
+        Debug.Log("[AstralBodyManager] allRB count: " +  AllFragment.Count);
 
         float breakTorque = body.InternalResistance;
         float breakForce = body.InternalResistance;
 
    
-        UpdateFixedJoint(allRb, breakForce, breakTorque);
+        UpdateFixedJoint(AllFragment, breakForce, breakTorque);
 
-        AddAstralBody(allRb, body);
+        AddAstralBody(AllFragment, body);
 
-       
-
-    return allRb;
     }
 
     private void UpdateFixedJoint(List<Rigidbody> allRb, float breakForce, float breakTorque)

@@ -28,7 +28,7 @@ public class GUIBehaviour : MonoBehaviour
     public float maxAlpha = 1;
     public float minAlpha = 0;
     public float currentAlpha;
-    public bool isClosable = true;
+    public bool isNotClosable;
 
     public virtual void Fade(CanvasGroup canvasGroup, bool fadeIn, float fadeDuration = 1, float delay = 0.0f)
     {

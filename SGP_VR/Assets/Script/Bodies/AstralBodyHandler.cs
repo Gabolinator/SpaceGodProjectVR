@@ -166,20 +166,20 @@ public class AstralBodyHandler : MonoBehaviour
         //if (body == null) return;
         if (Radius == 0) Radius = body.CalculateRadius(transform.localScale);
         else SetScaleFromRadius(Radius);
-
+        
         if (Volume == 0) Volume = body.CalculateVolume(Radius);
-
+        
         if (Density == 0 && Mass == 0)
         {
             Density = 1000;
             Mass = body.CalculateMass(Density, Volume);
         }
-
+        
         else if (Density == 0 && Mass != 0) Density = body.CalculateDensity(Mass, Volume);
-
+        
         if (thisRb == null) thisRb = GetComponent<Rigidbody>();
         if (Mass != 0) thisRb.mass = (float)Mass;
-
+        
         if (ID == "") ID = GenerateId();
 
 
@@ -200,6 +200,11 @@ public class AstralBodyHandler : MonoBehaviour
     }
 
 
+    private IEnumerator EnableCollisionCoroutine(bool state, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        EnableCollision = state;
+    }
 
     public void InjectMassOverTime(double mass, float duration)
     {
@@ -605,7 +610,7 @@ public class AstralBodyHandler : MonoBehaviour
         //body = new AstralBodyInternal(2000, 2000, new Vector3(0, 0, 0));
 
         _enableCollision = false;
-        
+        StartCoroutine(EnableCollisionCoroutine(true, 1));
         Initialize();
 
         bodyDescriptor = new AstralBodyDescriptor(body);
@@ -617,6 +622,8 @@ public class AstralBodyHandler : MonoBehaviour
         StartCoroutine(CalculateGravityPullCoroutine(_processRate, _delayStart));
 
         StartCoroutine(CollectData(_processRate,_delayStart));
+        
+        
     }
 
 

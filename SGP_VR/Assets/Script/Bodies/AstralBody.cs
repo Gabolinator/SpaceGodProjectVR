@@ -217,11 +217,11 @@ public class AstralBody
 
     public double CalculateDensity(double mass, double volume) => FormulaLibrairy.CalculateDensity(mass, volume);   
 
-    public double CalculateVolume(double radius) => FormulaLibrairy.CalculateVolume(radius);
+    public  virtual double CalculateVolume(double radius) => FormulaLibrairy.CalculateVolume(radius);
 
-    public double CalculateRadius(Vector3 scale) => FormulaLibrairy.CalculateRadius(scale);
+    public virtual double CalculateRadius(Vector3 scale) => FormulaLibrairy.CalculateRadius(scale);
 
-    public double CalculateRadius(double volume) => FormulaLibrairy.CalculateRadius(volume);
+    public  virtual double CalculateRadius(double volume) => FormulaLibrairy.CalculateRadius(volume);
 
     public double CalculateVolume(double mass, double density) => FormulaLibrairy.CalculateVolume(mass, density);
 
@@ -255,5 +255,7 @@ public class AstralBody
     {
         return PredictCollisionAtPosition(this, position, buffer);
     }
+
+   
 
 }

@@ -179,7 +179,7 @@ MonoBehaviour:
   m_BlockingObjects: 0
   m_BlockingMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 55
 --- !u!114 &6197189889622486679
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -204,7 +204,9 @@ MonoBehaviour:
   maxAlpha: 1
   minAlpha: 0
   currentAlpha: 0
+  isNotClosable: 0
   bodyName: {fileID: 6363009570584815693}
+  mount: {fileID: 0}
   _descriptor:
     _id: 
     _bodyType: 

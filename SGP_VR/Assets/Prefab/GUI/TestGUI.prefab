@@ -179,7 +179,7 @@ MonoBehaviour:
   m_BlockingObjects: 0
   m_BlockingMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 55
 --- !u!225 &7190539094767450778
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -216,6 +216,7 @@ MonoBehaviour:
   maxAlpha: 1
   minAlpha: 0
   currentAlpha: 0
+  isNotClosable: 0
 --- !u!1 &5173093582988344185
 GameObject:
   m_ObjectHideFlags: 0

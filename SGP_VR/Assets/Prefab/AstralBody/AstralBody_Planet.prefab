@@ -416,7 +416,7 @@ GameObject:
   - component: {fileID: 774464203943016157}
   - component: {fileID: 6907926857871000812}
   - component: {fileID: 5313848743172170669}
-  - component: {fileID: 172005879356218510}
+  - component: {fileID: -8235433073431349456}
   m_Layer: 0
   m_Name: AstralBody_Planet
   m_TagString: Untagged
@@ -469,7 +469,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 08a0907af9378df4a94753a8b7179006, type: 2}
+  - {fileID: 2100000, guid: ea6067614a80a3d4796ca92f2f2e1cb9, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -784,7 +784,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85b31a1a4926fdf47af55a2cbf12c7dc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_PermittedDisplacementAxes: 7
+  m_PermittedDisplacementAxes: -1
   m_ConstrainedAxisDisplacementMode: 1
   m_TwoHandedRotationMode: 1
   m_AllowTwoHandedScaling: 1
@@ -795,7 +795,7 @@ MonoBehaviour:
   m_ScaleMultiplier: 0.25
   previousInteractorCount: 0
   firstFrameSinceTwoHandeGab: 0
---- !u!114 &172005879356218510
+--- !u!114 &-8235433073431349456
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -804,12 +804,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 6975080124717213768}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 16e941d03cfc53b4c925e03193f9a54b, type: 3}
+  m_Script: {fileID: 11500000, guid: e5eb474bf8d2a9e4e85943760275aaf4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   InsideMaterial: {fileID: 2100000, guid: 235dbe708cf96e6449872a548521f2fe, type: 2}
   OptimizeMaterialUsage: 1
-  FractureTemplate: {fileID: 0}
+  FractureTemplate: {fileID: 100000, guid: 093d28d5ab929a54abe7deb9b2c7b735, type: 3}
   PiecesParent: {fileID: 0}
   FractureType: 0
   SlicePlanes: []
@@ -830,9 +830,21 @@ MonoBehaviour:
   RandomSeed: 0
   OnFractureCompleted:
     m_PersistentCalls:
-      m_Calls: []
-  _uniqueId: 07712e1c60934a19a271b858aae0eddc
-  _meshValidity: 1
+      m_Calls:
+      - m_Target: {fileID: -8235433073431349456}
+        m_TargetAssemblyTypeName: FractureGenerator_Dino, Assembly-CSharp
+        m_MethodName: Explode
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  _uniqueId: b2115ee4e227416f84a6641e7491e633
+  _meshValidity: 0
   SkipMeshCleaning: 0
   Asynchronous: 1
 --- !u!1 &7639278997976779354
