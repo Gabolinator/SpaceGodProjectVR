@@ -36,7 +36,9 @@ public class FractureGenerator_Dino : RuntimeFracturedGeometry, IFractureGenerat
     public void FractureBody(CollisionData collisionData)
     {
         ColData = collisionData;
-        FractureBody(collisionData._impactPoint.point);
+        var point =collisionData._impactPoint.point;
+         point   -= (collisionData._target.transform.position - point).normalized * collisionData._collisionPrefs.impactPointOffset;
+        FractureBody(point );
 
     }
 
@@ -63,9 +65,23 @@ public class FractureGenerator_Dino : RuntimeFracturedGeometry, IFractureGenerat
         CollisionManager.Instance.ExplosionImpact(AllFragment, GetComponent<AstralBodyHandler>(), collisionData);
     }
 
+    public void AddComponentsToFragments()
+    {
+        if(AllFragment.Count == 0) return;
+
+        foreach (var fragment in AllFragment)
+        {
+            var handler = fragment.gameObject.AddComponent<AstralBodyHandler>();
+            if(!handler) return;
+            handler.body = new FragmentBody();
+            handler.body.BodyType = AstralBodyType.Fragment;
+            handler.enableCollisionDelay = 30;
+        }
+    }
+
     public void Explode(OnFractureEventArgs args)
     {
-        Debug.Log("args.FracturePiecesRootObject " + args.FracturePiecesRootObject);
+        //Debug.Log("args.FracturePiecesRootObject " + args.FracturePiecesRootObject);
         AllFragment = new List<Rigidbody>(args.FracturePiecesRootObject.GetComponentsInChildren<Rigidbody>());
         Explode(ColData);
     }

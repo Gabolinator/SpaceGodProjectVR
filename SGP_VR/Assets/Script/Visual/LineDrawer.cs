@@ -9,15 +9,35 @@ public class LineDrawer : MonoBehaviour
     
     public virtual void UpdateLineColor(Color startColor, Color endColor, bool endAlphaToZero)
     {
-        var renderer = lineRenderer;
+      
+        UpdateLineColor(lineRenderer, startColor, endColor);
+        
 
+    }
+
+    public virtual void UpdateLineColor(LineRenderer renderer, Color startColor, Color endColor)
+    {
         if (!renderer) { Debug.Log("No renderer"); return; }
 
         renderer.startColor = startColor;
         renderer.endColor = endColor;
-        //lineRenderer.startColor;
+       
+        
 
     }
+
+    public virtual void UpdateLineColor(LineRenderer renderer, Color startColor, Color midColor, Color endColor)
+    {
+        if (!renderer) { Debug.Log("No renderer"); return; }
+
+        renderer.startColor = startColor;
+        //renderer.
+        renderer.endColor = endColor;
+       
+        
+
+    }
+    
     public virtual void UpdateLineColor(Color color, bool endAlphaToZero = true)
     {
         

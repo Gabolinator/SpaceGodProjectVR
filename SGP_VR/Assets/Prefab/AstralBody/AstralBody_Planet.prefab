@@ -417,6 +417,7 @@ GameObject:
   - component: {fileID: 6907926857871000812}
   - component: {fileID: 5313848743172170669}
   - component: {fileID: -8235433073431349456}
+  - component: {fileID: -6625615361071596137}
   m_Layer: 0
   m_Name: AstralBody_Planet
   m_TagString: Untagged
@@ -469,7 +470,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: ea6067614a80a3d4796ca92f2f2e1cb9, type: 2}
+  - {fileID: 2100000, guid: e8f1f461c46ef3b46911ce2ed1bbfc0d, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -592,8 +593,10 @@ MonoBehaviour:
   velocities: []
   accelerations: []
   currentRadiusOfTrajectory: 0
+  firstUpdate: 1
   gravityDisabled: 0
   _enableCollision: 0
+  enableCollisionDelay: 0
 --- !u!114 &5811864621561004374
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -843,10 +846,37 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: -8235433073431349456}
+        m_TargetAssemblyTypeName: FractureGenerator_Dino, Assembly-CSharp
+        m_MethodName: AddComponentsToFragments
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   _uniqueId: b2115ee4e227416f84a6641e7491e633
   _meshValidity: 0
   SkipMeshCleaning: 0
   Asynchronous: 1
+--- !u!114 &-6625615361071596137
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6975080124717213768}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5893a1b22e1124140b5e910f5754c937, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  springForce: 20
+  damping: 5
+  coroutineActive: 0
 --- !u!1 &7639278997976779354
 GameObject:
   m_ObjectHideFlags: 0

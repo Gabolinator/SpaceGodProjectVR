@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using DinoFracture;
 using UnityEngine;
+using UnityEngine.PlayerLoop;
 
 
 #region CelestialBodyType
@@ -513,7 +514,101 @@ public class AstralBodiesManager : MonoBehaviour
       
 
     }
+    
+    
+    #region Managing bodies( gravity and update) 
 
+    
+
+
+    private IEnumerator CalculateGravityPullCoroutine(float delay)
+    {
+        
+        do
+        {
+            ManageBodies(_allBodies);
+            
+            yield return new WaitForSeconds(delay);
+
+        } while (true);
+    }
+
+
+    private void ManageBody(AstralBodyHandler bodyHandler)
+    {
+        if(!bodyHandler) return;
+        
+        bodyHandler.UpdateVelocities(bodyHandler.firstUpdate);
+        bodyHandler.firstUpdate = false;
+            
+        AddGravityPullToBody(bodyHandler);
+
+        
+    }
+
+    private void ManageBodies(List<AstralBodyHandler> bodies)
+    {
+        
+        if(bodies.Count == 0) return;
+        
+        foreach (var bodyHandler in bodies)
+        {
+            ManageBody(bodyHandler);
+        }
+    }
+
+    private void AddGravityPullToBody(AstralBodyHandler bodyHandler)
+    {
+        float range = bodyHandler.InfluenceRange < 0 ? bodyHandler.MaxDetectionRange : bodyHandler.InfluenceRange;
+
+        var allBodiesInRange = new List<AstralBodyHandler>();
+
+        allBodiesInRange = GetAllBodyInRange(range, allBodiesInRange, bodyHandler);
+
+        var totalForceOnObject =
+            CalculateTotalGravityPull(allBodiesInRange, bodyHandler, bodyHandler.transform.position);
+
+
+        if (bodyHandler.thisRb && bodyHandler.EnableGravity && totalForceOnObject != Vector3.zero)
+        {
+            var ratioMass =
+                bodyHandler.Mass /
+                bodyHandler.thisRb.mass; // if we lost mass cause of the cast to float , compensate force applied
+
+            bodyHandler.thisRb.AddForce(bodyHandler.totalForceOnObject =
+                ratioMass == 1 ? totalForceOnObject : totalForceOnObject / (float)ratioMass);
+        }
+        
+    }
+
+
+    public List<AstralBodyHandler> GetAllBodyInRange(float range, List<AstralBodyHandler> listOfBody, AstralBodyHandler bodyHandler)
+    {
+
+        listOfBody.Clear();
+
+        Collider[] hitColliders = Physics.OverlapSphere(bodyHandler.transform.position, range);
+
+        if (hitColliders.Length == 0) return listOfBody;
+
+        foreach (Collider hitCollider in hitColliders)
+        {
+            AstralBodyHandler body = hitCollider.GetComponent<AstralBodyHandler>();
+
+            if (!body || hitCollider.gameObject == bodyHandler.gameObject) continue;
+
+            listOfBody.Add(body);
+        }
+
+        return listOfBody;
+    }
+    
+    public Vector3 CalculateTotalGravityPull(List<AstralBodyHandler> listOfBody, AstralBodyHandler body, Vector3 position, float timeStep = 0) =>
+        FormulaLibrairy.CalculateTotalGravityPull(listOfBody, body, position, timeStep);
+    
+    #endregion
+    
+    
     private void Awake()
     {
       Initialize();
@@ -528,4 +623,11 @@ public class AstralBodiesManager : MonoBehaviour
 
     }
 
+    private void FixedUpdate()
+    {
+        ManageBodies(_allBodies);
+        
+    }
+
+  
 }

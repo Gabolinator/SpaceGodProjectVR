@@ -116,7 +116,7 @@ public class FXHandler : MonoBehaviour
 
     private void Start()
     {
-        Debug.Log("[FX handler] Start to exist");
+       // Debug.Log("[FX handler] Start to exist");
         FX efx = new FX();
         if (!initialized) Initialize(efx);
     }
@@ -125,4 +125,18 @@ public class FXHandler : MonoBehaviour
     {
         FXManager.Instance.UnRegisterFX(this);
     }
+
+    public void InitiateDestroy(float delay = 0)
+    {
+     if(delay != 0) DestroySelf(delay);
+
+     if(particleSystems.Count == 0) return;
+     foreach (var part in particleSystems)
+     {
+     
+     }
+     
+    }
+    
+   
 }

@@ -3,5 +3,6 @@
   <component name="Encoding" addBOMForNewFiles="with BOM under Windows, with no BOM otherwise">
     <file url="file://$PROJECT_DIR$/Assets/Script/GrabHelper.cs" charset="windows-1252" />
     <file url="file://$PROJECT_DIR$/Assets/Script/Managers/CollisionManager.cs" charset="windows-1252" />
+    <file url="file://$PROJECT_DIR$/Assets/Script/Managers/VisualIndicatorManager.cs" charset="windows-1252" />
   </component>
 </project>

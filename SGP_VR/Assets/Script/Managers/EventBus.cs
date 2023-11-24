@@ -81,6 +81,13 @@ public class EventBus : MonoBehaviour
 
     #endregion
 
+    #region Collision event
+    
+    public static Action<CollisionData> OnCollision;
+    public static Action<CollisionData> OnCollisionProcessed;
+    
+    #endregion
+    
     #region GUIEvents
 
     public static Action OnToggleMainMenu;

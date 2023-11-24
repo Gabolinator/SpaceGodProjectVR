@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Splines;
 
@@ -43,6 +44,19 @@ public class TrajectoryDrawer : LineDrawer
         renderer.positionCount = trajectoryPoints.Count;
         renderer.SetPositions(positions);
         //trajectoryLineRenderer.SetPosition(0, rb.position);
+    }
+
+
+    public void DrawTrajectory()
+    {
+        if (showTrajectory)
+            DrawTrajectory(trajectoryLineRenderer, debugList = trajectoryPredictor.GetPredictedTrajectoryPoints());
+    }
+
+
+    public void DrawTrail()
+    {
+        if (showTrail)  DrawTrajectory(trailLineRenderer, trajectoryPredictor.GetPassedTrajectoryPoints());
     }
 
     public void UpdateSpline(List<TrajectoryPoint> trajectoryPoints, bool clearData = true)
@@ -101,6 +115,8 @@ public class TrajectoryDrawer : LineDrawer
 
         trajectoryPredictor = new TrajectoryPredictor(rb, astralBody, this);
        
+        thisVisualHandler._indicatorManager.RegisterTrajectoryDrawer(this);
+        
         if (astralBody && trajectoryPredictor != null)
         {
             /*populate trajectory predictiion points*/
@@ -113,13 +129,22 @@ public class TrajectoryDrawer : LineDrawer
 
     private void Update()
     {
+        
+        //TODO move to visualisation manager to reduce update calls 
+        
+        
         /*draw projected trajectory*/
-        if(showTrajectory) DrawTrajectory(trajectoryLineRenderer, debugList = trajectoryPredictor.GetPredictedTrajectoryPoints());
+        //if(showTrajectory) DrawTrajectory(trajectoryLineRenderer, debugList = trajectoryPredictor.GetPredictedTrajectoryPoints());
 
         //UpdateSpline(trajectoryPredictor.GetPredictedTrajectoryPoints());
 
         /*draw trail position */
-        if (showTrail)  DrawTrajectory(trailLineRenderer, trajectoryPredictor.GetPassedTrajectoryPoints());
+        //if (showTrail)  DrawTrajectory(trailLineRenderer, trajectoryPredictor.GetPassedTrajectoryPoints());
         //UpdateSpline(trajectoryPredictor.GetPassedTrajectoryPoints());
+    }
+
+    public void OnDestroy()
+    {
+        thisVisualHandler._indicatorManager.UnRegisterTrajectoryDrawer(this);
     }
 }

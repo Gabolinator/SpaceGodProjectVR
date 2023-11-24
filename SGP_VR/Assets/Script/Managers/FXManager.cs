@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 
 public enum FXCategory 
@@ -24,7 +25,7 @@ public enum FXElement
 public struct FX
 {
 
-    public GameObject fxPrefab;
+    public List<GameObject> fxPrefabs;
     public List<AudioClip> audios;
     //public List<ParticleSystem> particleSystems;
     public string keyword;
@@ -66,8 +67,10 @@ public class FXManager : MonoBehaviour
 
     public List<FXHandler> activeFX = new List<FXHandler>();
 
-    public void ToggleFX(FXCategory category, FXElement whatToToggle, string keyword, Vector3 position, Quaternion rotation, Transform transform ,bool parent ,bool state = true)
+    public void ToggleFX(FXCategory category, FXElement whatToToggle, string keyword, Vector3 position, Quaternion rotation, Transform transform ,bool parent ,bool state = true, bool destroyAfterPlay = true)
     {
+        Debug.Log("[FX Manager] Keyword : " + keyword);
+        
         var fxList = new List<FX>();
         //FXCategory[] categories = (FXCategory[])System.Enum.GetValues(typeof(FXCategory));  
         foreach (var entry in fxDictionnairy)
@@ -94,11 +97,11 @@ public class FXManager : MonoBehaviour
             }
         }
 
-        ToggleFX(fx, whatToToggle, position, rotation, transform, parent, state);
+        ToggleFX(fx, whatToToggle, position, rotation, transform, parent, state, destroyAfterPlay);
 
     }
 
-    public void ToggleFX(FXCategory category, FXElement whatToToggle, string keyword, Transform transform , bool parent , bool state = true ) 
+    public void ToggleFX(FXCategory category, FXElement whatToToggle, string keyword, Transform transform , bool parent , bool state = true, bool destroyAfterPlay = true ) 
     {
         if (fxDictionnairy.Count == 0) return;
 
@@ -133,38 +136,43 @@ public class FXManager : MonoBehaviour
 
     }
 
-    public void ToggleFX(List<FX> fxList, FXElement whatToToggle, Transform transform, bool parent , bool state)
+    public void ToggleFX(List<FX> fxList, FXElement whatToToggle, Transform transform, bool parent , bool state, bool destroyAfterPlay)
     {
         
     
-        ToggleFX(fxList, whatToToggle, transform.position, transform.rotation, transform, parent ,state);
+        ToggleFX(fxList, whatToToggle, transform.position, transform.rotation, transform, parent ,state, destroyAfterPlay);
        
     }
    
 
-    public void ToggleFX(List<FX> fxList, FXElement whatToToggle, Vector3 position, Quaternion rotation, Transform transform, bool parent, bool state)
+    public void ToggleFX(List<FX> fxList, FXElement whatToToggle, Vector3 position, Quaternion rotation, Transform transform, bool parent, bool state, bool destroyAfterPlay)
     {
         if (fxList.Count == 0) return;
 
         int index = 0;
         if (fxList.Count != 1) index = UnityEngine.Random.Range((int)0, (int)(fxList.Count - 1));
 
-        ToggleFX(fxList[index], whatToToggle, position, rotation, transform ,parent, state);
+        ToggleFX(fxList[index], whatToToggle, position, rotation, transform ,parent, state, destroyAfterPlay);
     }
 
-    public void ToggleFX(FX fx, FXElement whatToToggle, Vector3 position, Quaternion rotation, Transform transform, bool parent ,bool state) 
+    public void ToggleFX(FX fx, FXElement whatToToggle, Vector3 position, Quaternion rotation, Transform transform, bool parent ,bool state,bool destroyAfterPlay) 
     {
         FXHandler fxHandler;
         switch (whatToToggle)
         {
 
             case FXElement.All:
-                if(parent) fxHandler = SpawnFXPrefab(fx.fxPrefab,transform);
-                else fxHandler = SpawnFXPrefab(fx.fxPrefab, position, rotation);
-                fxHandler.Initialize(fx);
-                //PlayAudio(fx.audios, true);
-                fxHandler.PlayAudio();
-                activeFX.Add(fxHandler);
+                if(fx.fxPrefabs.Count == 0) return;
+                foreach (var fxPrefab in fx.fxPrefabs)
+                {
+                    if(parent) fxHandler = SpawnFXPrefab(fxPrefab,transform);
+                    else fxHandler = SpawnFXPrefab(fxPrefab, position, rotation);
+                    fxHandler.Initialize(fx);
+                    //PlayAudio(fx.audios, true);
+                    fxHandler.PlayAudio();
+                    activeFX.Add(fxHandler);
+                }
+                
 
                 break;
 
@@ -173,22 +181,29 @@ public class FXManager : MonoBehaviour
 
                 break;
             case FXElement.Visual:
-                if (parent) fxHandler = SpawnFXPrefab(fx.fxPrefab, transform);
-                else fxHandler = SpawnFXPrefab(fx.fxPrefab, position, rotation);
-                fxHandler.Initialize(fx);
-                activeFX.Add(fxHandler);
+                if(fx.fxPrefabs.Count == 0) return;
+                foreach (var fxPrefab in fx.fxPrefabs)
+                {
+                    if (parent) fxHandler = SpawnFXPrefab(fxPrefab, transform);
+                    else fxHandler = SpawnFXPrefab(fxPrefab, position, rotation);
+                    fxHandler.Initialize(fx);
+                    activeFX.Add(fxHandler);
+                }
 
                 break;
 
             default:
                 break;
+
+                fxHandler.InitiateDestroy();
+            
         }
     }
 
-    public void ToggleFX(FX fx, FXElement whatToToggle, Transform transform, bool parent ,bool state) 
+    public void ToggleFX(FX fx, FXElement whatToToggle, Transform transform, bool parent ,bool state,bool destroyAfterPlay) 
     {
         if (transform == null) return;
-        ToggleFX(fx, whatToToggle, transform.position, transform.rotation, transform, parent, state);
+        ToggleFX(fx, whatToToggle, transform.position, transform.rotation, transform, parent, state, destroyAfterPlay);
        
     }
 
@@ -237,17 +252,40 @@ public class FXManager : MonoBehaviour
     }
 
 
-
-
     private void OnEnable()
     {
-      
+        EventBus.OnCollision += ToggleCollisionFX;
+        EventBus.OnCollisionProcessed += ToggleCollisionFX;
     }
-
-
 
     private void OnDisable()
     {
-        
+        EventBus.OnCollision-= ToggleCollisionFX;
+        EventBus.OnCollisionProcessed -= ToggleCollisionFX;
     }
+    
+    private void ToggleCollisionFX(CollisionData collisionData)
+    {
+        var position = collisionData._impactPoint.point;
+        
+        /*dont do any fx if player not there*/
+        if( !CanPlayerSee(position)) return;
+
+        var angle = collisionData._projectile.Velocity.normalized *-1;
+
+        Quaternion rotation = Quaternion.Euler(angle);
+        
+
+        string keyword = collisionData.processed ?  collisionData._collisionType.ToString() : "Impact";
+       
+        
+       ToggleFX(FXCategory.Collision, FXElement.All, keyword ,position, rotation, collisionData._target.transform, false);
+    }
+
+    private bool CanPlayerSee(Vector3 position)
+    {
+        return true;
+    }
+
+ 
 }

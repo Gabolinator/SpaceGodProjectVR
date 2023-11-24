@@ -23,6 +23,22 @@ public enum CollidingBodyRole
     Other
 }
 
+
+[System.Serializable]
+public struct CollisionPreferences
+{
+    public CollisionType collisionType;
+
+    public float energyMultiplier;
+    
+    public float delay;
+
+    public float impactPointOffset;
+
+    public float lossOfEnergy; 
+
+}
+
 [System.Serializable]
 public class CollidingBody 
 {
@@ -55,14 +71,11 @@ public class CollisionData
 {
     public string _id;
     public List<CollidingBody> _collidingBodies = new();
-    //public AstralBodyHandler _body1;
-    //public AstralBodyHandler _body2;
+   
     public CollidingBody _targetBody; 
     public CollidingBody _projectileBody;
     public AstralBodyHandler _target => _targetBody._body;
     public AstralBodyHandler _projectile => _projectileBody._body;
-    //public Vector3 _projectileImpactVelocity;
-    // public Vector3 _targetImpactVelocity;
     public Vector3 _collisionEnergyDirection; 
     public double _collisionEnergy;
     public Vector3 impactImpulse;
@@ -74,6 +87,10 @@ public class CollisionData
 
     public AstralBodyType _resultingAstralBodyType = AstralBodyType.other;
 
+    public bool processed = false;
+
+    public CollisionPreferences _collisionPrefs;
+    
     public float _energyLoss;
     public bool _inProcess = false; 
     bool _showDebugLog = true;
@@ -142,7 +159,10 @@ public class CollisionManager : MonoBehaviour
     public static CollisionManager Instance => _instance;
 
     public FractureManager _fractureManager = new FractureManager();
-
+    
+    [SerializeField]
+    private List<CollisionPreferences> _collisionPreferences = new List<CollisionPreferences>();
+    
     public AstralBodiesManager _astralBodyManager => AstralBodiesManager.Instance;
 
     public List<CollisionData> _unProcessedCollisions;
@@ -151,7 +171,7 @@ public class CollisionManager : MonoBehaviour
     public float _processRate = 0.1f;
     public float _lossOfEnergyOnImpact = .15f;
 
-    public float _explosionEnergyMultiplier = 0.1f;
+    //public float _explosionEnergyMultiplier = 0.1f;
 
 
     public bool testMode = true;
@@ -159,7 +179,8 @@ public class CollisionManager : MonoBehaviour
 
     public bool showDebugLog = true;
 
-
+    public  Action<CollisionData> OnImpact => EventBus.OnCollision;
+    public  Action<CollisionData> OnAfterImpact => EventBus.OnCollisionProcessed;
     public void CreatingCollision(AstralBodyHandler body1, AstralBodyHandler body2, Collision collision)
     {
         if (!body1 || !body2) return;
@@ -175,9 +196,38 @@ public class CollisionManager : MonoBehaviour
 
         collisionData._collisionType = DeterminingCollisionType(collisionData);
 
-        ToggleFX(collisionData);
-
+        collisionData._collisionPrefs =  GetCollisionPrefs(collisionData._collisionType);
+        
+        
+       //ToggleFX(collisionData);
+        
         RegisterCollision(_unProcessedCollisions, collisionData);
+        
+        OnImpact?.Invoke(collisionData);
+        
+    }
+
+    private CollisionPreferences GetCollisionPrefs(CollisionType collisionType)
+    {
+        var defaultPref = new CollisionPreferences()
+        {
+            collisionType = collisionType,
+            energyMultiplier = 1f,
+            delay = 0.5f,
+            impactPointOffset = 0f,
+            lossOfEnergy = .6f
+        };
+
+        
+        if (_collisionPreferences.Count == 0)
+            return defaultPref;
+
+        foreach (var pref in _collisionPreferences)
+        {
+            if (pref.collisionType == collisionType) return pref;
+        }
+
+        return defaultPref;
     }
 
     private CollisionType DeterminingCollisionType(CollisionData collision)
@@ -269,7 +319,12 @@ public class CollisionManager : MonoBehaviour
 
         }
 
+        collision.processed = processed;
 
+        //ToggleFX(collision);
+        
+        OnAfterImpact?.Invoke(collision);
+        
         return processed;
     }
 
@@ -357,9 +412,12 @@ public class CollisionManager : MonoBehaviour
         if (showDebugLog) Debug.Log("[Collision Manager] Processing Super Catastrophic Regime");
 
         var point = collision._impactPoint.point;
+        point -= (collision._target.transform.position - point).normalized * collision._collisionPrefs.impactPointOffset;
+        
+        
         var collisionEnergy = collision._collisionEnergy;
-        float energy = (float)collisionEnergy;
-        energy *= _explosionEnergyMultiplier;
+        float energy = (float)collisionEnergy*(1-collision._collisionPrefs.lossOfEnergy);
+        energy *= collision._collisionPrefs.energyMultiplier;
 
 
         var fractureLogic = _fractureManager.AssignFractureComponent(collision._target.gameObject);
@@ -367,24 +425,7 @@ public class CollisionManager : MonoBehaviour
 
         fractureLogic = _fractureManager.AssignFractureComponent(collision._projectile.gameObject);
         if (fractureLogic != null) fractureLogic.FractureBody(collision);
-
-
-        //  if (fragmentsTarget == null || fragmentsProjectile == null)
-        //  {
-        //      return true;
-        //  }
-        //
-        //  if (fragmentsTarget.Count != 0)
-        // {
-        //     ExplosionImpact(fragmentsTarget, collision._target,point,energy, collision._collisionEnergyDirection); 
-        // }
-        //
-        // if(fragmentsProjectile != null)
-        // if (fragmentsProjectile.Count != 0)
-        // {
-        //     ExplosionImpact(fragmentsProjectile, collision._projectile, point,  energy, -collision._collisionEnergyDirection);
-        // }
-
+        
         return true;
     }
 
@@ -440,7 +481,7 @@ public class CollisionManager : MonoBehaviour
         /*are we mergin instantly or are we doing it over time */
         if (!instant)
         {
-            StartCoroutine(MergingCoroutine(collision, 2f));
+            StartCoroutine(MergingCoroutine(collision, collision._collisionPrefs.delay));
         }
         else MergingBodies(collision);
 
@@ -456,8 +497,14 @@ public class CollisionManager : MonoBehaviour
 
         var velocityLoss = MathF.Sqrt(collision._energyLoss / (float)collision._projectile.Mass);
 
-        StartCoroutine(collision._target.LerpToBodyOverTimeCoroutine(collision._resultingBodies[0], .5f, false));
-
+        StartCoroutine(collision._target.LerpToBodyOverTimeCoroutine(collision._resultingBodies[0], collision._collisionPrefs.delay, false));
+        
+        var meshDeformer = collision._target.GetComponent<MeshDeformer>();
+        var point = collision._impactPoint.point;
+        point -= (collision._target.transform.position - point).normalized * collision._collisionPrefs.impactPointOffset;
+        
+        if (meshDeformer) StartCoroutine(meshDeformer.AddDeformingForceCoroutine(collision._collisionPrefs.delay,.01f,point, (float)collision._collisionEnergy*.1f));
+        
         AstralBodiesManager.Instance.DestroyBody(collision._projectile);
 
         return true;
@@ -493,6 +540,11 @@ public class CollisionManager : MonoBehaviour
         collision._projectile.transform.parent = collision._target.transform;
         collision._projectile.transform.localRotation = Quaternion.identity;
 
+
+        var meshDeformer = collision._target.GetComponent<MeshDeformer>();
+        var point = collision._impactPoint.point;
+        point -= (collision._target.transform.position - point).normalized * collision._collisionPrefs.impactPointOffset;
+
         var drag = 0;
         float t = 0;
         do
@@ -508,6 +560,9 @@ public class CollisionManager : MonoBehaviour
 
             collision._target.LerpToBodyOverTime(collision._resultingBodies[0], t, delay, false);
 
+            if (meshDeformer) meshDeformer.AddDeformingForceInternal(Time.deltaTime, point, (float)collision._collisionEnergy*(1-collision._collisionPrefs.lossOfEnergy)*collision._collisionPrefs.energyMultiplier);
+            
+            
             t += Time.deltaTime;
             yield return null;
 
@@ -516,7 +571,7 @@ public class CollisionManager : MonoBehaviour
         collision._projectile.thisRb.drag = 0;
         // collision._projectile.thisRb.velocity = collision._target.thisRb.velocity;
 
-        AstralBodiesManager.Instance.DestroyBody(collision._projectile, 30);
+        AstralBodiesManager.Instance.DestroyBody(collision._projectile, .1f);
 
 
         CollisionProcessed(collision);
@@ -600,7 +655,7 @@ public class CollisionManager : MonoBehaviour
 
         targetBody.DestroySelf();
 
-        StartCoroutine(DelayedForce(.001f, allRb, impactPoint, force, forceDirection));
+        StartCoroutine(DelayedForce(.005f, allRb, impactPoint, force, forceDirection));
 
     }
 
@@ -609,9 +664,9 @@ public class CollisionManager : MonoBehaviour
         
         var point = collision._impactPoint.point;
         var collisionEnergy = collision._collisionEnergy;
-        float energy = (float)collisionEnergy;
-        energy *= _explosionEnergyMultiplier;
-
+        float energy = (float)collisionEnergy *(1- collision._collisionPrefs.lossOfEnergy);
+        energy *= collision._collisionPrefs.energyMultiplier;
+       
 
         energy *= (targetBody == collision._target) ? 1 : -.5f;
         
@@ -624,7 +679,7 @@ public class CollisionManager : MonoBehaviour
     private IEnumerator DelayedForce(float delay, List<Rigidbody> allRb,Vector3 impactPoint, float forceMagnitude, Vector3 forceDirection)
     {
         yield return new WaitForSeconds(delay);
-        Debug.Log("Adding force of "+ forceMagnitude +" to rb ");
+        //Debug.Log("Adding force of "+ forceMagnitude +" to rb ");
         AddForceToAllRb(allRb, impactPoint, forceMagnitude, forceDirection);
        
     }
@@ -634,7 +689,8 @@ public class CollisionManager : MonoBehaviour
         if(allRb.Count == 0) return;
         foreach (var rb in allRb)
         {
-            Debug.Log("Adding force of "+ forceMagnitude +" to rb: " + rb);
+           // Debug.Log("Adding force of "+ forceMagnitude +" to rb: " + rb + "of mass: " + rb.mass);
+          
             AddExplosionForceToRb(rb, forceMagnitude,forceDirection ,point);
         }
     }
@@ -653,7 +709,9 @@ public class CollisionManager : MonoBehaviour
         //Debug.Log("Adding force of "+ vectorForce +" to : "+rb );
     }
     private void ToggleFX(CollisionData collisionData)
-    {
+    {   
+        
+        //TODO coould use delegate OnCollisionProcessed ? have that there ? 
         /*dont do any fx if player not there*/
         if( !CanPlayerSee()) return;
 
@@ -662,7 +720,10 @@ public class CollisionManager : MonoBehaviour
         Quaternion rotation = Quaternion.Euler(angle);
         var position = collisionData._impactPoint.point;
 
-        FXManager.Instance.ToggleFX(FXCategory.Collision, FXElement.All, "impact" ,position, rotation, collisionData._target.transform, false);
+        string keyword = collisionData.processed ?  collisionData._collisionType.ToString() : "Impact";
+       
+        
+        FXManager.Instance.ToggleFX(FXCategory.Collision, FXElement.All, keyword ,position, rotation, collisionData._target.transform, false);
 
     }
 

@@ -1,7 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-
+using DinoFracture;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -44,7 +44,12 @@ public class AstralBodyHandler : MonoBehaviour
     public float MaxDetectionRange => UniverseManager.Instance.MaxDetectionRange;
 
     [SerializeField] protected float _influenceStrength = 1; //1  = normal influence, 0  = no influence
-    public float InfluenceStrength => _influenceStrength;
+    public float InfluenceStrength
+    {
+        get { return _influenceStrength; }
+        set { _influenceStrength = value; }
+
+    }
 
     public double KyneticEnergy => CalculateBodyEnergy();
 
@@ -122,7 +127,7 @@ public class AstralBodyHandler : MonoBehaviour
     public List<Vector3> accelerations = new List<Vector3>();
     public double currentRadiusOfTrajectory;
     private float timeElapsed;
-    private bool firstUpdate = true;
+    public bool firstUpdate = true;
     public bool gravityDisabled;
 
    private bool _shouldInitialize = true;
@@ -141,10 +146,12 @@ public class AstralBodyHandler : MonoBehaviour
        set => _enableCollision = value;
    }
 
-   protected bool enableGravity => UniverseManager.Instance.enableGravity && !isGrabbed && !gravityDisabled;
+   public float enableCollisionDelay;
+   
+   public bool EnableGravity => UniverseManager.Instance.enableGravity && !isGrabbed && !gravityDisabled;
 
 
-    public bool showDebugLog => AstralBodiesManager.Instance._showDebugLog;
+    public bool ShowDebugLog => AstralBodiesManager.Instance._showDebugLog;
 
 
 
@@ -163,21 +170,34 @@ public class AstralBodyHandler : MonoBehaviour
     private void Initialize()
     {
         if(!_shouldInitialize) return;
-        //if (body == null) return;
-        if (Radius == 0) Radius = body.CalculateRadius(transform.localScale);
-        else SetScaleFromRadius(Radius);
-        
-        if (Volume == 0) Volume = body.CalculateVolume(Radius);
-        
-        if (Density == 0 && Mass == 0)
+
+        FracturedObject fracturedObject = GetComponent<FracturedObject>();
+        if (fracturedObject)
         {
-            Density = 1000;
-            Mass = body.CalculateMass(Density, Volume);
+            Mass = fracturedObject.ThisMass;
+            Volume = fracturedObject.ThisVolume;
+            Density = body.CalculateDensity(Mass, Volume);
         }
-        
-        else if (Density == 0 && Mass != 0) Density = body.CalculateDensity(Mass, Volume);
-        
+
+
+        else
+        {
+            if (Radius == 0) Radius = body.CalculateRadius(transform.localScale);
+            else SetScaleFromRadius(Radius);
+
+            if (Volume == 0) Volume = body.CalculateVolume(Radius);
+
+            if (Density == 0 && Mass == 0)
+            {
+                Density = 1000;
+                Mass = body.CalculateMass(Density, Volume);
+            }
+
+            else if (Density == 0 && Mass != 0) Density = body.CalculateDensity(Mass, Volume);
+        }
+
         if (thisRb == null) thisRb = GetComponent<Rigidbody>();
+        
         if (Mass != 0) thisRb.mass = (float)Mass;
         
         if (ID == "") ID = GenerateId();
@@ -445,7 +465,7 @@ public class AstralBodyHandler : MonoBehaviour
             allBodiesInRange = GetAllBodyInRange(range, allBodiesInRange, transform.position);
 
             totalForceOnObject = CalculateTotalGravityPull(allBodiesInRange, this.transform.position);
-
+            
 
             yield return new WaitForSeconds(delay);
 
@@ -565,7 +585,7 @@ public class AstralBodyHandler : MonoBehaviour
         RegisterSelf();
     }
 
-    private void UpdateVelocities(bool firstTime = false)
+    public void UpdateVelocities(bool firstTime = false)
     {
 
         var velocityChanged = firstTime;
@@ -610,7 +630,8 @@ public class AstralBodyHandler : MonoBehaviour
         //body = new AstralBodyInternal(2000, 2000, new Vector3(0, 0, 0));
 
         _enableCollision = false;
-        StartCoroutine(EnableCollisionCoroutine(true, 1));
+     
+        StartCoroutine(EnableCollisionCoroutine(true, enableCollisionDelay));
         Initialize();
 
         bodyDescriptor = new AstralBodyDescriptor(body);
@@ -626,21 +647,21 @@ public class AstralBodyHandler : MonoBehaviour
         
     }
 
-
+//moved it to astralbody manager for optimization 
     protected virtual void FixedUpdate()
     {
-        UpdateVelocities(firstUpdate);
-        firstUpdate = false;
-
-
-
-        if (thisRb && enableGravity && totalForceOnObject != Vector3.zero)
-        {
-            var ratioMass = Mass / thisRb.mass; // if we lost mass cause of the cast to float , compensate force applied
-   
-            thisRb.AddForce(totalForceOnObject =
-                ratioMass == 1 ? totalForceOnObject : totalForceOnObject / (float)ratioMass);
-        }
+        // UpdateVelocities(firstUpdate);
+        // firstUpdate = false;
+        //
+        //
+        //                 
+        // if (thisRb && EnableGravity && totalForceOnObject != Vector3.zero)
+        // {
+        //     var ratioMass = Mass / thisRb.mass; // if we lost mass cause of the cast to float , compensate force applied
+        //
+        //     thisRb.AddForce(totalForceOnObject =
+        //         ratioMass == 1 ? totalForceOnObject : totalForceOnObject / (float)ratioMass);
+        // }
     }
 
 

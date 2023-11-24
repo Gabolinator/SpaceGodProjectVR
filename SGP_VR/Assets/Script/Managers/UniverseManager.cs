@@ -168,6 +168,7 @@ public class UniverseManager : MonoBehaviour
 
     private void UpdateInfluenceStrength(AstralBodyHandler obj)
     {
-        obj.SetInfluence(PhysicsProperties.DirectGravityPullMultiplier);
+        if(obj.BodyType != AstralBodyType.Fragment)  obj.SetInfluence(PhysicsProperties.DirectGravityPullMultiplier);
+        else obj.SetInfluence(PhysicsProperties.DirectGravityPullMultiplier/50);
     }
 }

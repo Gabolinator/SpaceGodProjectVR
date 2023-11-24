@@ -26,13 +26,13 @@ public class VisualIndicatorHandler : MonoBehaviour
     public Color _trailColor;
     public float trajectoryRefresh => _indicatorManager._refreshRate;
 
-    public bool showTrajectory => _indicatorManager.showTrajectory && !_thisBody.isGrabbed && !forceDisableTrajectory;
+    public bool showTrajectory => _indicatorManager.ShowTrajectory && !_thisBody.isGrabbed && !forceDisableTrajectory;
     public float _duration = 1;
     public bool forceDisableTrajectory;
 
     public AstralBodyHandler _thisBody;
     public Vector3 _totalPull = Vector3.zero;
-    public bool showTrail => _indicatorManager.showTrail && !_thisBody.isGrabbed && !forceDisableTrail;
+    public bool showTrail => _indicatorManager.ShowTrail && !_thisBody.isGrabbed && !forceDisableTrail;
     public bool forceDisableTrail;
     private List<AstralBodyHandler> _allBodiesInRange => _thisBody.allBodiesInRange;
 
@@ -49,9 +49,12 @@ public class VisualIndicatorHandler : MonoBehaviour
 
         trajectoryPrefab = _indicatorManager.TrajectoryPrefab;
         _trajectoryColor = _indicatorManager.TrajectoryColor;
+        _trailColor = _indicatorManager.TrailColor;
 
 
-        StartCoroutine(HandleIndicators(1f));
+        HandleTrajectory();
+        HandlePullLines();
+        
     }
 
     private IEnumerator HandleIndicators(float delay)
@@ -87,25 +90,23 @@ public class VisualIndicatorHandler : MonoBehaviour
         }
     }
 
-    private void HandleTrajectory()
+    public void HandleTrajectory()
     {
         if (showTrajectory)
         {
             if (_trajectoryDrawer == null)
             {
                 _trajectoryDrawer = CreateTrajectoryDrawer();
-                _trajectoryDrawer.UpdateLineColor(_trajectoryColor);
-               
             }
 
             _trajectoryDrawer.duration = _duration;
             if (_trajectoryDrawer != null) _trajectoryDrawer.trajectoryLineRenderer.enabled = true;
+            _trajectoryDrawer.UpdateLineColor(_trajectoryColor);
         }
 
         else
         {
             if (_trajectoryDrawer != null) _trajectoryDrawer.trajectoryLineRenderer.enabled = false;
-            //if (_trajectoryDrawer != null) Destroy(_trajectoryDrawer.gameObject);
         }
 
         if (showTrail)
@@ -113,18 +114,17 @@ public class VisualIndicatorHandler : MonoBehaviour
             if (_trajectoryDrawer == null)
             {
                 _trajectoryDrawer = CreateTrajectoryDrawer();
-                _trajectoryDrawer.UpdateLineColor(_trajectoryColor);
-
             }
 
             _trajectoryDrawer.duration = _duration;
             if (_trajectoryDrawer != null) _trajectoryDrawer.trailLineRenderer.enabled = true;
+            UpdateTrailColor(_trailColor);
         }
 
         else
         {
             if (_trajectoryDrawer != null) _trajectoryDrawer.trailLineRenderer.enabled = false;
-            //if (_trajectoryDrawer != null) Destroy(_trajectoryDrawer.gameObject);
+           
         }
 
     }
@@ -136,7 +136,7 @@ public class VisualIndicatorHandler : MonoBehaviour
     private VectorLine CreateVectorLine(Vector3 vector)
     {
       
-        if (!linePrefab || vector == null) return null;
+        if (!linePrefab ||Â vector == null) return null;
 
         var linePrefabClone = Instantiate(linePrefab, this.transform.position, Quaternion.identity);
         linePrefabClone.transform.parent = this.transform;
@@ -147,6 +147,11 @@ public class VisualIndicatorHandler : MonoBehaviour
         line.UpdateLine(vector, (float)_thisBody.Radius, this.transform.position);
 
         return line;
+    }
+
+    public void UpdateLine()
+    {
+        UpdateLine(_totalPullLine, _thisBody.totalForceOnObject.normalized * (float)_thisBody.currentRadiusOfTrajectory);
     }
 
     private void UpdateLine(VectorLine line, Vector3 vector) 
@@ -185,11 +190,16 @@ public class VisualIndicatorHandler : MonoBehaviour
     {
        
         if (_trajectoryDrawer) Destroy(_trajectoryDrawer.gameObject);
+        
         _trajectoryDrawer = null; 
-
     }
 
-    private void DestroyTrajectoryDrawer(SelectEnterEventArgs obj)
+    public void DestroyTrajectoryDrawer()
+    {
+        DestroyTrajectory();
+    }
+
+    public void DestroyTrajectoryDrawer(SelectEnterEventArgs obj)
     {
         if (obj == null) return;
         var body = obj.interactableObject.transform.GetComponent<AstralBodyHandler>();
@@ -197,7 +207,7 @@ public class VisualIndicatorHandler : MonoBehaviour
         DestroyTrajectoryDrawer(true, body);
     }
 
-    private void DestroyTrajectoryDrawer(bool state, AstralBodyHandler body) 
+    public void DestroyTrajectoryDrawer(bool state, AstralBodyHandler body) 
     {
         if(!state) return;
         if (!body) return;
@@ -236,26 +246,92 @@ public class VisualIndicatorHandler : MonoBehaviour
  
     }
 
-    private void ResetTrailPoints() => _trajectoryDrawer.ResetTrailPoint();
+    private void ResetTrailPoints() =>Â _trajectoryDrawer.ResetTrailPoint();
  
 
-    private void OnEnable()
-    {
-        EventBus.OnObjectGrabbed += DestroyTrajectoryDrawer;
-        EventBus.OnBodyEdit += DestroyTrajectoryDrawer;
-        //EventBus.OnObjectReleased += ResetTrailPoints;
-    }
-
-   
-
-    private void OnDisable()
-    {
-        EventBus.OnObjectGrabbed -= DestroyTrajectoryDrawer;
-        //EventBus.OnObjectReleased -= ResetTrailPoints;
-    }
+    // private void OnEnable()
+    // {
+    //     EventBus.OnObjectGrabbed += DestroyTrajectoryDrawer;
+    //     EventBus.OnBodyEdit += DestroyTrajectoryDrawer;
+    //     //EventBus.OnObjectReleased += ResetTrailPoints;
+    // }
+    //
+    //
+    //
+    // private void OnDisable()
+    // {
+    //     EventBus.OnObjectGrabbed -= DestroyTrajectoryDrawer;
+    //     //EventBus.OnObjectReleased -= ResetTrailPoints;
+    // }
     private void LateUpdate()
     {
-        UpdateLine(_totalPullLine, _thisBody.totalForceOnObject.normalized * (float)_thisBody.currentRadiusOfTrajectory);
+      //  UpdateLine(_totalPullLine, _thisBody.totalForceOnObject.normalized * (float)_thisBody.currentRadiusOfTrajectory);
 
     }
+
+    public void ShowTrajectory()
+    {
+        if (_trajectoryDrawer == null)
+        {
+            _trajectoryDrawer = CreateTrajectoryDrawer();
+            UpdateTrajectoryColor(_trajectoryColor);
+
+        }
+
+        _trajectoryDrawer.duration = _duration;
+        if (_trajectoryDrawer != null) _trajectoryDrawer.trajectoryLineRenderer.enabled = true;
+    }
+
+    public void HideTrajectory()
+    {
+        if (!showTrail)
+        {
+            DestroyTrajectory(); 
+            return;
+        }
+        
+        if (_trajectoryDrawer != null) _trajectoryDrawer.trajectoryLineRenderer.enabled = false;
+    }
+
+    public void HideTrail()
+    {
+        
+        if (!showTrajectory)
+        {
+            DestroyTrajectory(); 
+            return;
+        }
+        if (_trajectoryDrawer != null) _trajectoryDrawer.trailLineRenderer.enabled = false;
+    }
+
+    public void ShowTrail()
+    {
+        if (_trajectoryDrawer == null)
+        {
+            _trajectoryDrawer = CreateTrajectoryDrawer();
+            UpdateTrailColor(_trailColor);
+
+        }
+
+        _trajectoryDrawer.duration = _duration;
+        if (_trajectoryDrawer != null) _trajectoryDrawer.trailLineRenderer.enabled = true;
+    }
+
+
+    public void UpdateTrailColor(Color color)
+    {
+        if (_trajectoryDrawer == null) return;
+        Debug.Log("Update trail color");
+        _trajectoryDrawer.UpdateLineColor(_trajectoryDrawer.trailLineRenderer, new Color(color.r, color.g, color.b,0), new Color(color.r, color.g, color.b,color.a == 0 ? .1f: color.a) );
+    }
+    public void UpdateTrajectoryColor(Color color)
+    {
+        if (_trajectoryDrawer == null) return;
+        Debug.Log("Update trajectory color");
+        
+        _trajectoryDrawer.UpdateLineColor(_trajectoryDrawer.trajectoryLineRenderer, new Color(color.r, color.g, color.b,0),  new Color(color.r, color.g, color.b,0) );
+       // _trajectoryDrawer.UpdateLineColor(_trajectoryColor = color);
+      
+    }
+
 }

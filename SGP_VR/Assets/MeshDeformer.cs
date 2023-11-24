@@ -89,14 +89,14 @@ public class MeshDeformer : MonoBehaviour {
 		UpdateVertex(i, Time.deltaTime, springForce, damping);
 	}
 
-	public void AddDeformingForce (Vector3 point, float force) {
-		if(coroutineActive) return;
-		
-		point = transform.InverseTransformPoint(point);
-		for (int i = 0; i < displacedVertices.Length; i++) {
-			AddForceToVertex(i, point, force, Time.deltaTime);
-		}
-	}
+	// public void AddDeformingForce (Vector3 point, float force) {
+	// 	if(coroutineActive) return;
+	// 	
+	// 	point = transform.InverseTransformPoint(point);
+	// 	for (int i = 0; i < displacedVertices.Length; i++) {
+	// 		AddForceToVertex(i, point, force, Time.deltaTime);
+	// 	}
+	// }
 
 	void AddForceToVertex (int i, Vector3 point, float force, float time) {
 		Vector3 pointToVertex = displacedVertices[i] - point;
@@ -106,7 +106,7 @@ public class MeshDeformer : MonoBehaviour {
 		vertexVelocities[i] += pointToVertex.normalized * velocity;
 	}
 	
-	void AddDeformingForceInternal (float time, Vector3 point, float force) {
+	public void  AddDeformingForceInternal (float time, Vector3 point, float force) {
 
 		point = transform.InverseTransformPoint(point);
 		for (int i = 0; i < displacedVertices.Length; i++) {
@@ -124,6 +124,8 @@ public class MeshDeformer : MonoBehaviour {
 		if (coroutineActive) yield return null;
 		float t = 0;
 
+		
+		
 		coroutineActive = true;
 		while (t<overTime)
 		{
@@ -147,55 +149,13 @@ public class MeshDeformer : MonoBehaviour {
 		vertexVelocities = new Vector3[originalVertices.Length];
 	}
 
-	Mesh[] CreateFracturedMeshes(Mesh originalMesh)
+	public void AddDeformingForce(Vector3 point, float force)
 	{
-		// Split the original mesh into two separate meshes
-		// For simplicity, we are just splitting along the X-axis
-		Vector3[] vertices = originalMesh.vertices;
-		int halfVerticesCount = vertices.Length / 2;
-
-		// Create two new meshes
-		Mesh mesh1 = new Mesh();
-		Mesh mesh2 = new Mesh();
-
-		// Assign vertices to each mesh
-		mesh1.vertices = vertices.Take(halfVerticesCount).ToArray();
-		mesh2.vertices = vertices.Skip(halfVerticesCount).ToArray();
-
-		// Copy other mesh data
-		mesh1.triangles = originalMesh.triangles.Take(originalMesh.triangles.Length/2).ToArray();
-		mesh2.triangles = originalMesh.triangles.Skip(originalMesh.triangles.Length/2).ToArray();
-
-		// Create Normals and UVs
-		mesh1.RecalculateNormals();
-		mesh1.RecalculateBounds();
-		mesh2.RecalculateNormals();
-		mesh2.RecalculateBounds();
-
-		return new Mesh[] { mesh1, mesh2 };
+		float overtime = 2;
+		float freq = .1f;
+		StartCoroutine(AddDeformingForceCoroutine(overtime, freq, point, force));
 	}
 
-	public void CreateFracturedObjects()
-	{
-		var meshes = CreateFracturedMeshes(deformingMesh);
-		CreateFracturedObjects(meshes);
-	}
 
-	void CreateFracturedObjects(Mesh[] fracturedMeshes)
-	{
-		// Create game objects with MeshFilter and MeshRenderer components for the fractured parts
-		for (int i = 0; i < fracturedMeshes.Length; i++)
-		{
-			GameObject fracturedObject = new GameObject("Fractured Part " + (i + 1));
-			fracturedObject.transform.position = transform.position;
-			fracturedObject.transform.rotation = transform.rotation;
-
-			MeshFilter meshFilter = fracturedObject.AddComponent<MeshFilter>();
-			meshFilter.mesh = fracturedMeshes[i];
-
-			MeshRenderer meshRenderer = fracturedObject.AddComponent<MeshRenderer>();
-			//meshRenderer.material = fracturedMaterial; // Assign the material for the fractured parts
-		}
-	}
 
 }

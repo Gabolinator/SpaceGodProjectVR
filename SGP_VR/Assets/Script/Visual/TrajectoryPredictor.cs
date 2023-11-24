@@ -113,14 +113,14 @@ public class TrajectoryPredictor
 
             lastTime = predictionTime;
            
-            if(predictedTrajectoryPoints.Count >= maxNumberOfPoints || (useMaxDistance && distance > maxDistance)) break;
+            if(predictedTrajectoryPoints.Count >= maxNumberOfPoints ||Â (useMaxDistance && distance > maxDistance)) break;
 
         }
     }
 
   
 
-    private Vector3 GetAcceleration(AstralBodyHandler body) => FormulaLibrairy.GetAcceleration(body);
+    private Vector3 GetAcceleration(AstralBodyHandler body) =>Â FormulaLibrairy.GetAcceleration(body);
  
 
     private Vector3 GetAcceleration(AstralBodyHandler body, Vector3 atPosition, float timeStep) => FormulaLibrairy.GetAcceleration(body, atPosition, timeStep);
