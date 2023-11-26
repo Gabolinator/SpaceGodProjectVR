@@ -20,3 +20,10 @@ MonoBehaviour:
   _maxDensity: 10000
   _minMass: 5960
   _maxMass: 59600
+  _bodyComposition: []
+  _cMin: 1.6
+  _cMax: 2.2
+  _uMin: 0.35
+  _uMax: 0.37
+  _sMin: 1
+  _sMax: 1

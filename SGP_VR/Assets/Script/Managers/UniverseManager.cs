@@ -8,28 +8,29 @@ using UnityEngine;
 [System.Serializable]
 public class PhysicsProperties
 {
-    [SerializeField] private const double _gravitationnalConstant = 6.6743;
+    private const double _gravitationnalConstant = 6.6743;
    
     public double GravitationnalConstant => _gravitationnalConstant;
 
-    [SerializeField] private const double _gravitationnalConstantFactor = 1E-11;
+   private const double _gravitationnalConstantFactor = 1E-11;
     public double GravitationnalConstantFactor => _gravitationnalConstantFactor;
 
-    [SerializeField] private const double _massFactor = 1E21;
+    private const double _massFactor = 1E21;
     public double MassFactor => _massFactor;
 
-    [SerializeField] private const double _timeFactor =1;
+    private const double _timeFactor =1;
     public double TimeFactor => _timeFactor;
 
-    [SerializeField] private const double _densityFactor =1;
+    private const double _densityFactor =1;
     public double DensityFactor => _densityFactor;
 
-    [SerializeField] private const double _velocityFactor =1;
-    public double VelocityFactor => _velocityFactor;
+     private const double _velocityFactor =100; 
+    public double VelocityFactor => DistanceFactor/TimeFactor;
 
     [SerializeField] private const double _distanceFactor = 1.00068976040482E7;
     public double DistanceFactor => _distanceFactor;
 
+    public double EnergyFactor => (.5f * MassFactor * VelocityFactor * VelocityFactor);
 
 
     [SerializeField] private float _directGravityPullMultiplier = 1000;
@@ -43,7 +44,15 @@ public class PhysicsProperties
 
 }
 
-
+[System.Serializable]
+public struct UniverseComposition
+{
+    public float smallBodyPercentage;
+    public float planetoidPercentage;
+    public float planetPercentage;
+    public float starPercentage;
+    public float blackHolePercentage;
+}
 
 
 public class UniverseManager : MonoBehaviour
@@ -95,21 +104,21 @@ public class UniverseManager : MonoBehaviour
 
     private float _universeScale => GetUniverseScale();
     public float UniverseScale => _universeScale;
+
+
+
+    [Header("Universe Composition")] 
+    public UniverseComposition universeComposition = new UniverseComposition();
+
+    public float PlanetPercentage => universeComposition.planetPercentage;
+
+    public float StarPercentage => universeComposition.starPercentage;
     
-
-
-    [Header("Universe Composition")]
-    [SerializeField] private float _planetPercentage = 60;
-    public float PlanetPercentage => _planetPercentage;
-
-    [SerializeField] private float _starPercentage = 15;
-    public float StarPercentage => _starPercentage;
-
-    [SerializeField] private float _planetoidPercentage = 20;
-    public float PlanetoidPercentage => _planetoidPercentage;
-
-    [SerializeField] private float _blackHolePercentage = 5;
-    public float BlackHolePercentage => _blackHolePercentage;
+    public float PlanetoidPercentage => universeComposition.planetoidPercentage;
+    
+    public float SmallBodyPercentage => universeComposition.smallBodyPercentage;
+    
+    public float BlackHolePercentage => universeComposition.blackHolePercentage;
 
     [Header("Gravity Pull")]
     public bool enableGravity;

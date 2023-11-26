@@ -18,6 +18,7 @@ public enum AstralBodyType
     BlackHole,
     ProtoBody,
     Fragment,
+    SmallBody,
     other,
     Uninitialized
 }
@@ -152,10 +153,11 @@ public class AstralBodiesManager : MonoBehaviour
     public float spawnZoneMax=> UniverseManager.Instance.spawnZoneMax;
 
 
-    public float planetPercentage => UniverseManager.Instance.PlanetPercentage;
-    public float starPercentage =>UniverseManager.Instance.StarPercentage;
-    public float planetoidPercentage => UniverseManager.Instance.PlanetoidPercentage;
-    public float blackHolePercentage => UniverseManager.Instance.BlackHolePercentage;
+    // public float PlanetPercentage => UniverseManager.Instance.PlanetPercentage;
+    // public float StarPercentage =>UniverseManager.Instance.StarPercentage;
+    // public float PlanetoidPercentage => UniverseManager.Instance.PlanetoidPercentage;
+    // public float BlackHolePercentage => UniverseManager.Instance.BlackHolePercentage;
+    // public float SmallBodyPercentage => UniverseManager.Instance.SmallBodyPercentage;
     public float MaxAstralBodyScale => UniverseManager.Instance.MaxAstralBodyScale;
 
     public Action<AstralBodyHandler> OnBodyDestroyed => EventBus.OnAstralBodyDestroyed;
@@ -340,6 +342,13 @@ public class AstralBodiesManager : MonoBehaviour
 
     }
 
+    public void GenerateBody(Vector3 position, AstralBody body, GenerationPrefs prefs)
+    {
+        GenerateBody(position, body, prefs.generateEverythingAtRandom, prefs.randomPhysicalCharacteristic,
+            prefs.randomVelocity, prefs.randomAngularVelocity);
+    }
+
+
     public void GenerateBody(Vector3 position, AstralBody body, bool generateAtRandom, bool generateRandomPhysicalCharacteristic , bool randomVelocity, bool randomAngularVelocity) 
     {
        
@@ -361,7 +370,7 @@ public class AstralBodiesManager : MonoBehaviour
         float delta = 10;
         int maxIteration = 15;
 
-        GeneratedBody generatedBody = _bodyGenerator.GenerateRandomBody();
+        GeneratedBody generatedBody = _bodyGenerator.GenerateRandomBody(UniverseManager.Instance.universeComposition);
         var prefab = generatedBody.prefab;
 
         if (prefab == null) return;
@@ -395,6 +404,7 @@ public class AstralBodiesManager : MonoBehaviour
         GameObject newBodyClone = Instantiate(prefab, spawnPoint, Quaternion.identity, _universeContainer ? _universeContainer.transform : null);
 
         var astralBody = generatedBody.astralBody;
+       
 
         if (!randomVelocity) astralBody.StartVelocity = Vector3.zero;
         if (!randomAngularVelocity) astralBody.StartAngularVelocity = Vector3.zero;
@@ -482,7 +492,7 @@ public class AstralBodiesManager : MonoBehaviour
         _allBodies.Add(body);
         
         var count = _allBodies.Count;
-        body._delayStart = count % 5;
+        body.DelayStart = count % 5;
         }
     }
 
@@ -604,7 +614,7 @@ public class AstralBodiesManager : MonoBehaviour
     }
     
     public Vector3 CalculateTotalGravityPull(List<AstralBodyHandler> listOfBody, AstralBodyHandler body, Vector3 position, float timeStep = 0) =>
-        FormulaLibrairy.CalculateTotalGravityPull(listOfBody, body, position, timeStep);
+        FormulaLibrary.CalculateTotalGravityPull(listOfBody, body, position, timeStep);
     
     #endregion
     

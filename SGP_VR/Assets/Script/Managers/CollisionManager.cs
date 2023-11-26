@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using DinoFracture;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -9,11 +10,13 @@ using UnityEngine.Events;
 public enum CollisionType 
 {   
     PerfectMerge,
-    Catastrophic,
+    Disruption,
     SuperCatastrophic,
-    Grazing,
     HitAndRun,
+    Errosion,
+    PartialAccretion,
     Unknown
+   
 }
 
 public enum CollidingBodyRole 
@@ -35,8 +38,11 @@ public struct CollisionPreferences
 
     public float impactPointOffset;
 
-    public float lossOfEnergy; 
+    public float lossOfEnergy;
 
+    public double energyThreshold; 
+    
+    
 }
 
 [System.Serializable]
@@ -48,8 +54,9 @@ public class CollidingBody
     public Vector3 _bodyImpactAngularVelocity;
     public double _impactEnergy; 
     public Vector3 _impactEnergyDirection;
+    public double _impactEnergyAlongNormal; 
    
-    public CollidingBody(AstralBodyHandler body, CollidingBodyRole role = CollidingBodyRole.Other) 
+    public CollidingBody(AstralBodyHandler body, Vector3  collisionNormal,CollidingBodyRole role = CollidingBodyRole.Other) 
     {
         _body = body;
         _role = role;
@@ -57,8 +64,14 @@ public class CollidingBody
         _impactEnergyDirection = new Vector3((((float)body.KyneticEnergy * body.Velocity).normalized).x,(((float)body.KyneticEnergy * body.Velocity).normalized).y, (((float)body.KyneticEnergy * body.Velocity).normalized).z);
         
         _bodyImpactVelocity = new Vector3(body.Velocity.x, body.Velocity.y, body.Velocity.z);
+        var relativeBodyImpactVelocity = Vector3.Dot(_bodyImpactVelocity, collisionNormal);
+        _impactEnergyAlongNormal = .5 * body.Mass * relativeBodyImpactVelocity * relativeBodyImpactVelocity;
+        
         _impactEnergy = .5 * body.Mass * _bodyImpactVelocity.magnitude * _bodyImpactVelocity.magnitude;
+        
         _impactEnergyDirection = _bodyImpactVelocity.normalized * (float)_impactEnergy;
+        
+        
     }
 
 }
@@ -69,6 +82,70 @@ public class CollidingBody
     [System.Serializable]
 public class CollisionData
 {
+    [System.Serializable]
+    public class ImpactParameters
+    {
+        
+        //Todo struct might be better 
+        [Header("Energy Parameters")]
+        public double impactEnergy;
+        public double criticalImpactEnergy; //Critical Impact energy (Qr*)
+        public double superCatEnergy; //energy necessary to disperce 90% of mass of target (Qr'*)
+        public double erosionEnergy;
+        
+        [Header("Velocity Parameters")]
+        public double impactVelocity;
+        public double critImpactVelocity;//energy necessary to disperce half of mass of target
+        public double superCatVelocity; //Velocity of SuperCatastrophic energy - eq.
+        public double erosionVelocity;
+        public double escapeVelocity;
+        
+        [Header("Mass Parameters")]
+        public double interactingMass;
+        public double reducedMass;
+        public double reducedAlphaMass;
+
+        [Header("Other Parameters")] 
+        public double criticalImpactParameter;
+        public double impactParameter;
+        public ImpactParameters(CollidingBody target, CollidingBody projectile, float impactAngle)
+        {
+            
+            double df = UniverseManager.Instance.PhysicsProperties.DistanceFactor;
+            double ef = UniverseManager.Instance.PhysicsProperties.EnergyFactor ;
+            ef /= 20000; 
+            
+            interactingMass = FormulaLibrary.CalculateInteractingMass(projectile, target ,  impactAngle);
+            reducedMass = (target._body.Mass * projectile._body.Mass) / (target._body.Mass + projectile._body.Mass);
+            reducedAlphaMass =  (target._body.Mass * interactingMass) / (target._body.Mass + interactingMass);
+            
+            escapeVelocity = FormulaLibrary.CalculateEscapeVelocity(target,projectile , interactingMass)*1000  ;
+            
+            impactEnergy = FormulaLibrary.CalculateImpactEnergy(target, projectile)/ef;
+            impactVelocity = FormulaLibrary.CalculateVelocity(impactEnergy, target, projectile);
+            
+            criticalImpactEnergy = FormulaLibrary.CalculateCriticalImpactEnergy(target, projectile)/ef;
+            critImpactVelocity = FormulaLibrary.CalculateVelocity(criticalImpactEnergy, target, projectile);
+         
+            superCatEnergy = criticalImpactEnergy* 1.8f;
+            superCatVelocity = FormulaLibrary.CalculateVelocity( superCatEnergy, target, projectile);
+            
+            erosionEnergy = FormulaLibrary.CalculateErosionEnergy(superCatEnergy,target, projectile);
+            erosionVelocity =  FormulaLibrary.CalculateVelocity( erosionEnergy, target, projectile);
+
+            criticalImpactParameter = (target._body.Radius / (target._body.Radius + projectile._body.Radius));
+            impactParameter = Mathf.Sin(impactAngle);
+        }
+
+       
+
+        public ImpactParameters()
+        {
+            
+        }
+
+    }
+
     public string _id;
     public List<CollidingBody> _collidingBodies = new();
    
@@ -87,20 +164,25 @@ public class CollisionData
 
     public AstralBodyType _resultingAstralBodyType = AstralBodyType.other;
 
-    public bool processed = false;
+    
 
     public CollisionPreferences _collisionPrefs;
+
+    public ImpactParameters _impactParameters;
     
     public float _energyLoss;
     public bool _inProcess = false; 
     bool _showDebugLog = true;
+    public bool processed = false;
+    
+    
     public CollisionData(AstralBodyHandler body1, AstralBodyHandler body2, ContactPoint contactPoint, Vector3 impulse ,float lossOfEnergy, bool showDebug)
     {
 
         if(!body1 || !body2) return;
         
-        var collidingBody1 = new CollidingBody(body1, DetermineCollidingRole(body1, body2));
-        var collidingBody2 = new CollidingBody(body2, DetermineCollidingRole(body2, body1));
+        var collidingBody1 = new CollidingBody(body1, contactPoint.normal, DetermineCollidingRole(body1, body2));
+        var collidingBody2 = new CollidingBody(body2,contactPoint.normal, DetermineCollidingRole(body2, body1));
 
         _collidingBodies.Add(collidingBody1);
         _collidingBodies.Add(collidingBody2);
@@ -117,8 +199,14 @@ public class CollisionData
             _projectileBody = _collidingBodies[0];
         }
 
-    
-        _collisionEnergy = _targetBody._impactEnergy + _projectileBody._impactEnergy;
+        _impactParameters = new ImpactParameters(_targetBody, _projectileBody, CalculateImpactAngle(_projectileBody, contactPoint.normal ));
+      
+        
+       //_collisionEnergy = _targetBody._impactEnergy + _projectileBody._impactEnergy;
+       
+        _collisionEnergy = _impactParameters.impactEnergy * 10000; //energy used to apply force to rb  
+        
+       
         _collisionEnergyDirection = (_targetBody._impactEnergyDirection + _projectileBody._impactEnergyDirection).normalized;
 
         _energyLoss = lossOfEnergy;
@@ -134,6 +222,9 @@ public class CollisionData
         if(_showDebugLog) Debug.Log("[CollisionData] New collision data for : " + _id);
     }
 
+    private float CalculateImpactAngle(CollidingBody projectileBody, Vector3 contactPointNormal) =>
+        FormulaLibrary.CalculateImpactAngle(projectileBody._bodyImpactVelocity, contactPointNormal);
+  
     private CollidingBodyRole DetermineCollidingRole(AstralBodyHandler body, AstralBodyHandler otherBody)
     {
     
@@ -198,7 +289,7 @@ public class CollisionManager : MonoBehaviour
 
         collisionData._collisionPrefs =  GetCollisionPrefs(collisionData._collisionType);
         
-        
+        Debug.Log("[Collision Manager] collision energy: " + collisionData._collisionEnergy );
        //ToggleFX(collisionData);
         
         RegisterCollision(_unProcessedCollisions, collisionData);
@@ -235,13 +326,90 @@ public class CollisionManager : MonoBehaviour
         if (showDebugLog) Debug.Log("[Collision Manager] Determining Collision Type for :" + collision._id);
 
         var type = CollisionType.Unknown;
-
-        if (testMode) type = testCollisionType;
         //TODO:  logic to determine collision type here - now just testing 
+
+        if (testMode) return testCollisionType;
+
+        /*SuperCatastrophic*/
+        if (collision._impactParameters.impactVelocity > collision._impactParameters.superCatVelocity)
+            return CollisionType.SuperCatastrophic;
+        
+        /*Perfect Merge */
+        if(collision._impactParameters.impactVelocity < collision._impactParameters.erosionVelocity) 
+           return CollisionType.PerfectMerge;
+        
+        bool isGrazingImpact = collision._impactParameters.impactParameter > collision._impactParameters.criticalImpactParameter;
+
+        if (isGrazingImpact)
+        {
+            /*hit and run*/
+            if (collision._impactParameters.impactVelocity < collision._impactParameters.erosionVelocity &&
+                collision._impactParameters.impactVelocity > collision._impactParameters.escapeVelocity)
+                return CollisionType.HitAndRun;
+
+
+            if (collision._impactParameters.impactVelocity < collision._impactParameters.superCatVelocity &&
+                collision._impactParameters.impactVelocity > collision._impactParameters.erosionVelocity)
+            {
+                if(CalculateLargestRemnantMass(collision._target.Mass+collision._projectile.Mass,collision._impactParameters) < collision._target.Mass) return CollisionType.Disruption;
+                
+            }
+
+            
+        }
+
+        else
+        {
+            if (collision._impactParameters.impactVelocity < collision._impactParameters.superCatVelocity &&
+                collision._impactParameters.impactVelocity > collision._impactParameters.escapeVelocity)
+                return CollisionType.Disruption;
+            
+            if (collision._impactParameters.impactVelocity < collision._impactParameters.erosionVelocity &&
+                collision._impactParameters.impactVelocity > collision._impactParameters.escapeVelocity)
+                return CollisionType.PartialAccretion;
+        }
+
+
+        /*errosion*/
+        if (collision._impactParameters.impactVelocity > collision._impactParameters.erosionVelocity)
+            return CollisionType.Errosion;
 
 
         if (showDebugLog) Debug.Log("[Collision Manager] Collision Type for :" + collision._id + " is : " + type);
         return type;
+    }
+
+    private double CalculateLargestRemnantMass(double totalMass, CollisionData.ImpactParameters impactParameters) =>
+        FormulaLibrary.CalculateLargestRemnantMass(totalMass, impactParameters.impactEnergy,
+            impactParameters.superCatEnergy);
+ 
+
+    private List<CollisionType> BasedOnImpactEnergy(CollisionData collision, List<CollisionType> possibleType)
+    {
+        if (_collisionPreferences.Count == 0) return possibleType;
+        var collisionEnergy = collision._collisionEnergy;
+        
+        
+        foreach (var colPref in _collisionPreferences)
+        {
+            if (collisionEnergy < colPref.energyThreshold)
+            {
+                if(possibleType.Contains(colPref.collisionType)) possibleType.Remove(colPref.collisionType);
+            }
+        }
+
+        return possibleType;
+
+    }
+
+    private float GetIncidenceAngle(CollisionData collision)
+    {
+        var normal = collision._impactPoint.normal;
+        var direction = collision._projectileBody._bodyImpactVelocity;
+        float angle = Vector3.Angle(normal, direction);
+
+        Debug.Log("[Collision Manager] Impact direction  :" + direction + "/ angle : " + angle);
+        return angle;
     }
 
     private bool CollisionAlreadyPresent(CollisionData collisionData)
@@ -291,21 +459,26 @@ public class CollisionManager : MonoBehaviour
                 processed = ProcessPerfectMerge(collision);
                 break;
 
-            case CollisionType.Catastrophic:
+            case CollisionType.Disruption:
                 if (showDebugLog) Debug.Log("[Collision Manager] Processing Collision type: Catastrophic");
-                processed = ProcessCatastrophic(collision);
+                processed = ProcessDisruption(collision);
                 break;
             case CollisionType.SuperCatastrophic:
                 if (showDebugLog) Debug.Log("[Collision Manager] Processing Collision type: SuperCatastrophic");
                 processed = ProcessSuperCatastrophic(collision);
                 break;
-            case CollisionType.Grazing:
+            case CollisionType.PartialAccretion:
                 if (showDebugLog) Debug.Log("[Collision Manager] Processing Collision type: Grazing");
-                processed = ProcessGrazing(collision);
+                processed = ProcessPartialAccretion(collision);
                 break;
             case CollisionType.HitAndRun:
                 if (showDebugLog) Debug.Log("[Collision Manager] Processing Collision type: HitAndRun");
                 processed = ProcessHitAndRun(collision);
+                break;
+            
+            case CollisionType.Errosion:
+                if (showDebugLog) Debug.Log("[Collision Manager] Processing Collision type: Errosion");
+                processed = ProcessErrosion(collision);
                 break;
             case CollisionType.Unknown:
                 if (showDebugLog) Debug.Log("[Collision Manager] Collision type: Unknown, cant process");
@@ -326,6 +499,11 @@ public class CollisionManager : MonoBehaviour
         OnAfterImpact?.Invoke(collision);
         
         return processed;
+    }
+
+    private bool ProcessErrosion(CollisionData collision)
+    {
+        throw new NotImplementedException();
     }
 
     public void ProcessCollisions(List<CollisionData> collisionList)
@@ -399,7 +577,7 @@ public class CollisionManager : MonoBehaviour
         return true;
     }
 
-    private bool ProcessGrazing(CollisionData collision)
+    private bool ProcessPartialAccretion(CollisionData collision)
     {
         if (collision == null) return false;
         if (showDebugLog) Debug.Log("[Collision Manager] Grazing regime not yet implemented");
@@ -416,7 +594,7 @@ public class CollisionManager : MonoBehaviour
         
         
         var collisionEnergy = collision._collisionEnergy;
-        float energy = (float)collisionEnergy*(1-collision._collisionPrefs.lossOfEnergy);
+        float energy = (float)collisionEnergy;
         energy *= collision._collisionPrefs.energyMultiplier;
 
 
@@ -432,7 +610,7 @@ public class CollisionManager : MonoBehaviour
 
 
 
-    private bool ProcessCatastrophic(CollisionData collision)
+    private bool ProcessDisruption(CollisionData collision)
     {
         if (collision == null) return false;
         if (showDebugLog)
@@ -560,7 +738,7 @@ public class CollisionManager : MonoBehaviour
 
             collision._target.LerpToBodyOverTime(collision._resultingBodies[0], t, delay, false);
 
-            if (meshDeformer) meshDeformer.AddDeformingForceInternal(Time.deltaTime, point, (float)collision._collisionEnergy*(1-collision._collisionPrefs.lossOfEnergy)*collision._collisionPrefs.energyMultiplier);
+            if (meshDeformer) meshDeformer.AddDeformingForceInternal(Time.deltaTime, point, (float)collision._collisionEnergy*collision._collisionPrefs.energyMultiplier);
             
             
             t += Time.deltaTime;
@@ -664,7 +842,7 @@ public class CollisionManager : MonoBehaviour
         
         var point = collision._impactPoint.point;
         var collisionEnergy = collision._collisionEnergy;
-        float energy = (float)collisionEnergy *(1- collision._collisionPrefs.lossOfEnergy);
+        float energy = (float)collisionEnergy;
         energy *= collision._collisionPrefs.energyMultiplier;
        
 

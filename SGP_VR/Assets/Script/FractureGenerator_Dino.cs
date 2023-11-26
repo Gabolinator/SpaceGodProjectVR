@@ -75,7 +75,7 @@ public class FractureGenerator_Dino : RuntimeFracturedGeometry, IFractureGenerat
             if(!handler) return;
             handler.body = new FragmentBody();
             handler.body.BodyType = AstralBodyType.Fragment;
-            handler.enableCollisionDelay = 30;
+            handler.EnableCollisionDelay = 30;
         }
     }
 

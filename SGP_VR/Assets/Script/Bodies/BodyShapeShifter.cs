@@ -2,6 +2,23 @@ using Sirenix.OdinInspector;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
+
+
+[System.Serializable]
+public struct GenerationPrefs
+{
+    public bool generateEverythingAtRandom;
+    public bool randomPhysicalCharacteristic;
+    public bool randomVelocity;
+    public bool randomAngularVelocity;
+    public bool generateSatellites;
+    public bool generateRandomNumberOfSatellites;
+    public int numberOfSatellites;
+    public int minNumberOfSatellites;
+    public int maxNumberOfSatellites;
+    public bool generateRingsAtRandom;
+}
 
 /// <summary>
 /// This class will change the object in scene to the specific astral body selected
@@ -21,13 +38,16 @@ public class BodyShapeShifter : MonoBehaviour
     [ShowIf("@this.StrType == StarType.MainSequenceStar")] [SerializeField] protected StarSpectralType _starSpectralType = StarSpectralType.none;
     public StarSpectralType SpectralType => _starSpectralType;
 
-    public bool generateEverythingAtRandom;
+    public GenerationPrefs prefs;
 
-    public bool randomPhysicalCharacteristic;
+    public bool GenerateEverythingAtRandom => prefs.generateEverythingAtRandom;
 
-    public bool randomVelocity;
-    public bool randomAngularVelocity; 
+    public bool RandomPhysicalCharacteristic => prefs.randomPhysicalCharacteristic;
+    public bool RandomVelocity => prefs.randomVelocity;
+    public bool RandomAngularVelocity => prefs.randomAngularVelocity;
 
+    protected void GenerateBody(Vector3 position, AstralBody body, GenerationPrefs prefs) => AstralBodiesManager.Instance.GenerateBody(position, body,prefs);
+    
     protected void GenerateBody(Vector3 position, AstralBody body, bool generateAtRandom, bool generateRandomPhysicalCharacteristic,  bool randomVelocity, bool randomAngularVelocity) => AstralBodiesManager.Instance.GenerateBody(position, body, generateAtRandom, generateRandomPhysicalCharacteristic, randomVelocity, randomAngularVelocity) ;
 
 
@@ -44,7 +64,7 @@ public class BodyShapeShifter : MonoBehaviour
     public void Start()
     {
        
-        GenerateBody(transform.position, CreateBody(Body, PltType, StrType, SpectralType), generateEverythingAtRandom, randomPhysicalCharacteristic, randomVelocity, randomAngularVelocity);
+        GenerateBody(transform.position, CreateBody(Body, PltType, StrType, SpectralType), prefs);
         this.gameObject.SetActive(false);
 
         var handler = gameObject.GetComponent<AstralBodyHandler>();

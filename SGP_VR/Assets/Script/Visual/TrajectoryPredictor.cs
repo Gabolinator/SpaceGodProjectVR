@@ -120,10 +120,10 @@ public class TrajectoryPredictor
 
   
 
-    private Vector3 GetAcceleration(AstralBodyHandler body) => FormulaLibrairy.GetAcceleration(body);
+    private Vector3 GetAcceleration(AstralBodyHandler body) => FormulaLibrary.GetAcceleration(body);
  
 
-    private Vector3 GetAcceleration(AstralBodyHandler body, Vector3 atPosition, float timeStep) => FormulaLibrairy.GetAcceleration(body, atPosition, timeStep);
+    private Vector3 GetAcceleration(AstralBodyHandler body, Vector3 atPosition, float timeStep) => FormulaLibrary.GetAcceleration(body, atPosition, timeStep);
   
 
     public void AddTrajectoryPoint(List<TrajectoryPoint> list, TrajectoryPoint point) 

@@ -151,7 +151,7 @@ public class VisualIndicatorHandler : MonoBehaviour
 
     public void UpdateLine()
     {
-        UpdateLine(_totalPullLine, _thisBody.totalForceOnObject.normalized * (float)_thisBody.currentRadiusOfTrajectory);
+        UpdateLine(_totalPullLine, _thisBody.totalForceOnObject.normalized * (float)_thisBody.CurrentRadiusOfTrajectory);
     }
 
     private void UpdateLine(VectorLine line, Vector3 vector) 

@@ -21,3 +21,9 @@ MonoBehaviour:
   _minMass: 0.1
   _maxMass: 100
   _bodyComposition: []
+  _cMin: 3
+  _cMax: 7
+  _uMin: 0.36
+  _uMax: 0.38
+  _sMin: 1
+  _sMax: 1

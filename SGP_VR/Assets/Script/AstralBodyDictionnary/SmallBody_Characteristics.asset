@@ -10,20 +10,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 29e526ec47ac37e41bcf1117efb43a71, type: 3}
-  m_Name: Jovian_Characteristics
+  m_Name: SmallBody_Characteristics
   m_EditorClassIdentifier: 
-  bodyType: 0
-  planetType: 1
+  bodyType: 6
+  planetType: 2
   starType: 2
   starSpectralType: 0
-  _minDensity: 300
-  _maxDensity: 1000
-  _minMass: 59600
-  _maxMass: 200000
+  _minDensity: 100
+  _maxDensity: 2000
+  _minMass: 0.00001
+  _maxMass: 10
   _bodyComposition: []
-  _cMin: 1.6
-  _cMax: 2.2
-  _uMin: 0.35
-  _uMax: 0.36
+  _cMin: 3
+  _cMax: 7
+  _uMin: 0.36
+  _uMax: 0.38
   _sMin: 1
   _sMax: 1

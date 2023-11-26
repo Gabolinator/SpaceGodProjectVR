@@ -229,15 +229,32 @@ MonoBehaviour:
   body:
     _id: 
     _bodyType: 5
-    _mass: 0
     _startVelocity: {x: 0, y: 0, z: 0}
     _startAngularVelocity: {x: 0, y: 0, z: 0}
-    _density: 0
     _radius: 0
     _volume: 0
     _subType: '-'
-    _bodyComposition: []
+    _physicalCharacteristics:
+      _mass: 0
+      _density: 0
+      _bodyComposition: []
+      _c: 0
+      _u: 0
+      _s: 0
+      _internalResistance: 0
     _temperature: 0
+    orbitingData:
+      currentRadiusOfTrajectory: 0
+      _centerOfRotation: {fileID: 0}
+      distanceFromCenter: 0
+      isSatellite: 0
+    satellitesData:
+      maxNumberOfSatellites: 0
+      satellites: []
+      canHaveSatellites: 0
+    ringsData:
+      rings: []
+      canHaveRings: 0
   bodyDescriptor:
     _id: 
     _bodyType: 
@@ -249,22 +266,25 @@ MonoBehaviour:
     _bodyComposition: []
     _velocity: {x: 0, y: 0, z: 0}
     _angularVelocity: {x: 0, y: 0, z: 0}
-  _setRandomVelocity: 0
-  _setRandomAngularVelocity: 0
+  thisRb: {fileID: 0}
+  _velocity: {x: 0, y: 0, z: 0}
   _angularVelocity: {x: 0, y: 0, z: 0}
   _influenceRange: -1
   _influenceStrength: 100
   _processRate: 0.1
-  _velocity: {x: 0, y: 0, z: 0}
-  thisRb: {fileID: 0}
-  isGrabbed: 0
-  _centerOfRotation: {fileID: 0}
-  allBodiesInRange: []
   totalForceOnObject: {x: 0, y: 0, z: 0}
+  startPreferences:
+    _setRandomVelocity: 0
+    _setRandomAngularVelocity: 0
+    _delayStart: 0
+    _enableCollisionDelay: 0
+  _enableCollision: 0
+  isGrabbed: 0
+  allBodiesInRange: []
   positions: []
   velocities: []
   accelerations: []
-  currentRadiusOfTrajectory: 0
+  firstUpdate: 1
   gravityDisabled: 0
 --- !u!114 &3756666432735887797
 MonoBehaviour:

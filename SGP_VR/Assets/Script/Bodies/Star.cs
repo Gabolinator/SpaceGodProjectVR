@@ -20,13 +20,18 @@ public class Star : AstralBody
     {
         if (ShowDebugLog) Debug.Log("[Star] Creating new star : " + _id + " of mass :" + mass + " of density : " + density + "  of velocity " + velocity);
     }
+    
+    public Star(BodyPhysicalCharacteristics physicalCharacteristics, Vector3 velocity, Vector3 angularVelocity) : base(physicalCharacteristics, velocity, angularVelocity, AstralBodyType.Star) 
+    {
+        if (ShowDebugLog) Debug.Log("[Star] Creating new star : " + _id + " of mass :" + physicalCharacteristics._mass + " of density : " +physicalCharacteristics._density + "  of velocity " + velocity);
+    }
 
     public Star(AstralBody astralBody) : base(astralBody) 
     {
         Debug.Log("[Star] Constructor (AstralBody astralBody) based on astral body");
     }
 
-    public Star(Star star) :base(star.Mass, star.Density, star.StartVelocity, star.StartAngularVelocity)
+    public Star(Star star) :base(star._physicalCharacteristics, star.StartVelocity, star.StartAngularVelocity)
     {
         Debug.Log("[Star] Constructor (Star star) ");
         BodyType = star.BodyType;
@@ -35,6 +40,11 @@ public class Star : AstralBody
 
         SubType = star.StrType.ToString();
         if (star.StrType == StarType.MainSequenceStar ) SubType += " - " + star.SpectralType;
+        
+        orbitingData = star.orbitingData;
+        satellitesData = star.satellitesData;
+        ringsData = star.ringsData;
+        
     }
 
     public Star(double mass, double density, Vector3 velocity, Vector3 angularVelocity, StarType starType) : this(mass, density, velocity, angularVelocity)
@@ -45,6 +55,7 @@ public class Star : AstralBody
     public Star(double mass, double density, Vector3 velocity, Vector3 angularVelocity, StarSpectralType spectralType) : this(mass, density, velocity,angularVelocity ,StarType.MainSequenceStar)
     {
         SpectralType = spectralType;
+        
     }
 
     public Star() : base() 
@@ -52,6 +63,13 @@ public class Star : AstralBody
         Debug.Log("[Star] Constructor () based on astral body");
     }
 
+    
+   
+    
+    public override void SetCanHaveRing()
+    {
+        ringsData.canHaveRings = false;
+    }
 
 }
 

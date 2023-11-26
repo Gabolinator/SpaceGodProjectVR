@@ -279,6 +279,8 @@ public class BodyGenerator
 
     public GeneratedBody GenerateBody(AstralBody body, bool generateRandomPhysical = false)
     {
+        body = GenerateSatellites(body);
+        body = GenerateRings(body);
 
         var defaultPrefab = _astralBodyDictionnary.Count > 0 ? _astralBodyDictionnary[0].bodyPrefab : null;
 
@@ -321,7 +323,7 @@ public class BodyGenerator
         return generateBody;
     }
 
-    public GeneratedBody GenerateRandomBody()
+    public GeneratedBody GenerateRandomBody(UniverseComposition universeComposition)
     {
 
         AstralBody astralBody = new AstralBody();
@@ -330,9 +332,9 @@ public class BodyGenerator
 
         do 
         {
-
-            bodyType = GetBodyTypeFromPercentage(UnityEngine.Random.Range(0, 100));
-            //bodyType = GetRandomEnumValue<AstralBodyType>();
+            
+            bodyType = GetBodyTypeFromPercentage(UnityEngine.Random.Range(0, 100), universeComposition);
+            
 
             Debug.Log("[Body Generator] random body type : " + bodyType);
                 
@@ -354,7 +356,9 @@ public class BodyGenerator
             planet.BodyType = bodyType;
             Debug.Log("[Body Generator] random planet type : " + planetType);
             Debug.Log("[Body Generator] Velocity : " + planet.StartVelocity);
-
+            
+           // planet = GenerateSatellites(planet) as Planet;
+          //  planet = GenerateRings(planet) as Planet;
 
             return GenerateBody(planet);
         }
@@ -388,6 +392,10 @@ public class BodyGenerator
             star.BodyType = bodyType;
             star.StrType = starType;
             star.SpectralType = starSpectralType;
+            
+            //star = GenerateSatellites(star) as Star;
+           // star = GenerateRings(star) as Star;
+            
             return GenerateBody(star);
         }
 
@@ -396,8 +404,50 @@ public class BodyGenerator
             astralBody = GenerateBodyPhysicalProperties(bodyType);
             astralBody.BodyType = bodyType;
 
+           // astralBody = GenerateSatellites(astralBody);
+           // astralBody = GenerateRings(astralBody);
+            
             return GenerateBody(astralBody);
         }
+    }
+
+    // private Planet GenerateRings(Planet planet)
+    // {
+    //     throw new NotImplementedException();
+    // }
+    //
+    // private Planet GenerateSatellites(Planet planet)
+    // {
+    //     throw new NotImplementedException();
+    // }
+    //
+    // private Star GenerateRings(Star star)
+    // {
+    //     throw new NotImplementedException();
+    // }
+    //
+    // private Star GenerateSatellites(Star star)
+    // {
+    //     throw new NotImplementedException();
+    // }
+    
+    private AstralBody GenerateRings(AstralBody body)
+    {
+        //TODO : not implemented yet 
+        if (!body.CanHaveRings) return body;
+        
+        return body;
+
+    }
+
+    private AstralBody GenerateSatellites(AstralBody body)
+    {
+        //TODO : not implemented yet 
+        if (!body.CanHaveSatellites) return body;
+        
+        
+        
+        return body;
     }
 
     public AstralBody CreateAstralBody(AstralBody body, PlanetType planetType, StarType starType, StarSpectralType starSpectralType)
@@ -447,14 +497,15 @@ public class BodyGenerator
         return body;
     }
 
-    private AstralBodyType GetBodyTypeFromPercentage(float percentage)
+    private AstralBodyType GetBodyTypeFromPercentage(float percentage , UniverseComposition universeComposition)
     {
         Debug.Log("[Body Generator ] Percentage is : " + percentage);
 
-        float planetPercentage = AstralBodiesManager.Instance.planetPercentage;
-        float starPercentage = AstralBodiesManager.Instance.starPercentage;
-        float planetoidPercentage = AstralBodiesManager.Instance.planetoidPercentage;
-        float blackHolePercentage = AstralBodiesManager.Instance.blackHolePercentage;
+        float planetPercentage = universeComposition.planetPercentage;
+        float starPercentage = universeComposition.starPercentage;
+        float planetoidPercentage = universeComposition.planetoidPercentage;
+        float blackHolePercentage = universeComposition.blackHolePercentage;
+        float smallBodyPercentage =universeComposition.smallBodyPercentage;
 
         if (percentage < planetPercentage)
         {
@@ -472,6 +523,12 @@ public class BodyGenerator
         {
             return AstralBodyType.BlackHole;
         }
+        
+        else if(percentage < planetPercentage + starPercentage + planetoidPercentage + blackHolePercentage + smallBodyPercentage)
+        {
+            return AstralBodyType.SmallBody;
+        }
+            
         else
         {
             return AstralBodyType.other;
@@ -536,14 +593,16 @@ public class BodyGenerator
 
         if (bodyCharacteristics == null) bodyCharacteristics = new AstralBodyPhysicalCharacteristics(10000, 20000, 3000, 5000);
 
-        double mass = UnityEngine.Random.Range((float)bodyCharacteristics._minMass, (float)bodyCharacteristics._maxMass);
-        double density = UnityEngine.Random.Range((float)bodyCharacteristics._minDensity, (float)bodyCharacteristics._maxDensity);
+       // double mass = UnityEngine.Random.Range((float)bodyCharacteristics._minMass, (float)bodyCharacteristics._maxMass);
+       // double density = UnityEngine.Random.Range((float)bodyCharacteristics._minDensity, (float)bodyCharacteristics._maxDensity);
 
+        BodyPhysicalCharacteristics physicalCharacteristics = bodyCharacteristics.GenerateRandomPhysicalCharacteristics();
+        
         Vector3 velocity = GenerateRandomVelocity(-0.5f, 0.5f);
         Vector3 angularVelocity = GenerateRandomVelocity(-0.5f, 0.5f);
 
 
-        return new Star(mass, density, velocity, angularVelocity);
+        return new Star(physicalCharacteristics, velocity, angularVelocity);
     }
 
 
@@ -553,14 +612,15 @@ public class BodyGenerator
 
         if (bodyCharacteristics == null) bodyCharacteristics = new AstralBodyPhysicalCharacteristics(1000, 2000, 1000, 2000);
 
-        double mass = UnityEngine.Random.Range((float)bodyCharacteristics._minMass, (float)bodyCharacteristics._maxMass);
-        double density = UnityEngine.Random.Range((float)bodyCharacteristics._minDensity, (float)bodyCharacteristics._maxDensity);
+        //double mass = UnityEngine.Random.Range((float)bodyCharacteristics._minMass, (float)bodyCharacteristics._maxMass);
+       // double density = UnityEngine.Random.Range((float)bodyCharacteristics._minDensity, (float)bodyCharacteristics._maxDensity);
 
+       BodyPhysicalCharacteristics physicalCharacteristics = bodyCharacteristics.GenerateRandomPhysicalCharacteristics();
 
         Vector3 velocity = GenerateRandomVelocity(-0.5f, 0.5f);
         Vector3 angularVelocity = GenerateRandomVelocity(-0.5f, 0.5f);
 
-        var planet = new Planet(mass, density, velocity, angularVelocity);
+        var planet = new Planet(physicalCharacteristics, velocity, angularVelocity);
 
        // Debug.Log("[Body Generator] Velocity : " + velocity);
 
@@ -573,13 +633,12 @@ public class BodyGenerator
 
         if (bodyCharacteristics == null) bodyCharacteristics = new AstralBodyPhysicalCharacteristics(100,2000,1000,2000);
 
-        double mass = UnityEngine.Random.Range((float)bodyCharacteristics._minMass, (float)bodyCharacteristics._maxMass);
-        double density = UnityEngine.Random.Range((float)bodyCharacteristics._minDensity, (float)bodyCharacteristics._maxDensity);
+        BodyPhysicalCharacteristics physicalCharacteristics = bodyCharacteristics.GenerateRandomPhysicalCharacteristics();
 
 
         Vector3 velocity = GenerateRandomVelocity(-0.5f, 0.5f);
         Vector3 angularVelocity = GenerateRandomVelocity(-0.5f, 0.5f);
-        return new AstralBody(mass, density, velocity, angularVelocity);
+        return new AstralBody(physicalCharacteristics, velocity, angularVelocity);
     }
 
 
