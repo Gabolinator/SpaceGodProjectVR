@@ -287,7 +287,7 @@ public class AstralBodyEditor : MonoBehaviour
         HandSide handSide = HandSide.Left;
         var hand = handSide == HandSide.Left ? LeftHand : RightHand;
 
-        var newProto = AstralBodiesManager.Instance.GenerateBody(AstralBodyType.ProtoBody, hand.BodySpawnPoint.transform.position + hand.Controller.transform.forward*-5f, Quaternion.identity);
+        var newProto = BodyGenerator.Instance.GenerateBody(AstralBodyType.ProtoBody, hand.BodySpawnPoint.transform.position + hand.Controller.transform.forward*-5f, Quaternion.identity);
         if (!newProto) return;
         var handler = newProto.GetComponent<AstralBodyHandler>();
 
@@ -320,7 +320,7 @@ public class AstralBodyEditor : MonoBehaviour
     private void PredictNewBody(AstralBody body)
     {
         if (Time.time % 5 == 0) return;
-        AstralBodyType bodyType = AstralBodiesManager.Instance.PredictBodyTypeFromCharacteristic(body);
+        AstralBodyType bodyType = BodyGenerator.Instance.PredictBodyTypeFromCharacteristic(body);
 
         //OnPredictBody?.Invoke(_grabbedBodyHandler, predictedBody);  
         Debug.Log("[Body Handler] Possiblebody : " + bodyType.ToString());

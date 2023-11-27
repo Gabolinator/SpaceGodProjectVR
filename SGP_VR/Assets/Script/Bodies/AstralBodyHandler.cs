@@ -470,7 +470,7 @@ public class AstralBodyHandler : MonoBehaviour
         thisRb.angularVelocity = angularVelocity;
     }
 
-    private Vector3 GetRandomVelocity(float min, float max) => AstralBodiesManager.Instance.GenerateVelocity(min, max);
+    private Vector3 GetRandomVelocity(float min, float max) => BodyGenerator.Instance.GenerateVelocity(min, max);
 
     public void SetScaleFromRadius(double radius)
     {

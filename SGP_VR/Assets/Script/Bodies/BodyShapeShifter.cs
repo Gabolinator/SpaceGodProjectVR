@@ -46,12 +46,12 @@ public class BodyShapeShifter : MonoBehaviour
     public bool RandomVelocity => prefs.randomVelocity;
     public bool RandomAngularVelocity => prefs.randomAngularVelocity;
 
-    protected void GenerateBody(Vector3 position, AstralBody body, GenerationPrefs prefs) => AstralBodiesManager.Instance.GenerateBody(position, body,prefs);
+    protected void GenerateBody(Vector3 position, AstralBody body, GenerationPrefs prefs) => BodyGenerator.Instance.GenerateBody(position, body,prefs);
     
-    protected void GenerateBody(Vector3 position, AstralBody body, bool generateAtRandom, bool generateRandomPhysicalCharacteristic,  bool randomVelocity, bool randomAngularVelocity) => AstralBodiesManager.Instance.GenerateBody(position, body, generateAtRandom, generateRandomPhysicalCharacteristic, randomVelocity, randomAngularVelocity) ;
+    protected void GenerateBody(Vector3 position, AstralBody body, bool generateAtRandom, bool generateRandomPhysicalCharacteristic,  bool randomVelocity, bool randomAngularVelocity) => BodyGenerator.Instance.GenerateBody(position, body, generateAtRandom, generateRandomPhysicalCharacteristic, randomVelocity, randomAngularVelocity) ;
 
 
-    protected AstralBody CreateBody(AstralBody body, PlanetType planetType, StarType starType, StarSpectralType starSpectralType) => AstralBodiesManager.Instance.CreateAstralBody(body, planetType, starType,starSpectralType);
+    protected AstralBody CreateBody(AstralBody body, PlanetType planetType, StarType starType, StarSpectralType starSpectralType) => BodyGenerator.Instance.CreateAstralBody(body, planetType, starType,starSpectralType);
 
 
     protected void UnregisterSelf(AstralBodyHandler handler) => AstralBodiesManager.Instance.DestroyBody(handler);
