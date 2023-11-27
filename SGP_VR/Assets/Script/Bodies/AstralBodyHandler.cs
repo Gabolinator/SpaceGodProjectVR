@@ -132,7 +132,7 @@ public class AstralBodyHandler : MonoBehaviour
     public float _processRate = 0.1f;
     
     public Vector3 totalForceOnObject = Vector3.zero;
-    public bool EnableGravity => UniverseManager.Instance.enableGravity && !isGrabbed && !gravityDisabled;
+    public bool EnableGravity => UniverseManager.Instance.enableGravity || !isGrabbed || !gravityDisabled;
     
     
     [Header("Start Preferences")] 
@@ -176,13 +176,20 @@ public class AstralBodyHandler : MonoBehaviour
         set => body.CurrentRadiusOfTrajectory = value;
     }
 
-    public Transform CenterOfRotation => body.CenterOfRotation;
-
+    public AstralBodyHandler CenterOfRotation => body.CenterOfRotation;
+    
     public bool IsOrbiting => body.IsOrbiting;
+    
+    public bool IsSatellite => body.IsSatellite;
     //
     // [Header("Satellites")] 
+    // [Header("Satellites")] 
     // public int maxNumberOfSatellites;
-    // public List<AstralBodyHandler> satellites;
+    public List<AstralBodyHandler> Satellites
+    {
+        get => body.Satellites;
+        set => body.Satellites = value;
+    }
     // public bool canHaveSatellites;
     // public bool HasSatellite => satellites.Count != 0;
     //
@@ -227,7 +234,7 @@ public class AstralBodyHandler : MonoBehaviour
         Mass *= delta;
 
         thisRb.mass = (float)Mass;
-
+        
         UpdateBody();
     }
 
@@ -705,7 +712,7 @@ public class AstralBodyHandler : MonoBehaviour
 
         OnAstralBodyStartToExist?.Invoke(this);
 
-        StartCoroutine(CalculateGravityPullCoroutine(_processRate, DelayStart));
+        //StartCoroutine(CalculateGravityPullCoroutine(_processRate, DelayStart));
 
         StartCoroutine(CollectData(_processRate,DelayStart));
         

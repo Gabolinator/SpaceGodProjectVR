@@ -140,10 +140,12 @@ public struct OrbitingData
 {
     [Header("Orbit")] 
     public double currentRadiusOfTrajectory;
-    public Transform _centerOfRotation;
-    public bool IsOrbiting => (_centerOfRotation != null);
+    public AstralBodyHandler  centerOfRotation;
+    public bool IsOrbiting => (centerOfRotation != null);
     public float distanceFromCenter;
     public bool isSatellite;
+    //public float currentAngle;
+    public float orbitAngularVelocity;
 }
 
 [System.Serializable]
@@ -151,7 +153,7 @@ public struct SatellitesData
 {
     [Header("Satellites")] 
     public int maxNumberOfSatellites;
-    public List<AstralBody> satellites;
+    public List<AstralBodyHandler> satellites;
     public bool canHaveSatellites;
     public bool HasSatellite => satellites.Count != 0;
 }
@@ -282,24 +284,47 @@ public class AstralBody
         set => _physicalCharacteristics._s = value;
     } //= 1; 
 
+
+
+
     public OrbitingData orbitingData = new OrbitingData();
-    
+
     public double CurrentRadiusOfTrajectory
     {
         get => orbitingData.currentRadiusOfTrajectory;
         set => orbitingData.currentRadiusOfTrajectory = value;
     }
+    
 
-    public Transform CenterOfRotation => orbitingData._centerOfRotation;
+    public AstralBodyHandler CenterOfRotation
+    {
+        get => orbitingData.centerOfRotation;
+        set => orbitingData.centerOfRotation = value;
+    }
+
+
     public bool IsOrbiting => (CenterOfRotation != null);
-    public float DistanceFromCenter=> orbitingData.distanceFromCenter;
-    public bool IsSatellite => orbitingData.isSatellite;
+    public float DistanceFromCenter => orbitingData.distanceFromCenter;
+
+    public bool IsSatellite
+    {
+        get => orbitingData.isSatellite;
+        set => orbitingData.isSatellite = value;
+
+    }
 
 
     public SatellitesData satellitesData = new SatellitesData();
-    
+
     public bool CanHaveSatellites => satellitesData.canHaveSatellites;
-    public List<AstralBody> Satellites => satellitesData.satellites;
+
+    public List<AstralBodyHandler> Satellites
+    {
+
+        get => satellitesData.satellites;
+        set => satellitesData.satellites = value;
+    }
+
     public bool HasSatellite => satellitesData.HasSatellite;
   
     public RingsData ringsData = new RingsData();
@@ -406,8 +431,6 @@ public class AstralBody
         _volume = CalculateVolume(Mass, Density);
         _radius = CalculateRadius(_volume);
         
-        SetCanHaveSatellites();
-        SetCanHaveRing();
     }
 
 
@@ -430,8 +453,14 @@ public class AstralBody
 
     public virtual void SetCanHaveSatellites()
     {
-        //TODO check if mass is large enough to keep satellites 
-        satellitesData.canHaveSatellites = true;
+        //TODO check if mass is large enough to keep satellites + change name 
+        int min = 0;
+        int max = 3;
+
+        if (BodyType == AstralBodyType.Fragment || BodyType == AstralBodyType.SmallBody) max = 0;
+            
+        satellitesData.maxNumberOfSatellites = UnityEngine.Random.Range(min, max);
+        satellitesData.canHaveSatellites = satellitesData.maxNumberOfSatellites != 0;
     }
     
     public virtual void SetCanHaveRing()

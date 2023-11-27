@@ -279,9 +279,6 @@ public class BodyGenerator
 
     public GeneratedBody GenerateBody(AstralBody body, bool generateRandomPhysical = false)
     {
-        body = GenerateSatellites(body);
-        body = GenerateRings(body);
-
         var defaultPrefab = _astralBodyDictionnary.Count > 0 ? _astralBodyDictionnary[0].bodyPrefab : null;
 
         var bodyType = body.BodyType;
@@ -332,7 +329,6 @@ public class BodyGenerator
 
         do 
         {
-            
             bodyType = GetBodyTypeFromPercentage(UnityEngine.Random.Range(0, 100), universeComposition);
             
 
@@ -356,10 +352,7 @@ public class BodyGenerator
             planet.BodyType = bodyType;
             Debug.Log("[Body Generator] random planet type : " + planetType);
             Debug.Log("[Body Generator] Velocity : " + planet.StartVelocity);
-            
-           // planet = GenerateSatellites(planet) as Planet;
-          //  planet = GenerateRings(planet) as Planet;
-
+   
             return GenerateBody(planet);
         }
 
@@ -393,9 +386,6 @@ public class BodyGenerator
             star.StrType = starType;
             star.SpectralType = starSpectralType;
             
-            //star = GenerateSatellites(star) as Star;
-           // star = GenerateRings(star) as Star;
-            
             return GenerateBody(star);
         }
 
@@ -403,52 +393,14 @@ public class BodyGenerator
         {
             astralBody = GenerateBodyPhysicalProperties(bodyType);
             astralBody.BodyType = bodyType;
-
-           // astralBody = GenerateSatellites(astralBody);
-           // astralBody = GenerateRings(astralBody);
             
             return GenerateBody(astralBody);
         }
     }
 
-    // private Planet GenerateRings(Planet planet)
-    // {
-    //     throw new NotImplementedException();
-    // }
-    //
-    // private Planet GenerateSatellites(Planet planet)
-    // {
-    //     throw new NotImplementedException();
-    // }
-    //
-    // private Star GenerateRings(Star star)
-    // {
-    //     throw new NotImplementedException();
-    // }
-    //
-    // private Star GenerateSatellites(Star star)
-    // {
-    //     throw new NotImplementedException();
-    // }
+   
     
-    private AstralBody GenerateRings(AstralBody body)
-    {
-        //TODO : not implemented yet 
-        if (!body.CanHaveRings) return body;
-        
-        return body;
-
-    }
-
-    private AstralBody GenerateSatellites(AstralBody body)
-    {
-        //TODO : not implemented yet 
-        if (!body.CanHaveSatellites) return body;
-        
-        
-        
-        return body;
-    }
+   
 
     public AstralBody CreateAstralBody(AstralBody body, PlanetType planetType, StarType starType, StarSpectralType starSpectralType)
     {
@@ -843,4 +795,14 @@ public class BodyGenerator
         Debug.Log("[Body Generator] Generated Random Velocity : " + velocity);
         return velocity;
     }
+    
+    public Vector3 GenerateRandomSpawnPoint(float min, float max)
+    {
+        float randomX = UnityEngine.Random.Range(min, max);
+        float randomY = UnityEngine.Random.Range(min, max);
+        float randomZ = UnityEngine.Random.Range(min, max);
+
+        return new Vector3(randomX, randomY, randomZ);
+    }
+    
 }

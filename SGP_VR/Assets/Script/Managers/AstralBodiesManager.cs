@@ -7,6 +7,7 @@ using System.Text;
 using DinoFracture;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
+using Random = UnityEngine.Random;
 
 
 #region CelestialBodyType
@@ -139,6 +140,7 @@ public class AstralBodiesManager : MonoBehaviour
     public List<AstralBodyHandler> _allBodies = new();
 
     private BodyGenerator _bodyGenerator;
+    public BodyGenerator BodyGen => _bodyGenerator;
 
     private GameObject _universeContainer => UniverseManager.Instance.UniverseContainer;
 
@@ -284,13 +286,98 @@ public class AstralBodiesManager : MonoBehaviour
         DestroyBody(body);
     }
 
-    public void GenerateBody(Vector3 spawnPoint, AstralBody body, bool generateRandomPhysicalCharacteristic = false , bool randomVelocity = false, bool randomAngularVelocity = false)
+    public AstralBody GenerateRings(AstralBody body)
     {
+        //TODO : not implemented yet 
+        if (!body.CanHaveRings) return body;
+        
+        return body;
 
-        GeneratedBody generatedBody = _bodyGenerator.GenerateBody(body, generateRandomPhysicalCharacteristic);
+    }
+
+    public List<AstralBodyHandler> GenerateSatellites(AstralBodyHandler bodyHandler, int number = 1, int nestedLevel = 1)
+    {
+        //TODO : not fully implemented yet 
+        List<AstralBodyHandler> satellites = new List<AstralBodyHandler>();
+        
+        if (!bodyHandler.body.CanHaveSatellites) return satellites;
+        
+        /*check how many "nested satellites level" we have - to not have satellite that has a satellite that have a satellite that ... you know*/
+        if(ReachedMaxNestedSatellites(bodyHandler, nestedLevel)) return satellites;
+        
+        /*to control what can be a satellite*/
+        UniverseComposition bodyProbability = new UniverseComposition()
+        {
+            smallBodyPercentage = 100
+        };
+        
+        float radius = 3; //Todo generate radius and velocity so it matches logic
+        var velocity = 1;
+
+        int maxNumber = bodyHandler.body.satellitesData.maxNumberOfSatellites < number
+            ? bodyHandler.body.satellitesData.maxNumberOfSatellites
+            : number;
+        
+        /*Here to generate the satellites*/
+        for (int i = 0; i < maxNumber; i++)
+        {
+            
+            float angle =  UnityEngine.Random.Range(0f, 2f * Mathf.PI);
+            var genBody = _bodyGenerator.GenerateRandomBody(bodyProbability);
+
+          
+    
+            genBody.astralBody.orbitingData = new OrbitingData() 
+            {
+                isSatellite = true,
+                centerOfRotation = bodyHandler,
+                distanceFromCenter = radius,
+                orbitAngularVelocity = velocity
+            };
+            
+            
+            Vector3 position = new Vector3(radius * MathF.Cos(angle), 0 , radius * MathF.Sin(angle));
+            
+            var newHandler = GenerateBody(genBody , bodyHandler.transform.position + position, false, true);
+            newHandler.transform.parent = bodyHandler.transform;
+            newHandler.gravityDisabled = true; //Todo to test , dont keep
+            
+            if(newHandler) satellites.Add(newHandler);
+
+            radius += 2; //Todo to test , dont keep
+            velocity += 15;
+        }
+        return satellites;
+    }
+
+    private bool ReachedMaxNestedSatellites(AstralBodyHandler bodyHandler, int nestedLevel)
+    {
+        var parent = bodyHandler;
+        int i = 0;
+        while (parent.IsSatellite)
+        {
+            i++;
+            parent = parent.CenterOfRotation;
+            if (!parent)
+            {
+             
+                Debug.Log("End of satellites loop");   
+                break;
+                
+            }
+
+           
+        }
+
+        return i >= nestedLevel;
+
+    }
+
+    public AstralBodyHandler GenerateBody(GeneratedBody generatedBody,Vector3 spawnPoint,  bool randomVelocity = false, bool randomAngularVelocity = false)
+    {
         var prefab = generatedBody.prefab;
 
-        if (prefab == null) return;
+        if (prefab == null) return null;
 
         GameObject newBodyClone = Instantiate(prefab, spawnPoint, Quaternion.identity, _universeContainer ? _universeContainer.transform : null);
 
@@ -303,14 +390,14 @@ public class AstralBodiesManager : MonoBehaviour
         
         var bodyHandler = newBodyClone.GetComponent<AstralBodyHandler>();
 
-        if (bodyHandler == null) return;
+        if (bodyHandler == null) return null;
 
 
 
         if (astralBody is Planet)
         {
             Planet planet = (Planet)astralBody;
-            newBodyClone.GetComponent<AstralBodyHandler>().body = new Planet(planet);
+            bodyHandler.body = new Planet(planet);
             Planet planetToSet = newBodyClone.GetComponent<AstralBodyHandler>().body as Planet;
             Debug.Log("[AstralBodyManager] planet resistance: " + planet.InternalResistance);
 
@@ -325,7 +412,7 @@ public class AstralBodiesManager : MonoBehaviour
         else if (astralBody is Star)
         {
             Star star = (Star)astralBody;
-            newBodyClone.GetComponent<AstralBodyHandler>().body = new Star(star);
+            bodyHandler.body = new Star(star);
             Star starToSet = newBodyClone.GetComponent<AstralBodyHandler>().body as Star;
             if (starToSet != null)
             {
@@ -337,9 +424,21 @@ public class AstralBodiesManager : MonoBehaviour
 
         else
         {
-            newBodyClone.GetComponent<AstralBodyHandler>().body = new AstralBody(astralBody);
+            bodyHandler.body = new AstralBody(astralBody);
         }
+        
+        bodyHandler.body.SetCanHaveSatellites();
+        bodyHandler.Satellites = GenerateSatellites(bodyHandler, 3);
 
+        return newBodyClone.GetComponent<AstralBodyHandler>();
+
+    }
+
+    public AstralBodyHandler GenerateBody(AstralBody body, Vector3 spawnPoint, bool generateRandomPhysicalCharacteristic = false , bool randomVelocity = false, bool randomAngularVelocity = false)
+    {
+        GeneratedBody generatedBody = _bodyGenerator.GenerateBody(body, generateRandomPhysicalCharacteristic);
+        
+        return GenerateBody(generatedBody, spawnPoint, randomVelocity, randomAngularVelocity);
     }
 
     public void GenerateBody(Vector3 position, AstralBody body, GenerationPrefs prefs)
@@ -354,23 +453,23 @@ public class AstralBodiesManager : MonoBehaviour
        
         if (generateAtRandom) 
         {
-            GenerateRandomBody(position, generateAtRandom, randomVelocity, randomAngularVelocity);
+            GenerateRandomBody(UniverseManager.Instance.universeComposition ,position, generateAtRandom, randomVelocity, randomAngularVelocity);
         }
         
         else 
         {
             Debug.Log("[AstralBody Manager] random characteristic" + generateRandomPhysicalCharacteristic);
-            GenerateBody(position, body, generateRandomPhysicalCharacteristic, randomVelocity, randomAngularVelocity);
+            GenerateBody(body, position,  generateRandomPhysicalCharacteristic, randomVelocity, randomAngularVelocity);
         }
     
     }
 
-    public void GenerateRandomBody(Vector3 spawnPoint, bool randomSpawnPoint = true, bool randomVelocity = true, bool randomAngularVelocity = true, List < Vector3> spawnPoints = null) 
+    public void GenerateRandomBody(UniverseComposition composition, Vector3 spawnPoint, bool randomSpawnPoint = true, bool randomVelocity = true, bool randomAngularVelocity = true, List < Vector3> spawnPoints = null) 
     {
         float delta = 10;
         int maxIteration = 15;
 
-        GeneratedBody generatedBody = _bodyGenerator.GenerateRandomBody(UniverseManager.Instance.universeComposition);
+        GeneratedBody generatedBody = _bodyGenerator.GenerateRandomBody(composition);
         var prefab = generatedBody.prefab;
 
         if (prefab == null) return;
@@ -412,9 +511,7 @@ public class AstralBodiesManager : MonoBehaviour
         var bodyHandler = newBodyClone.GetComponent<AstralBodyHandler>();
 
         if (bodyHandler == null) return;
-
- 
-
+        
         if (astralBody is Planet)
         {
             Planet planet = (Planet)astralBody;
@@ -455,7 +552,7 @@ public class AstralBodiesManager : MonoBehaviour
        
         for (int i = 0; i < numberOfBody; i++) 
         {
-            GenerateRandomBody(spawnPoint,randomSpawnPoint,randomVelocity, randomAngularVelocity, spawnPoints);
+            GenerateRandomBody(UniverseManager.Instance.universeComposition,spawnPoint,randomSpawnPoint,randomVelocity, randomAngularVelocity, spawnPoints);
         }
     }
 
@@ -469,20 +566,18 @@ public class AstralBodiesManager : MonoBehaviour
         return canSpawn;
     }
 
-    private Vector3 GenerateRandomSpawnPoint(float min, float max)
-    {
-        float randomX = UnityEngine.Random.Range(min, max);
-        float randomY = UnityEngine.Random.Range(min, max);
-        float randomZ = UnityEngine.Random.Range(min, max);
-
-        return new Vector3(randomX, randomY, randomZ);
-    }
-
+    private Vector3 GenerateRandomSpawnPoint(float min, float max) => _bodyGenerator.GenerateRandomSpawnPoint(min, max);
+    
     private bool IsWithinDistance(Vector3 point, Vector3 center, float radius)
     {
         float distance = Vector3.Distance(point, center);
         return distance <= radius;
     }
+
+    #region Register/Unregister/Destroy
+
+    
+
 
     public void RegisterBody(AstralBodyHandler body) 
     {
@@ -524,12 +619,32 @@ public class AstralBodiesManager : MonoBehaviour
       
 
     }
+    #endregion
     
-    
-    #region Managing bodies( gravity and update) 
+    #region Managing bodies( gravity and update)
 
-    
 
+
+    public void Orbit(AstralBodyHandler bodyHandler)
+    {
+        var centerTransform = bodyHandler.CenterOfRotation.transform;
+        var radius = bodyHandler.body.orbitingData.distanceFromCenter;
+        var rotationSpeed = bodyHandler.body.orbitingData.orbitAngularVelocity;
+        
+        float angleInRadians = Time.time * Mathf.Deg2Rad * rotationSpeed;
+        Vector3 newPosition = new Vector3(
+            centerTransform.position.x + radius * Mathf.Cos(angleInRadians),
+            centerTransform.transform.position.y,
+            centerTransform.position.z + radius * Mathf.Sin(angleInRadians)
+        ); //Todo implement rotation axis and oval orbits 
+
+        // Update the object's position
+        bodyHandler.transform.position = newPosition;
+
+        // Optionally, you can also rotate the object to face the center
+        //transform.LookAt(centerTransform.position);
+    }
+    
 
     private IEnumerator CalculateGravityPullCoroutine(float delay)
     {
@@ -548,10 +663,13 @@ public class AstralBodiesManager : MonoBehaviour
     {
         if(!bodyHandler) return;
         
+        
+        
         bodyHandler.UpdateVelocities(bodyHandler.firstUpdate);
         bodyHandler.firstUpdate = false;
             
-        AddGravityPullToBody(bodyHandler);
+        if(bodyHandler.IsSatellite) Orbit(bodyHandler);
+        else AddGravityPullToBody(bodyHandler);
 
         
     }
@@ -569,6 +687,9 @@ public class AstralBodiesManager : MonoBehaviour
 
     private void AddGravityPullToBody(AstralBodyHandler bodyHandler)
     {
+      
+        if(bodyHandler.IsSatellite) return;  //TODO just to test , dont leave that here
+        
         float range = bodyHandler.InfluenceRange < 0 ? bodyHandler.MaxDetectionRange : bodyHandler.InfluenceRange;
 
         var allBodiesInRange = new List<AstralBodyHandler>();
