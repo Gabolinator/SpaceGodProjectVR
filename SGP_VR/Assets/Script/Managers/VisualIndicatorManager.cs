@@ -354,6 +354,19 @@ public class VisualIndicatorManager : MonoBehaviour
        
     }
     
+    private void PredictTrajectories(List<TrajectoryDrawer> trajectoryDrawers)
+    {
+        if(trajectoryDrawers.Count == 0) return;
+        foreach (var trajectoryDrawer in trajectoryDrawers)
+        {
+            if (trajectoryDrawer)
+                trajectoryDrawer.trajectoryPredictor.PredictTrajectory(5, .2f, trajectoryDrawer.astralBody);
+        }
+    }
+    
+    
+    
+    
 #if UNITY_EDITOR
    
     private void OnValidate()
@@ -380,6 +393,12 @@ public class VisualIndicatorManager : MonoBehaviour
 
 
     }
+
+    private void Update()
+    {
+        PredictTrajectories(allTrajectoryDrawers);
+    }
+    
 
     private void LateUpdate()
     {

@@ -121,7 +121,7 @@ public class TrajectoryDrawer : LineDrawer
         if (astralBody && trajectoryPredictor != null)
         {
             /*populate trajectory predictiion points*/
-            StartCoroutine(trajectoryPredictor.PredictTrajectoryCoroutine(delay, 5, .2f, astralBody));
+         //   StartCoroutine(trajectoryPredictor.PredictTrajectoryCoroutine(delay, 5, .2f, astralBody));
 
             /*populate trail points*/
             StartCoroutine(trajectoryPredictor.AddTrajectoryPointCoroutine(trailRefreshRate, trajectoryPredictor.GetPassedTrajectoryPoints()));
