@@ -1,5 +1,68 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &906567202397022167
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6722174576113013204}
+  - component: {fileID: 7308834667487865666}
+  m_Layer: 0
+  m_Name: VisualisationManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6722174576113013204
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 906567202397022167}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 579.499, y: 171.44983, z: 31.681332}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7671786324418725450}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7308834667487865666
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 906567202397022167}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 30eff4279b1b8e34c83d091cd1946c49, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _refreshRate: 0.01
+  _linePrefab: {fileID: 3937277535213951727, guid: b7f681ef82c8a9a47b57d97184fcdf27, type: 3}
+  maxNumberOfPoints: 50
+  useMaxDistance: 1
+  maxLineDistance: 50
+  _showTotalPullLine: 0
+  _totalPullColor: {r: 1, g: 0, b: 0.9504018, a: 1}
+  _showIndividualPullLine: 0
+  _indivitualPullColor: {r: 0, g: 0, b: 0, a: 0}
+  _maxNumberOfLines: 0
+  _showTrajectory: 0
+  _showTrail: 1
+  _trajectoryPrefab: {fileID: 3937277535213951727, guid: f124ffa0b6f6cd246839b79833bb44a5, type: 3}
+  _trajectoryColor: {r: 0, g: 1, b: 0.89888954, a: 1}
+  _trailColor: {r: 0.051886797, g: 0.51319927, b: 1, a: 1}
+  allVisHandlers: []
+  allTrajectoryDrawers: []
+  allAstralBodies: []
+  showDebugLog: 0
 --- !u!1 &1042398614548460625
 GameObject:
   m_ObjectHideFlags: 0
@@ -32,14 +95,14 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 6748467595964154997}
   - {fileID: 289806828308583950}
+  - {fileID: 4895044612732410679}
   - {fileID: 8470724755422649767}
   - {fileID: 1040362270034426912}
-  - {fileID: 3271439465054542175}
   - {fileID: 2489770573421296345}
   - {fileID: 5425945712734456102}
   - {fileID: 2632553442877582257}
+  - {fileID: 6722174576113013204}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &6318081074052121691
@@ -84,6 +147,7 @@ MonoBehaviour:
   _translateAnchorRef: {fileID: 7779212132400271959, guid: c348712bda248c246b8c49b3db54643f, type: 3}
   _rotateAnchorRef: {fileID: -7363382999065477798, guid: c348712bda248c246b8c49b3db54643f, type: 3}
   _createProtoBodyRef: {fileID: 8122604362336219827, guid: c348712bda248c246b8c49b3db54643f, type: 3}
+  _toggleMainMenuRef: {fileID: 2169927044464356298, guid: c348712bda248c246b8c49b3db54643f, type: 3}
 --- !u!1 &1160373270921561034
 GameObject:
   m_ObjectHideFlags: 0
@@ -148,18 +212,101 @@ MonoBehaviour:
   _editingBody:
     _id: 
     _bodyType: 5
-    _mass: 0
     _startVelocity: {x: 0, y: 0, z: 0}
     _startAngularVelocity: {x: 0, y: 0, z: 0}
-    _density: 0
     _radius: 0
     _volume: 0
     _subType: '-'
-    _bodyComposition: []
+    _physicalCharacteristics:
+      _mass: 0
+      _density: 0
+      _bodyComposition: []
+      _c: 0
+      _u: 0
+      _s: 0
+      _internalResistance: 0
     _temperature: 0
+    orbitingData:
+      currentRadiusOfTrajectory: 0
+      centerOfRotation: {fileID: 0}
+      distanceFromCenter: 0
+      isSatellite: 0
+      orbitAngularVelocity: 0
+    satellitesData:
+      maxNumberOfSatellites: 0
+      satellites: []
+      canHaveSatellites: 0
+      initialized: 0
+    ringsData:
+      rings: []
+      canHaveRings: 0
   massInjectionMultiplicator: 1
   isGrabbing: 0
   editModeOn: 0
+--- !u!1 &1524427161634171827
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4895044612732410679}
+  - component: {fileID: 5640056339318513619}
+  m_Layer: 0
+  m_Name: UniverseManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4895044612732410679
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1524427161634171827}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 579.499, y: 171.44983, z: 31.681332}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7671786324418725450}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5640056339318513619
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1524427161634171827}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b2c966763672cb4981b558ccad9b0fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _physicsProperties:
+    _bodiesDefaultInfluenceStrength: 1000
+    _directGravityPullMultiplier: 10
+  _universeContainer: {fileID: 0}
+  _maxAstralBodyScale: 900
+  _clampScale: 0
+  _maxUniverseScale: 5
+  _scaleMultiplier: 1.005
+  universeComposition:
+    smallBodyPercentage: 0
+    planetoidPercentage: 0
+    planetPercentage: 100
+    starPercentage: 0
+    blackHolePercentage: 0
+  enableGravity: 1
+  _maxDetectionRange: 1000
+  generateRandomBodies: 0
+  numberOfBodyToGenerate: 10
+  spawnZoneMin: -1000
+  spawnZoneMax: 1000
 --- !u!1 &2174668052997480789
 GameObject:
   m_ObjectHideFlags: 0
@@ -220,67 +367,7 @@ MonoBehaviour:
   _uisContainer: {fileID: 8799410326012614030}
   activeGuis: []
   objectWithGuisAttached: []
---- !u!1 &3078534822673242464
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3271439465054542175}
-  - component: {fileID: 3541894038173997633}
-  m_Layer: 2
-  m_Name: VisualizationManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3271439465054542175
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3078534822673242464}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 374.40674, y: 126.27074, z: 25.529766}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 7671786324418725450}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &3541894038173997633
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3078534822673242464}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 30eff4279b1b8e34c83d091cd1946c49, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _refreshRate: 0.1
-  _linePrefab: {fileID: 3937277535213951727, guid: b7f681ef82c8a9a47b57d97184fcdf27, type: 3}
-  maxNumberOfPoints: 50
-  useMaxDistance: 1
-  maxLineDistance: 50
-  _showTotalPullLine: 0
-  _totalPullColor: {r: 1, g: 0, b: 0.9504018, a: 1}
-  _showIndividualPullLine: 0
-  _indivitualPullColor: {r: 0, g: 0, b: 0, a: 0}
-  _maxNumberOfLines: 0
-  showTrajectory: 1
-  showTrail: 1
-  _trajectoryPrefab: {fileID: 3937277535213951727, guid: f124ffa0b6f6cd246839b79833bb44a5, type: 3}
-  _trajectoryColor: {r: 0, g: 1, b: 0.89888954, a: 1}
-  _trailColor: {r: 0, g: 0, b: 0, a: 0}
-  allAstralBodies: []
-  showDebugLog: 0
+  forceMainMenuOn: 1
 --- !u!1 &6630404062334099573
 GameObject:
   m_ObjectHideFlags: 0
@@ -325,13 +412,38 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea43acf8f80534143a1f5a5f6f646b09, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _fractureManager:
+    _fractureFramework: 2
+    atRuntime: 1
+    _sphereFragmentPrefabs:
+    - {fileID: 7556947004061532775, guid: 5b489c66bbdd13f42b2454e94bcd79a5, type: 3}
+    _insideMaterial: {fileID: 2100000, guid: 235dbe708cf96e6449872a548521f2fe, type: 2}
+  _collisionPreferences:
+  - collisionType: 0
+    energyMultiplier: 0.05
+    delay: 0.2
+    impactPointOffset: 0.1
+    lossOfEnergy: 0.6
+    energyThreshold: 500
+  - collisionType: 2
+    energyMultiplier: 1
+    delay: 0
+    impactPointOffset: 0
+    lossOfEnergy: 0.6
+    energyThreshold: 2000
+  - collisionType: 4
+    energyMultiplier: 0
+    delay: 0
+    impactPointOffset: 0
+    lossOfEnergy: 0
+    energyThreshold: 500
   _unProcessedCollisions: []
   _processedCollisions: []
   _processRate: 0.1
   _lossOfEnergyOnImpact: 0.6
-  testMode: 1
-  testCollisionType: 0
-  showDebugLog: 1
+  testMode: 0
+  testCollisionType: 2
+  showDebugLog: 0
 --- !u!1 &6661654414029199172
 GameObject:
   m_ObjectHideFlags: 0
@@ -378,19 +490,29 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   fxDictionnairy:
   - fxList:
-    - fxPrefab: {fileID: 1597029315449593082, guid: 38b8d5c7b7419a0449595a5b6ca1ed87, type: 3}
+    - fxPrefabs:
+      - {fileID: 1560195616043144, guid: 9efac3ef75f3a054f93c32ffa91c05e7, type: 3}
+      - {fileID: 1822826418782532, guid: 7bfa717c06cd39a4caa982d7615971fe, type: 3}
       audios: []
       keyword: inject
       category: 0
-    - fxPrefab: {fileID: 1597029315449593082, guid: 2372f17e389cd2243affdedb1b5dfce0, type: 3}
+    - fxPrefabs:
+      - {fileID: 1236643204216662, guid: 706333c6431ba8c4ea48f7fe578e3e37, type: 3}
+      - {fileID: 1822826418782532, guid: 7bfa717c06cd39a4caa982d7615971fe, type: 3}
       audios: []
       keyword: create
       category: 0
     category: 1
   - fxList:
-    - fxPrefab: {fileID: 227284104515349956, guid: 54602c009446e8c44b2b73f77d661e4e, type: 3}
+    - fxPrefabs:
+      - {fileID: 1809022330002312, guid: ed511b7776af6174e9b1255c7a81e59c, type: 3}
       audios: []
-      keyword: impact
+      keyword: Impact
+      category: 0
+    - fxPrefabs:
+      - {fileID: 1879769179923522, guid: 65932b7368590234d8163da03c2055d8, type: 3}
+      audios: []
+      keyword: SuperCatastrophic
       category: 0
     category: 0
   activeFX: []
@@ -404,6 +526,7 @@ GameObject:
   m_Component:
   - component: {fileID: 289806828308583950}
   - component: {fileID: 152695022865645998}
+  - component: {fileID: 7123576045994859530}
   m_Layer: 2
   m_Name: AstralBodyManager
   m_TagString: Untagged
@@ -438,9 +561,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b609bc1c6c30b2b44b8378d72362b8bf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _allBodies: []
+  _showDebugLog: 1
+--- !u!114 &7123576045994859530
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7005266415668038351}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ecf7d8e4cbb51a42aa4fd0ba5a2f628, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  nameGenerator:
+    _showDebugLog: 1
   _astralBodyDictionnary:
-  - bodyPrefab: {fileID: 6975080124717213768, guid: f600e3ff0ff13cb4f85e265920c4cbba, type: 3}
-    bodyType: 5
+  - bodyPrefab: {fileID: 6975080124717213768, guid: 509ba924b387281449dedf5253638288, type: 3}
+    bodyType: 4
     bodyMaterials: []
   - bodyPrefab: {fileID: 6975080124717213768, guid: eebae1c30c57e034297d6f80d5bc3541, type: 3}
     bodyType: 1
@@ -448,10 +587,18 @@ MonoBehaviour:
   - bodyPrefab: {fileID: 6975080124717213768, guid: dc7b6858101084242844da844f551155, type: 3}
     bodyType: 0
     bodyMaterials: []
-  - bodyPrefab: {fileID: 6975080124717213768, guid: 509ba924b387281449dedf5253638288, type: 3}
-    bodyType: 4
+  - bodyPrefab: {fileID: 6975080124717213768, guid: f600e3ff0ff13cb4f85e265920c4cbba, type: 3}
+    bodyType: 5
     bodyMaterials: []
   _planetDictionnary:
+  - planetMaterials:
+    - {fileID: 2100000, guid: d02cb23446c23594eb4c954cd186480f, type: 2}
+    planetType: 2
+  - planetMaterials:
+    - {fileID: 2100000, guid: 0c6fa64ac0ec35b45a92ed2c286703a2, type: 2}
+    - {fileID: 2100000, guid: 8efc69a871253ad4ea528de9c62840ed, type: 2}
+    - {fileID: 2100000, guid: ad314413b46b1734a98a1b5773a2f20f, type: 2}
+    planetType: 1
   - planetMaterials:
     - {fileID: 2100000, guid: e8f1f461c46ef3b46911ce2ed1bbfc0d, type: 2}
     - {fileID: 2100000, guid: ec99e4d33b5de804f91280cdbdb61466, type: 2}
@@ -462,35 +609,27 @@ MonoBehaviour:
     - {fileID: 2100000, guid: 1ed28e16c94976543831ed38672299b1, type: 2}
     - {fileID: 2100000, guid: 61b876c0be2cc7842bf48f56ff0ae0d5, type: 2}
     planetType: 0
-  - planetMaterials:
-    - {fileID: 2100000, guid: 0c6fa64ac0ec35b45a92ed2c286703a2, type: 2}
-    - {fileID: 2100000, guid: 8efc69a871253ad4ea528de9c62840ed, type: 2}
-    - {fileID: 2100000, guid: ad314413b46b1734a98a1b5773a2f20f, type: 2}
-    planetType: 1
-  - planetMaterials:
-    - {fileID: 2100000, guid: d02cb23446c23594eb4c954cd186480f, type: 2}
-    planetType: 2
   _starDictionnary:
   - starMaterials:
     - {fileID: 2100000, guid: 235dbe708cf96e6449872a548521f2fe, type: 2}
     starType: 6
     mainSequenceStar: []
   _astralBodyCharacteristics:
+  - {fileID: 11400000, guid: 95427ef1b4c00f54180de4000c8a7157, type: 2}
+  - {fileID: 11400000, guid: 976de88e821d89747b7202ca0f25bb2c, type: 2}
   - {fileID: 11400000, guid: 2fd47dd70ec9a6441822439a07c7cf08, type: 2}
   - {fileID: 11400000, guid: 21b1aeac839b4544695731c94588f928, type: 2}
   - {fileID: 11400000, guid: a0ea1b3dc0099f245b9d5c2cdf0a04f7, type: 2}
-  - {fileID: 11400000, guid: 6b9519278a0eb0b4eadebe0691cfe382, type: 2}
-  - {fileID: 11400000, guid: c69957db20d0f834eb1a449c75a6003a, type: 2}
-  - {fileID: 11400000, guid: 976de88e821d89747b7202ca0f25bb2c, type: 2}
   - {fileID: 11400000, guid: 42f0c21565898da42908050c03256760, type: 2}
   - {fileID: 11400000, guid: 490e8778e081d1c4eb77da33b7d01f05, type: 2}
-  - {fileID: 11400000, guid: b521bd19c3e308a44b92dd1b944df896, type: 2}
-  - {fileID: 11400000, guid: ebeaa3206494744439bfbbfb0bdb572a, type: 2}
-  - {fileID: 11400000, guid: 3d20ddd893fd71a4e84f40dbf88b0bc4, type: 2}
-  - {fileID: 11400000, guid: 95427ef1b4c00f54180de4000c8a7157, type: 2}
+  - {fileID: 11400000, guid: c69957db20d0f834eb1a449c75a6003a, type: 2}
   - {fileID: 11400000, guid: b7749247fcf631e4c839d336013126fc, type: 2}
-  _allBodies: []
-  _showDebugLog: 1
+  - {fileID: 11400000, guid: b521bd19c3e308a44b92dd1b944df896, type: 2}
+  - {fileID: 11400000, guid: 1fa20f0d4c1d7ba498d1e12c536347bb, type: 2}
+  - {fileID: 11400000, guid: ebeaa3206494744439bfbbfb0bdb572a, type: 2}
+  - {fileID: 11400000, guid: 6b9519278a0eb0b4eadebe0691cfe382, type: 2}
+  - {fileID: 11400000, guid: 3d20ddd893fd71a4e84f40dbf88b0bc4, type: 2}
+  _showDebugLog: 0
 --- !u!1 &8071367937046749520
 GameObject:
   m_ObjectHideFlags: 0
@@ -542,67 +681,6 @@ MonoBehaviour:
   _yaw: {fileID: 8425948716712956818, guid: c348712bda248c246b8c49b3db54643f, type: 3}
   rotationSpeed: 10
   _player: {fileID: 0}
---- !u!1 &8617161759658477976
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6748467595964154997}
-  - component: {fileID: 5659223766027960456}
-  m_Layer: 2
-  m_Name: UniverseManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6748467595964154997
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8617161759658477976}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 329.2472, y: 51.300484, z: 515.4408}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 7671786324418725450}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &5659223766027960456
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8617161759658477976}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3b2c966763672cb4981b558ccad9b0fd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _physicsProperties:
-    _directGravityPullMultiplier: 1000
-  _universeContainer: {fileID: 0}
-  _maxAstralBodyScale: 900
-  _clampScale: 0
-  _maxUniverseScale: 5
-  _scaleMultiplier: 1.005
-  _planetPercentage: 100
-  _starPercentage: 0
-  _planetoidPercentage: 24
-  _blackHolePercentage: 1
-  enableGravity: 1
-  _maxDetectionRange: 1000
-  generateRandomBodies: 0
-  numberOfBodyToGenerate: 10
-  spawnZoneMin: -1000
-  spawnZoneMax: 1000
 --- !u!1 &8799410326012614030
 GameObject:
   m_ObjectHideFlags: 0

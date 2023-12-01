@@ -184,7 +184,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   lineRenderer: {fileID: 3794682039361252259}
   rb: {fileID: 0}
-  delay: 1
+  delay: 0.1
   trailLineRenderer: {fileID: 7001210205965490923}
   thisVisualHandler: {fileID: 0}
   trailGO: {fileID: 1700329919051903124}

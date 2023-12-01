@@ -5,6 +5,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using DinoFracture;
+using Script.Physics;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
 using Random = UnityEngine.Random;
@@ -125,9 +129,12 @@ public class AstralBodiesManager : MonoBehaviour
 
     private GameObject _universeContainer => UniverseManager.Instance.UniverseContainer;
 
+    
+    
     public bool _showDebugLog = true;
     
     private float t;
+    [SerializeField] private bool useJobs;
 
     public bool generateRandomBodies => UniverseManager.Instance.generateRandomBodies;
     public int numberOfBodyToGenerate => UniverseManager.Instance.numberOfBodyToGenerate;
@@ -149,7 +156,9 @@ public class AstralBodiesManager : MonoBehaviour
     public void GenerateRandomBodies(int numberOfBody, bool randomSpawnPoint = true, bool randomVelocity = true,
         bool randomAngularVelocity = true) => BodyGenerator.Instance.GenerateRandomBodies(numberOfBody, randomSpawnPoint,
         randomVelocity, randomAngularVelocity);
+    public void GenerateRandomBodies(GenerationPrefs generationPrefs, int numberOfBody) => BodyGenerator.Instance.GenerateRandomBodies(numberOfBody, generationPrefs);
     
+    #region Utils
     private Vector3 GenerateRandomSpawnPoint(float min, float max) =>BodyGenerator.Instance.GenerateRandomSpawnPoint(min, max);
     
     private bool IsWithinDistance(Vector3 point, Vector3 center, float radius)
@@ -158,6 +167,93 @@ public class AstralBodiesManager : MonoBehaviour
         return distance <= radius;
     }
 
+    private float GetVelocity(AstralBodyHandler newSatellite)
+    {
+        return newSatellite.Velocity.magnitude;
+    }
+
+    private float GetDistance(AstralBodyHandler body, AstralBodyHandler otherBody)
+    {
+        return Vector3.Distance(body.transform.position, otherBody.transform.position);
+    }
+    #endregion
+    
+    #region Satellites
+
+    private void ReleaseSatellites(AstralBodyHandler body)
+    {
+        if(!body.HasSatellite) return;
+        foreach (var satellite in body.Satellites)
+        {
+            satellite.StopOrbiting();
+            satellite.ResetOrbitingData();
+        }
+       
+    }
+
+    private void ReleaseSatellite(AstralBodyHandler body, AstralBodyHandler satellite)
+    {
+        if(!body.HasSatellite) return;
+        if (!body.Satellites.Contains(satellite)) return;
+        
+       
+        satellite.ResetOrbitingData();
+    }
+
+
+    private void CaptureSatellite(AstralBodyHandler body, AstralBodyHandler newSatellite) =>
+        body.CaptureSatellite(newSatellite, GetDistance(body, newSatellite), GetVelocity(newSatellite));
+    
+
+
+    private void EvaluateIfBecomesSatellite(AstralBodyHandler body, List<AstralBodyHandler> possibleCenterOfRotation, float maxDistance )
+    {
+        
+        //todo doesnt work 
+       if(possibleCenterOfRotation.Count == 0) return;
+       
+       foreach (var possibleCenter in possibleCenterOfRotation)
+       {
+          float distance = GetDistance(body, possibleCenter);
+          if(distance > maxDistance) continue;
+
+          if (IsAlreadyOrbitingBody(body, possibleCenter) && !CouldBecomeSatellite(possibleCenter, body, distance,  .5f*distance))
+          {
+           Debug.Log(body + " Starts to orbit :" + possibleCenter);
+             // ReleaseSatellite(possibleCenter, body); //we were orbiting but not anymore
+          
+          }
+
+              
+          else if (!IsAlreadyOrbitingBody(body, possibleCenter) && CouldBecomeSatellite(possibleCenter, body, distance,   .5f*distance))
+          {
+              Debug.Log(body + " Stops to orbit :" + possibleCenter);
+             // CaptureSatellite(possibleCenter, body);
+          }
+         
+       }
+
+    }
+
+    private bool IsAlreadyOrbitingBody(AstralBodyHandler body, AstralBodyHandler possibleCenter)
+    {
+        return (body.IsSatellite && body.CenterOfRotation == possibleCenter);
+    }
+
+    private bool CouldBecomeSatellite(AstralBodyHandler body, AstralBodyHandler possibleSatellite, float distance, float buffer)
+    {
+        
+        
+        float velocity = FormulaLibrary.DetermineOrbitingVelocity(body, distance);
+        
+        float currentVelocity = GetVelocity(possibleSatellite);
+        
+        return (currentVelocity >= velocity - buffer && currentVelocity <= velocity + buffer);
+        
+    }
+    
+    #endregion   
+    
     #region Register/Unregister/Destroy
 
     public void RegisterBody(AstralBodyHandler body) 
@@ -194,10 +290,13 @@ public class AstralBodiesManager : MonoBehaviour
 
         OnBodyDestroyed?.Invoke(body);
         UnRegisterBody(body);
-       
+        //ReleaseSatellites(body);
+       // body.StopOrbiting();
+        
         Destroy(body.gameObject);
     }
-    
+
+
     private IEnumerator DestroyBodyCoroutine(AstralBodyHandler body, float delay)
     {
         yield return new WaitForSeconds(delay);
@@ -217,6 +316,7 @@ public class AstralBodiesManager : MonoBehaviour
         var centerTransform = bodyHandler.CenterOfRotation.transform;
         var radius = bodyHandler.body.orbitingData.distanceFromCenter;
         var rotationSpeed = bodyHandler.body.orbitingData.orbitAngularVelocity;
+        
         
         float angleInRadians = Time.time * Mathf.Deg2Rad * rotationSpeed;
         Vector3 newPosition = new Vector3(
@@ -249,23 +349,20 @@ public class AstralBodiesManager : MonoBehaviour
     private void ManageBody(AstralBodyHandler bodyHandler)
     {
         if(!bodyHandler) return;
-        
-        
-        
+
         bodyHandler.UpdateVelocities(bodyHandler.firstUpdate);
         bodyHandler.firstUpdate = false;
-            
-        if(bodyHandler.IsSatellite) Orbit(bodyHandler);
-        else AddGravityPullToBody(bodyHandler);
-
         
+        AddGravityPullToBody(bodyHandler);
+       //EvaluateIfBecomesSatellite(bodyHandler, _allBodies, 100);
+
     }
 
     private void ManageBodies(List<AstralBodyHandler> bodies)
     {
         
         if(bodies.Count == 0) return;
-        
+
         foreach (var bodyHandler in bodies)
         {
             ManageBody(bodyHandler);
@@ -274,32 +371,114 @@ public class AstralBodiesManager : MonoBehaviour
 
     private void AddGravityPullToBody(AstralBodyHandler bodyHandler)
     {
-      
-        if(bodyHandler.IsSatellite) return;  //TODO just to test , dont leave that here
+ 
+        var totalForceOnObject = bodyHandler.totalForceOnObject;
         
-        float range = bodyHandler.InfluenceRange < 0 ? bodyHandler.MaxDetectionRange : bodyHandler.InfluenceRange;
-
-        var allBodiesInRange = new List<AstralBodyHandler>();
-
-        allBodiesInRange = GetAllBodyInRange(range, allBodiesInRange, bodyHandler);
-
-        var totalForceOnObject =
-            CalculateTotalGravityPull(allBodiesInRange, bodyHandler, bodyHandler.transform.position);
-
-
         if (bodyHandler.thisRb && bodyHandler.EnableGravity && totalForceOnObject != Vector3.zero)
         {
             var ratioMass =
                 bodyHandler.Mass /
                 bodyHandler.thisRb.mass; // if we lost mass cause of the cast to float , compensate force applied
-
-            bodyHandler.thisRb.AddForce(bodyHandler.totalForceOnObject =
-                ratioMass == 1 ? totalForceOnObject : totalForceOnObject / (float)ratioMass);
+    
+           // Debug.Log("Total force : " + bodyHandler+ " : " +totalForceOnObject);
+              bodyHandler.thisRb.AddForce(bodyHandler.totalForceOnObject =
+                  ratioMass == 1 ? totalForceOnObject : totalForceOnObject / (float)ratioMass);
         }
         
     }
 
 
+    private void CalculateGravityPulls(List<AstralBodyHandler> bodiesInRange, bool usingJobs)
+    {
+        if( bodiesInRange.Count == 0) return;
+        
+        if(usingJobs) CalculateGravityPullToBodyJob(bodiesInRange);
+
+
+
+        else
+        {
+            foreach (var body in bodiesInRange)
+            {
+                CalculateGravityPullToBody(bodiesInRange, body);
+            }
+        }
+
+       
+        
+
+    }
+
+    private void CalculateGravityPullToBody(List<AstralBodyHandler> bodies, AstralBodyHandler bodyHandler)
+    {
+        if(bodies.Count == 0) return;
+      //  float range = bodyHandler.InfluenceRange < 0 ? bodyHandler.MaxDetectionRange : bodyHandler.InfluenceRange;
+        
+        var allBodiesInRange =bodies;
+        
+        //allBodiesInRange = GetAllBodyInRange(range, allBodiesInRange, bodyHandler);
+        
+        var totalForceOnObject =
+            CalculateTotalGravityPull(allBodiesInRange, bodyHandler, bodyHandler.transform.position)* UniverseManager.Instance.PhysicsProperties.DirectGravityPullMultiplier;
+        
+        bodyHandler.totalForceOnObject = totalForceOnObject;
+//        Debug.Log("Total force : " + bodyHandler+ " : " +totalForceOnObject);
+       // bodyHandler.totalForceOnObject = totalForceOnObject;
+
+    }
+
+    
+    private void CalculateGravityPullToBodyJob(List<AstralBodyHandler> bodies)
+    {
+     
+        /*Using job */
+      
+        if(bodies.Count == 0) return;
+        
+        var allBodiesInRange = bodies;
+
+        int numberOfBodies = allBodiesInRange.Count;
+
+        NativeArray<Vector3> positions = new NativeArray<Vector3>(numberOfBodies, Allocator.TempJob);
+        NativeArray<float> masses = new NativeArray<float>(numberOfBodies, Allocator.TempJob);
+        NativeArray<Vector3> totalForces = new NativeArray<Vector3>(numberOfBodies, Allocator.TempJob);
+        NativeArray<float> influencesStrengths = new NativeArray<float>(numberOfBodies, Allocator.TempJob);
+        
+        for (int i = 0; i < numberOfBodies; i++)
+        {
+          //  Debug.Log("Job: " + i);
+            positions[i] = allBodiesInRange[i].transform.position;
+            masses[i] = (float)allBodiesInRange[i].Mass;
+            influencesStrengths[i] = allBodiesInRange[i].InfluenceStrength;
+        }
+
+        GravityCalculationJob gravityJob = new GravityCalculationJob
+        {
+            positions = positions,
+            masses = masses,
+            totalForces = totalForces,
+            influenceStrength = influencesStrengths,
+            directGravityMultiplier = UniverseManager.Instance.PhysicsProperties.DirectGravityPullMultiplier,
+            gConstant = UniverseManager.Instance.PhysicsProperties.GravitationnalConstant* UniverseManager.Instance.PhysicsProperties.GravitationnalConstantFactor
+        };
+
+        JobHandle jobHandle = gravityJob.Schedule(numberOfBodies, 64); // Adjust the batch size (64 is an example)
+        jobHandle.Complete();
+      
+        
+        for (int i = 0; i < numberOfBodies; i++)
+        { 
+            allBodiesInRange[i].totalForceOnObject = totalForces[i];
+          //  Debug.Log("Total force job: " + allBodiesInRange[i] +" : " +totalForces[i]);
+        }
+        
+        positions.Dispose();
+        masses.Dispose();
+        totalForces.Dispose();
+       
+    }
+
+    
     public List<AstralBodyHandler> GetAllBodyInRange(float range, List<AstralBodyHandler> listOfBody, AstralBodyHandler bodyHandler)
     {
 
@@ -334,9 +513,16 @@ public class AstralBodiesManager : MonoBehaviour
 
     private void Start()
     {
-        if (generateRandomBodies) GenerateRandomBodies(numberOfBodyToGenerate);
+        
+        var generationPrefs = UniverseManager.Instance.generationPrefs;
+        if (generateRandomBodies) GenerateRandomBodies(generationPrefs,numberOfBodyToGenerate);
 
 
+    }
+
+    private void Update()
+    {
+        CalculateGravityPulls(_allBodies, useJobs);
     }
 
     private void FixedUpdate()

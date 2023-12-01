@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using DinoFracture;
+using Script.Physics;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -132,7 +133,7 @@ public class AstralBodyHandler : MonoBehaviour
     public float _processRate = 0.1f;
     
     public Vector3 totalForceOnObject = Vector3.zero;
-    public bool EnableGravity => UniverseManager.Instance.enableGravity || !isGrabbed || !gravityDisabled;
+    public bool EnableGravity => UniverseManager.Instance.enableGravity && !isGrabbed && !gravityDisabled;
     
     
     [Header("Start Preferences")] 
@@ -181,22 +182,21 @@ public class AstralBodyHandler : MonoBehaviour
     public bool IsOrbiting => body.IsOrbiting;
     
     public bool IsSatellite => body.IsSatellite;
-    //
-    // [Header("Satellites")] 
-    // [Header("Satellites")] 
-    // public int maxNumberOfSatellites;
+
+    public bool CanHaveSatellites => body.CanHaveSatellites;
+
+    public int IncrementMaxSatellites() => body.satellitesData.maxNumberOfSatellites++; 
+    
     public List<AstralBodyHandler> Satellites
     {
         get => body.Satellites;
         set => body.Satellites = value;
     }
-    // public bool canHaveSatellites;
-    // public bool HasSatellite => satellites.Count != 0;
-    //
-    // [Header("Ring")] 
-    // public List<CelestialRing> rings;
-    // public bool canHaveRings;
-    // public bool HasRings => rings.Count != 0;
+
+    public void ResetOrbitingData() => body.ResetOrbitingData();
+    
+    public bool HasSatellite => body.HasSatellite;
+
     
     [Header("Grab")] 
     public bool isGrabbed = false;
@@ -772,5 +772,26 @@ public class AstralBodyHandler : MonoBehaviour
         
         
         Volume = volume*250000*originalBodyVolume / 1.0027; //to make sure volume ratio is respected - will have a tiny bit of loss 
+    }
+
+
+    public void CaptureSatellite(AstralBodyHandler newSatellite, float distance, float angularVelocity)
+    {
+        if(!newSatellite) return;
+        IncrementMaxSatellites();
+        if(!CanHaveSatellites) return;
+        
+        body.Satellites.Add(newSatellite);
+        newSatellite.body.CreateOrbitData(this, distance, angularVelocity);
+        
+    }
+
+    public void StopOrbiting()
+    {
+        if(!IsSatellite) return;
+        if( !CenterOfRotation.Satellites.Contains(this)) return;
+        
+        CenterOfRotation.Satellites.Remove(this);
+       
     }
 }

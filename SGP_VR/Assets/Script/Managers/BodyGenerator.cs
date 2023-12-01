@@ -1,8 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Text;
+using Script.Physics;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 
 /// <summary>
@@ -40,6 +43,8 @@ public class NameGenerator
         "Andromeda", "Orion", "Cassiopeia", "Pleiades", "Hubble", "Chandra", "Kepler"
         // Add more common names as needed
     };
+    
+    
     
      public string GenerateRandomName()
     {
@@ -98,10 +103,23 @@ public class NameGenerator
 
         if (_showDebugLog) Debug.Log("[Body Generator] Generated ID : " + nameBuilder.ToString());
 
+        
+        
         return nameBuilder.ToString();
 
     }
-    
+
+     public void LoadBodyNameData()
+     {
+         throw new NotImplementedException();
+     }
+
+     public void SaveBodyNameData()
+     {
+         throw new NotImplementedException();
+     }
+     
+
 }
 
 
@@ -131,346 +149,31 @@ public class BodyGenerator : MonoBehaviour
     
     public NameGenerator nameGenerator = new NameGenerator();
     
-    
-    public bool _showDebugLog = true;
-
     [SerializeField] private List<AstralBodyDictionnary> _astralBodyDictionnary = new List<AstralBodyDictionnary>();
     [SerializeField] private List<PlanetDictionnary> _planetDictionnary = new List<PlanetDictionnary>();
     [SerializeField] private List<StarDictionnary> _starDictionnary = new List<StarDictionnary>();
     
     [SerializeField] private List<AstralBodyPhysicalCharacteristics> _astralBodyCharacteristics = new List<AstralBodyPhysicalCharacteristics>();
     public List<AstralBodyPhysicalCharacteristics> AstralBodyCharacteristics => _astralBodyCharacteristics;
-
-    //private GameObject _universeContainer = UniverseManager.Instance.UniverseContainer;
     
+    public bool _showDebugLog = true;
     
-    public GeneratedBody GeneratedBodyFromCharacteristic(AstralBody body) =>
-        GeneratedBodyFromCharacteristic(AstralBodyCharacteristics, body);
+    public string GenerateRandomName() => nameGenerator.GenerateRandomName();
 
-    public GeneratedBody GeneratedBodyFromCharacteristic(List<AstralBodyPhysicalCharacteristics> characteristics, AstralBody body) 
-    {
-        List< AstralBodyPhysicalCharacteristics > possibleCharacteristics = new List< AstralBodyPhysicalCharacteristics >(characteristics);
+  
+    #region BodyType / Subtype
+    
+    public string PredictSubtypeFromCharacteristic(AstralBody body, AstralBodyType bodyType) =>PredictSubtypeFromCharacteristic(AstralBodyCharacteristics, body, bodyType);
 
-        List<GeneratedBody> generatedBodies = new List<GeneratedBody>();
+    public AstralBodyType PredictBodyTypeFromCharacteristic(AstralBody body) => PredictBodyTypeFromCharacteristic(AstralBodyCharacteristics, body);
 
-        /*eliminate possibilities based on density*/
-      
-        var bodyDensity = body.Density;
-        List<AstralBodyPhysicalCharacteristics> possibleCharacteristicsClones = new List<AstralBodyPhysicalCharacteristics>(possibleCharacteristics);
-        foreach (var characteristic in possibleCharacteristicsClones) 
-        {
-            if (bodyDensity >= characteristic._minDensity && bodyDensity <= characteristic._maxDensity) continue;
-            
-            possibleCharacteristics.Remove(characteristic);
-        }
-
-
-        /*eliminate possibilities based on mass*/
-        var bodyMass = body.Mass;
-        possibleCharacteristicsClones = new List<AstralBodyPhysicalCharacteristics>(possibleCharacteristics);
-        foreach (var characteristic in possibleCharacteristicsClones)
-        {
-            if (bodyDensity >= characteristic._minMass && bodyDensity <= characteristic._maxMass) continue;
-            
-            possibleCharacteristics.Remove(characteristic);
-        }
-
-        /*eliminate possibilities based on composition*/
-        //TODO
-
-        if (possibleCharacteristics.Count == 0) return null;
-
-        /*for each possible characteristic get all the planets - and subtype */
-        possibleCharacteristicsClones = new List<AstralBodyPhysicalCharacteristics>(possibleCharacteristics);
-        foreach (var characteristic in possibleCharacteristicsClones)
-        {
-            if (characteristic.bodyType != AstralBodyType.Planet) continue;
-
-            var subType = characteristic.planetType;
-            Planet possiblePlanet = new Planet(body.Mass, body.Density, Vector3.zero, Vector3.zero, subType);
-            
-            generatedBodies.Add(new GeneratedBody(possiblePlanet));
-            possibleCharacteristics.Remove(characteristic);
-        }
-
-
-
-        /*for each possible characteristic get all the stars - and subtype */
-        possibleCharacteristicsClones = new List<AstralBodyPhysicalCharacteristics>(possibleCharacteristics);
-        foreach (var characteristic in possibleCharacteristicsClones)
-        {
-            if (characteristic.bodyType != AstralBodyType.Star) continue;
-
-            var subType = characteristic.starType;
-            var spectraType = characteristic.starSpectralType;
-
-            if (subType == StarType.MainSequenceStar) 
-            {
-                Star possibleStar = new Star(body.Mass, body.Density, Vector3.zero, Vector3.zero ,spectraType);
-                generatedBodies.Add(new GeneratedBody(possibleStar));
-                possibleCharacteristics.Remove(characteristic);
-            }
-
-            else 
-            {
-                Star possibleStar = new Star(body.Mass, body.Density, Vector3.zero, Vector3.zero, subType);
-                generatedBodies.Add(new GeneratedBody(possibleStar));
-                possibleCharacteristics.Remove(characteristic);
-            }
-        }
-
-        /*for each possible characteristic get all the other type */
-        possibleCharacteristicsClones = new List<AstralBodyPhysicalCharacteristics>(possibleCharacteristics);
-        foreach (var characteristic in possibleCharacteristicsClones)
-        {
-            var type = characteristic.bodyType;
-
-            AstralBody possibleBody = new AstralBody(body.Mass, body.Density, Vector3.zero, Vector3.zero, type);
-
-            generatedBodies.Add(new GeneratedBody(possibleBody));
-            possibleCharacteristics.Remove(characteristic);
-        }
-
-        if (generatedBodies.Count == 0) return null;
-
-        if (generatedBodies.Count == 1) return generatedBodies[0];
-
-        /*if more than one possibility get at random*/
-        int randomIndex = 0;//= UnityEngine.Random.Range((int)0, (int)(generatedBodies.Count-1));
-
-        return generatedBodies[randomIndex];
-    }
-
-    internal AstralBodyType PredictBodyTypeFromCharacteristic(List<AstralBodyPhysicalCharacteristics> astralBodyCharacteristics, AstralBody body)
-    {
-        List<AstralBodyPhysicalCharacteristics> possibleCharacteristics = new List<AstralBodyPhysicalCharacteristics>(astralBodyCharacteristics);
-
-
-
-        /*eliminate possibilities based on density*/
-
-        var bodyDensity = body.Density;
-        List<AstralBodyPhysicalCharacteristics> possibleCharacteristicsClones = new List<AstralBodyPhysicalCharacteristics>(possibleCharacteristics);
-        foreach (var characteristic in possibleCharacteristicsClones)
-        {
-            if (bodyDensity >= characteristic._minDensity && bodyDensity <= characteristic._maxDensity) continue;
-
-            possibleCharacteristics.Remove(characteristic);
-        }
-
-
-        /*eliminate possibilities based on mass*/
-        var bodyMass = body.Mass;
-        possibleCharacteristicsClones = new List<AstralBodyPhysicalCharacteristics>(possibleCharacteristics);
-        foreach (var characteristic in possibleCharacteristicsClones)
-        {
-            if (bodyDensity >= characteristic._minMass && bodyDensity <= characteristic._maxMass) continue;
-
-            possibleCharacteristics.Remove(characteristic);
-        }
-
-        if (possibleCharacteristics.Count == 0) return AstralBodyType.Uninitialized;
-
-        Debug.Log("Possible Characteristics count " + possibleCharacteristics.Count);
-
-        if (possibleCharacteristics.Count == 1) return possibleCharacteristics[0].bodyType;
-
-        /*if more than one possibility get at random*/
-        int randomIndex= UnityEngine.Random.Range((int)0, (int)(possibleCharacteristics.Count-1));
-
-        foreach (var possibleBody in possibleCharacteristics) 
-        {
-            Debug.Log("possble body :" + possibleBody.bodyType +" " +possibleBody.name);
-        }
-
-        return possibleCharacteristics[randomIndex].bodyType;
-
-
-
-    }
-
-
+    
     public string PredictSubtypeFromCharacteristic(List<AstralBodyPhysicalCharacteristics> astralBodyCharacteristics, AstralBody body, AstralBodyType bodyType)
     {
         //TODO : implement
         throw new NotImplementedException();
     }
 
-    public string GenerateRandomName() => nameGenerator.GenerateRandomName();
-    
-    public GeneratedBody GenerateBody(AstralBodyType bodyType, bool generateRandomPhysical = false) 
-    {
-        AstralBody newBody = new AstralBody(bodyType);
-        return GenerateBody(newBody, true);
-    }
-
-    public GeneratedBody GenerateBody(AstralBody body, bool generateRandomPhysical = false)
-    {
-        var defaultPrefab = _astralBodyDictionnary.Count > 0 ? _astralBodyDictionnary[0].bodyPrefab : null;
-
-        var bodyType = body.BodyType;
-
-        if (_showDebugLog) Debug.Log("[Body Generator] Generate Body  : " + bodyType);
-
-        GameObject prefab = GetBodyPrefab(bodyType);
-        if (!prefab)
-        {
-            if (_showDebugLog) Debug.Log("[Body Generator] No prefab found , using default one : " + defaultPrefab);
-            prefab = defaultPrefab;
-        }
-
-        if (_showDebugLog) Debug.Log("[Body Generator] Prefab found : " + prefab);
-
-        Material material = GetMaterial(body);
-
-        if (material != null) 
-        {
-            Debug.Log("[Body Generator] Material found : " + material);
-            prefab.GetComponent<Renderer>().material = material; 
-        }
-
-        else Debug.Log("[Body Generator] No Material found");
-        GeneratedBody generateBody = new GeneratedBody();
-        generateBody.prefab = prefab;
-
-        Debug.Log("[Body Generator] Generate random body characteristics ? " + generateRandomPhysical);
-
-        if (generateRandomPhysical) generateBody.astralBody = GenerateBodyPhysicalProperties(body);
-
-        else  generateBody.astralBody = body;
-
-
-        generateBody.astralBody.InternalResistance = body.InternalResistance; //TODO: generate resistance based on body characterisitics 
-
-        Debug.Log("[Body Generator] Velocity : " + body.StartVelocity);
-        Debug.Log("[Body Generator] Resistance : " + body.InternalResistance);
-        return generateBody;
-    }
-
-    public GeneratedBody GenerateRandomBody(UniverseComposition universeComposition)
-    {
-
-        AstralBody astralBody = new AstralBody();
-
-        AstralBodyType bodyType = AstralBodyType.other;
-
-        do 
-        {
-            bodyType = GetBodyTypeFromPercentage(UnityEngine.Random.Range(0, 100), universeComposition);
-            
-
-            Debug.Log("[Body Generator] random body type : " + bodyType);
-                
-        } while (bodyType == AstralBodyType.other);
-
-
-        if (bodyType == AstralBodyType.Planet)
-        {
-            PlanetType planetType = PlanetType.none;
-            do
-            {
-                planetType = GetRandomEnumValue<PlanetType>();
-            
-            } while (planetType == PlanetType.none);
-
-            astralBody = GenerateBodyPhysicalProperties(planetType);
-            Planet planet = new Planet(astralBody.Mass, astralBody.Density, astralBody.StartVelocity, astralBody.StartAngularVelocity);
-            planet.PltType = planetType;
-            planet.BodyType = bodyType;
-            Debug.Log("[Body Generator] random planet type : " + planetType);
-            Debug.Log("[Body Generator] Velocity : " + planet.StartVelocity);
-   
-            return GenerateBody(planet);
-        }
-
-        else if (bodyType == AstralBodyType.Star)
-        {
-            StarType starType = StarType.none;
-            do {
-                starType = GetRandomEnumValue<StarType>();
-                
-            }while(starType == StarType.none);
-
-            Debug.Log("[Body Generator] random star type : " + starType);
-            StarSpectralType starSpectralType = StarSpectralType.none;
-
-            if (starType == StarType.MainSequenceStar)
-            {
-                do
-                {
-                    starSpectralType = GetRandomEnumValue<StarSpectralType>();
-                    
-                } while (starSpectralType == StarSpectralType.none);
-
-                Debug.Log("[Body Generator] random star spectral type : " + starSpectralType);
-            }
-
-           
-
-            astralBody = GenerateBodyPhysicalProperties(starType, starSpectralType);
-            Star star = new Star(astralBody);
-            star.BodyType = bodyType;
-            star.StrType = starType;
-            star.SpectralType = starSpectralType;
-            
-            return GenerateBody(star);
-        }
-
-        else
-        {
-            astralBody = GenerateBodyPhysicalProperties(bodyType);
-            astralBody.BodyType = bodyType;
-            
-            return GenerateBody(astralBody);
-        }
-    }
-    
-    public AstralBody CreateAstralBody(AstralBody body, PlanetType planetType, StarType starType, StarSpectralType starSpectralType)
-    {
-        if (body.BodyType == AstralBodyType.Planet)
-        {
-            if (planetType == PlanetType.none) 
-            {
-                do
-                {
-                    planetType = GetRandomEnumValue<PlanetType>();
-
-                }while (planetType == PlanetType.none);
-            }
-
-            Planet planet = new Planet(body);
-            planet.PltType = planetType;
-            
-            
-            return planet;
-        }
-
-        if(body.BodyType == AstralBodyType.Star) {
-            if (starType != StarType.none)
-            {
-                Star star = new Star(body);
-                star.StrType = starType;
-
-                if (starType == StarType.MainSequenceStar)
-                {
-                    if (starSpectralType == StarSpectralType.none)
-                    {
-                        do
-                        {
-                            starSpectralType = GetRandomEnumValue<StarSpectralType>();
-
-                        } while (starSpectralType == StarSpectralType.none);
-                    }
-
-                    star.SpectralType = starSpectralType;
-                }
-
-                return star;
-            }
-        }
-        
-        return body;
-    }
 
     private AstralBodyType GetBodyTypeFromPercentage(float percentage , UniverseComposition universeComposition)
     {
@@ -509,165 +212,20 @@ public class BodyGenerator : MonoBehaviour
             return AstralBodyType.other;
         }
     }
+    #endregion
 
-  
-
-  
-
-    private AstralBodyPhysicalCharacteristics GetCharacteristics(StarType starType, StarSpectralType starSpectralType)
-    {
-        var list = AstralBodyCharacteristics;
-        foreach (var characteristics in list) 
-        {
-            if (characteristics.bodyType == AstralBodyType.Star && characteristics.starType == starType) 
-            {
-                if (starSpectralType == StarSpectralType.none) return characteristics;
-
-                else 
-                {
-                    if (characteristics.starSpectralType == starSpectralType) return characteristics;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private AstralBodyPhysicalCharacteristics GetCharacteristics(PlanetType planetType)
-    {
-        var list = AstralBodyCharacteristics;
-        foreach (var characteristics in list)
-        {
-            if (characteristics.bodyType == AstralBodyType.Planet&& characteristics.planetType == planetType)
-            {
-               return characteristics;
-            }
-        }
-
-        return null;
-    }
-    private AstralBodyPhysicalCharacteristics GetCharacteristics(AstralBodyType bodyType)
-    {
-        var list = AstralBodyCharacteristics;
-        foreach (var characteristics in list)
-        {
-            if (characteristics.bodyType == bodyType)
-            {
-                return characteristics;
-            }
-        }
-
-        return null;
-    }
-
-
-    private AstralBody GenerateBodyPhysicalProperties(StarType starType, StarSpectralType starSpectralType)
-    {
-
-        AstralBodyPhysicalCharacteristics bodyCharacteristics = GetCharacteristics(starType, starSpectralType);
-
-        if (bodyCharacteristics == null) bodyCharacteristics = new AstralBodyPhysicalCharacteristics(10000, 20000, 3000, 5000);
-
-       // double mass = UnityEngine.Random.Range((float)bodyCharacteristics._minMass, (float)bodyCharacteristics._maxMass);
-       // double density = UnityEngine.Random.Range((float)bodyCharacteristics._minDensity, (float)bodyCharacteristics._maxDensity);
-
-        BodyPhysicalCharacteristics physicalCharacteristics = bodyCharacteristics.GenerateRandomPhysicalCharacteristics();
-        
-        Vector3 velocity = GenerateRandomVelocity(-0.5f, 0.5f);
-        Vector3 angularVelocity = GenerateRandomVelocity(-0.5f, 0.5f);
-
-
-        return new Star(physicalCharacteristics, velocity, angularVelocity);
-    }
-
-
-    private AstralBody GenerateBodyPhysicalProperties(PlanetType planetType)
-    {
-        AstralBodyPhysicalCharacteristics bodyCharacteristics = GetCharacteristics(planetType);
-
-        if (bodyCharacteristics == null) bodyCharacteristics = new AstralBodyPhysicalCharacteristics(1000, 2000, 1000, 2000);
-        
-       BodyPhysicalCharacteristics physicalCharacteristics = bodyCharacteristics.GenerateRandomPhysicalCharacteristics();
-
-        Vector3 velocity = GenerateRandomVelocity(-0.5f, 0.5f);
-        Vector3 angularVelocity = GenerateRandomVelocity(-0.5f, 0.5f);
-
-        var planet = new Planet(physicalCharacteristics, velocity, angularVelocity);
-
-       // Debug.Log("[Body Generator] Velocity : " + velocity);
-
-        return planet;
-    }
-
-    public AstralBody GenerateBodyPhysicalProperties(AstralBodyType bodyType)
-    {
-        AstralBodyPhysicalCharacteristics bodyCharacteristics = GetCharacteristics(bodyType);
-
-        if (bodyCharacteristics == null) bodyCharacteristics = new AstralBodyPhysicalCharacteristics(100,2000,1000,2000);
-
-        BodyPhysicalCharacteristics physicalCharacteristics = bodyCharacteristics.GenerateRandomPhysicalCharacteristics();
-
-
-        Vector3 velocity = GenerateRandomVelocity(-0.5f, 0.5f);
-        Vector3 angularVelocity = GenerateRandomVelocity(-0.5f, 0.5f);
-        return new AstralBody(physicalCharacteristics, velocity, angularVelocity);
-    }
-
-
-    private AstralBody GenerateBodyPhysicalProperties(AstralBody body)
-    {
-
-        Debug.Log("[Body Generator] Generating Random physical characteristic");
-        //AstralBody astralBody = new AstralBody();
-
-        if (body is Planet)
-        {
-            Debug.Log("[Body Generator] Generating Random physical for planet");
-            var planet = body as Planet;
-
-            Planet newPlanet = new Planet(GenerateBodyPhysicalProperties(planet.PltType));
-
-            newPlanet.StartVelocity = body.StartVelocity;
-            newPlanet.StartAngularVelocity = body.StartAngularVelocity;
-            newPlanet.PltType = planet.PltType;
-            newPlanet.BodyType = AstralBodyType.Planet;
-
-            return newPlanet;
-        }
-
-        else if (body is Star)
-        {
-            Debug.Log("[Body Generator] Generating Random physical for Star");
-            var star = body as Star;
-
-
-            Star newStar = new Star(GenerateBodyPhysicalProperties(star.StrType, star.SpectralType));
-
-            newStar.StartVelocity = body.StartVelocity;
-            newStar.StartAngularVelocity = body.StartAngularVelocity;
-            newStar.BodyType = AstralBodyType.Star;
-            newStar.StrType = star.StrType;
-            newStar.SpectralType = star.SpectralType;
-            return newStar;
-        }
-
-        else
-        {
-            Debug.Log("[Body Generator] Generating Random physical for Other Body : " + body.BodyType);
-            AstralBody newAstralBody = GenerateBodyPhysicalProperties(body.BodyType);
-            newAstralBody.StartVelocity = body.StartVelocity;
-            newAstralBody.StartAngularVelocity = body.StartAngularVelocity;
-            newAstralBody.BodyType = body.BodyType;
-
-            return newAstralBody;
-        }
-    }
+    #region Utils
 
     private T GetRandomEnumValue<T>()
     {
         System.Array values = System.Enum.GetValues(typeof(T));
         return (T)values.GetValue(UnityEngine.Random.Range(0, values.Length));
     }
+
+    
+    #endregion
+    
+    #region Get Prefab/Material etc
 
     public GameObject GetBodyPrefab(AstralBodyType bodyType)
     {
@@ -805,22 +363,12 @@ public class BodyGenerator : MonoBehaviour
         return materialList[randomIndex];
     }
 
-    public Vector3 GenerateRandomVelocity(float min, float max)
-    {
-        Vector3 velocity = new Vector3(UnityEngine.Random.Range(min, max), UnityEngine.Random.Range(min, max), UnityEngine.Random.Range(min, max));
-
-        Debug.Log("[Body Generator] Generated Random Velocity : " + velocity);
-        return velocity;
-    }
+    #endregion
     
-    public Vector3 GenerateRandomSpawnPoint(float min, float max)
-    {
-        float randomX = UnityEngine.Random.Range(min, max);
-        float randomY = UnityEngine.Random.Range(min, max);
-        float randomZ = UnityEngine.Random.Range(min, max);
+    #region Generate Rings
 
-        return new Vector3(randomX, randomY, randomZ);
-    }
+    
+
     
     
     public AstralBody GenerateRings(AstralBody body)
@@ -832,25 +380,84 @@ public class BodyGenerator : MonoBehaviour
 
     }
 
-    public List<AstralBodyHandler> GenerateSatellites(AstralBodyHandler bodyHandler, int number = 1, int nestedLevel = 1)
+    #endregion
+    
+    #region Generate Satellites
+
+    public int DetermineMaxNumberOfSatellites(AstralBody astralBody)
+    {
+        return 3; //TODO for now - eventually check with mass and other criteria 
+    }
+
+    public SatellitesData CreateSatelliteData(GenerationPrefs pref, AstralBody astralBody)
+    {
+        if (astralBody.satellitesData.initialized) return astralBody.satellitesData;
+
+        
+        Debug.Log("Creating satellite data");
+        
+        int min = pref.minNumberOfSatellites;
+        int max = (astralBody.BodyType == AstralBodyType.Fragment || astralBody.BodyType == AstralBodyType.SmallBody)
+            ? 0
+            : pref.maxNumberOfSatellites;
+
+        int number = pref.generateRandomNumberOfSatellites
+            ? UnityEngine.Random.Range(min, max)
+            : pref.numberOfSatellites;
+
+        var satData = new SatellitesData()
+        {
+            maxNumberOfSatellites = number,
+            canHaveSatellites = pref.generateSatellites && number != 0,
+            initialized = true
+        };
+
+        return satData;
+    }
+
+    public SatellitesData CreateSatelliteData(AstralBody astralBody)
+    {
+        if (astralBody.satellitesData.initialized) return astralBody.satellitesData;
+        Debug.Log("Creating Sat Data");
+        int min = 0;
+        int max = DetermineMaxNumberOfSatellites(astralBody);
+
+        int number = UnityEngine.Random.Range(min, max);
+        
+        var satData = new SatellitesData()
+        {
+            maxNumberOfSatellites = number,
+            canHaveSatellites = number != 0,
+            initialized = true,
+        };
+
+        return satData;
+    }
+
+    public List<AstralBodyHandler> GenerateSatellites(AstralBodyHandler bodyHandler, int nestedLevel = 1) =>
+        GenerateSatellites(bodyHandler,bodyHandler.body.satellitesData.maxNumberOfSatellites, nestedLevel);
+    
+    public List<AstralBodyHandler> GenerateSatellites(AstralBodyHandler bodyHandler, int number, int nestedLevel = 1)
     {
         //TODO : not fully implemented yet 
+
+        Debug.Log("[BodyGenerator] Generating satellites");
+        
         List<AstralBodyHandler> satellites = new List<AstralBodyHandler>();
         
         if (!bodyHandler.body.CanHaveSatellites) return satellites;
         
-        /*check how many "nested satellites level" we have - to not have satellite that has a satellite that have a satellite that ... you know*/
+        /*check how many "nested satellites level" we have - to not have satellite that has a satellite that have a satellite that has a satellite... you know*/
         if(ReachedMaxNestedSatellites(bodyHandler, nestedLevel)) return satellites;
         
-        /*to control what can be a satellite*/
-        UniverseComposition bodyProbability = new UniverseComposition()
-        {
-            smallBodyPercentage = 100
-        };
+        /*to control what can be a satellite - will depend on body ie a star cant orbit a planet */
+        UniverseComposition bodyProbability = GetSatelitteBodyTypeProbability(bodyHandler);
+        if (bodyProbability.Empty) return satellites; 
         
-        float radius = 3; //Todo generate radius and velocity so it matches logic
-        var velocity = 1;
-
+        
+        float minRadius = (float)bodyHandler.Radius + .5f;
+        float maxRadius =10f; 
+        
         int maxNumber = bodyHandler.body.satellitesData.maxNumberOfSatellites < number
             ? bodyHandler.body.satellitesData.maxNumberOfSatellites
             : number;
@@ -858,12 +465,14 @@ public class BodyGenerator : MonoBehaviour
         /*Here to generate the satellites*/
         for (int i = 0; i < maxNumber; i++)
         {
-            
-            float angle =  UnityEngine.Random.Range(0f, 2f * Mathf.PI);
+            double rad = Random.Range(minRadius, maxRadius);
+            float radius = (float)rad;
+            float velocity = DetermineOrbitingVelocity(bodyHandler, rad);
+            velocity *= 1.5f;
+            velocity *= Random.Range(0, 2) == 0 ? 1 : -1; //clockwise or not 
+     
             var genBody = GenerateRandomBody(bodyProbability);
-
-          
-    
+            
             genBody.astralBody.orbitingData = new OrbitingData() 
             {
                 isSatellite = true,
@@ -871,21 +480,78 @@ public class BodyGenerator : MonoBehaviour
                 distanceFromCenter = radius,
                 orbitAngularVelocity = velocity
             };
+         
+          Vector3 randomPointOnSphere = Random.onUnitSphere * radius;
+
+          // Set the object's position to the random point on the sphere
+          var startPosition = randomPointOnSphere + bodyHandler.transform.position;
+
+          // Calculate a velocity vector tangent to the sphere at the chosen point
+          Vector3 tangentVelocity = Vector3.Cross(randomPointOnSphere.normalized, Vector3.up).normalized;
+
+          genBody.astralBody.StartVelocity = tangentVelocity*velocity;
             
+           // Vector3 position = new Vector3(0, 0 , radius);
             
-            Vector3 position = new Vector3(radius * MathF.Cos(angle), 0 , radius * MathF.Sin(angle));
-            
-            var newHandler = GenerateBody(genBody , bodyHandler.transform.position + position, false, true);
-            newHandler.transform.parent = bodyHandler.transform;
-            newHandler.gravityDisabled = true; //Todo to test , dont keep
+            var newHandler = GenerateBody(genBody , startPosition, false, true);
+            //newHandler.transform.parent = bodyHandler.transform;
             
             if(newHandler) satellites.Add(newHandler);
-
-            radius += 2; //Todo to test , dont keep
-            velocity += 15;
+            
         }
         return satellites;
     }
+
+    private UniverseComposition GetSatelitteBodyTypeProbability(AstralBodyHandler bodyHandler)
+    {
+        var bodyType = bodyHandler.BodyType;
+
+        switch (bodyType)
+        {
+            case AstralBodyType.Planet:
+                
+                return  new UniverseComposition()
+                {
+                    smallBodyPercentage = 90,
+                    planetPercentage = 1,
+                    planetoidPercentage = 9,
+                };
+                
+              
+            case AstralBodyType.Star:
+                return  new UniverseComposition()
+                {
+                    smallBodyPercentage = 50,
+                    planetPercentage = 34,
+                    planetoidPercentage = 15,
+                    starPercentage = 1
+                };
+           
+            case AstralBodyType.BlackHole:
+                return  new UniverseComposition()
+                {
+                    smallBodyPercentage =30,
+                    planetPercentage = 34,
+                    planetoidPercentage = 14,
+                    starPercentage = 15.9f,
+                    blackHolePercentage = .1f
+                };
+              
+            default:
+                return  new UniverseComposition();
+            
+            
+        }
+        
+    }
+
+    private float DetermineOrbitingVelocity(AstralBodyHandler bodyHandler, double radius) => FormulaLibrary.DetermineOrbitingVelocity(bodyHandler,  radius);
+   
+
+    private double DetermineOrbitingRadius(AstralBodyHandler bodyHandler, float velocity) =>
+        FormulaLibrary.DetermineOrbitingRadius(bodyHandler, velocity);
+
+
 
     private bool ReachedMaxNestedSatellites(AstralBodyHandler bodyHandler, int nestedLevel)
     {
@@ -907,8 +573,561 @@ public class BodyGenerator : MonoBehaviour
         return i >= nestedLevel;
 
     }
+    
+    public OrbitingData CreateOrbitData(AstralBodyHandler centerBody, AstralBody astralBody, float distanceFromCenter, float velocity)
+    {
+        var orbitData = new OrbitingData()
+        {
+            centerOfRotation = centerBody,
+            distanceFromCenter = distanceFromCenter,
+            orbitAngularVelocity = velocity,
+            isSatellite = true
+            
+        };
 
-    public AstralBodyHandler GenerateBody(GeneratedBody generatedBody,Vector3 spawnPoint,  bool randomVelocity = false, bool randomAngularVelocity = false)
+        return orbitData;
+    }
+
+    #endregion
+    
+    #region Characteristics
+
+   
+    
+    internal AstralBodyType PredictBodyTypeFromCharacteristic(List<AstralBodyPhysicalCharacteristics> astralBodyCharacteristics, AstralBody body)
+    {
+        List<AstralBodyPhysicalCharacteristics> possibleCharacteristics = new List<AstralBodyPhysicalCharacteristics>(astralBodyCharacteristics);
+
+
+
+        /*eliminate possibilities based on density*/
+
+        var bodyDensity = body.Density;
+        List<AstralBodyPhysicalCharacteristics> possibleCharacteristicsClones = new List<AstralBodyPhysicalCharacteristics>(possibleCharacteristics);
+        foreach (var characteristic in possibleCharacteristicsClones)
+        {
+            if (bodyDensity >= characteristic._minDensity && bodyDensity <= characteristic._maxDensity) continue;
+
+            possibleCharacteristics.Remove(characteristic);
+        }
+
+
+        /*eliminate possibilities based on mass*/
+        var bodyMass = body.Mass;
+        possibleCharacteristicsClones = new List<AstralBodyPhysicalCharacteristics>(possibleCharacteristics);
+        foreach (var characteristic in possibleCharacteristicsClones)
+        {
+            if (bodyDensity >= characteristic._minMass && bodyDensity <= characteristic._maxMass) continue;
+
+            possibleCharacteristics.Remove(characteristic);
+        }
+
+        if (possibleCharacteristics.Count == 0) return AstralBodyType.Uninitialized;
+
+        Debug.Log("Possible Characteristics count " + possibleCharacteristics.Count);
+
+        if (possibleCharacteristics.Count == 1) return possibleCharacteristics[0].bodyType;
+
+        /*if more than one possibility get at random*/
+        int randomIndex= UnityEngine.Random.Range((int)0, (int)(possibleCharacteristics.Count-1));
+
+        foreach (var possibleBody in possibleCharacteristics) 
+        {
+            Debug.Log("possble body :" + possibleBody.bodyType +" " +possibleBody.name);
+        }
+
+        return possibleCharacteristics[randomIndex].bodyType;
+
+
+
+    }
+
+    
+  private AstralBodyPhysicalCharacteristics GetCharacteristics(StarType starType, StarSpectralType starSpectralType)
+    {
+        var list = AstralBodyCharacteristics;
+        foreach (var characteristics in list) 
+        {
+            if (characteristics.bodyType == AstralBodyType.Star && characteristics.starType == starType) 
+            {
+                if (starSpectralType == StarSpectralType.none) return characteristics;
+
+                else 
+                {
+                    if (characteristics.starSpectralType == starSpectralType) return characteristics;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private AstralBodyPhysicalCharacteristics GetCharacteristics(PlanetType planetType)
+    {
+        var list = AstralBodyCharacteristics;
+        foreach (var characteristics in list)
+        {
+            if (characteristics.bodyType == AstralBodyType.Planet&& characteristics.planetType == planetType)
+            {
+               return characteristics;
+            }
+        }
+
+        return null;
+    }
+    private AstralBodyPhysicalCharacteristics GetCharacteristics(AstralBodyType bodyType)
+    {
+        var list = AstralBodyCharacteristics;
+        foreach (var characteristics in list)
+        {
+            if (characteristics.bodyType == bodyType)
+            {
+                return characteristics;
+            }
+        }
+
+        return null;
+    }
+
+
+  
+    
+    #endregion
+
+    #region Generate Velocity
+
+    public Vector3 GenerateRandomVelocity(float min, float max)
+    {
+        Vector3 velocity = new Vector3(UnityEngine.Random.Range(min, max), UnityEngine.Random.Range(min, max), UnityEngine.Random.Range(min, max));
+
+        Debug.Log("[Body Generator] Generated Random Velocity : " + velocity);
+        return velocity;
+    }
+
+
+
+    public Vector3 GenerateVelocity(float min, float max) => GenerateRandomVelocity(min, max);
+    
+    #endregion
+    
+    #region Generate AstralBody and GeneratedBody
+
+         public GeneratedBody GeneratedBodyFromCharacteristic(AstralBody body) =>
+        GeneratedBodyFromCharacteristic(AstralBodyCharacteristics, body);
+
+         
+           private AstralBody GenerateBodyPhysicalProperties(StarType starType, StarSpectralType starSpectralType)
+    {
+
+        AstralBodyPhysicalCharacteristics bodyCharacteristics = GetCharacteristics(starType, starSpectralType);
+
+        if (bodyCharacteristics == null) bodyCharacteristics = new AstralBodyPhysicalCharacteristics(10000, 20000, 3000, 5000);
+
+       // double mass = UnityEngine.Random.Range((float)bodyCharacteristics._minMass, (float)bodyCharacteristics._maxMass);
+       // double density = UnityEngine.Random.Range((float)bodyCharacteristics._minDensity, (float)bodyCharacteristics._maxDensity);
+
+        BodyPhysicalCharacteristics physicalCharacteristics = bodyCharacteristics.GenerateRandomPhysicalCharacteristics();
+        
+        Vector3 velocity = GenerateRandomVelocity(-0.5f, 0.5f);
+        Vector3 angularVelocity = GenerateRandomVelocity(-0.5f, 0.5f);
+
+
+        return new Star(physicalCharacteristics, velocity, angularVelocity);
+    }
+
+
+    private AstralBody GenerateBodyPhysicalProperties(PlanetType planetType)
+    {
+        AstralBodyPhysicalCharacteristics bodyCharacteristics = GetCharacteristics(planetType);
+
+        if (bodyCharacteristics == null) bodyCharacteristics = new AstralBodyPhysicalCharacteristics(1000, 2000, 1000, 2000);
+        
+       BodyPhysicalCharacteristics physicalCharacteristics = bodyCharacteristics.GenerateRandomPhysicalCharacteristics();
+
+        Vector3 velocity = GenerateRandomVelocity(-0.5f, 0.5f);
+        Vector3 angularVelocity = GenerateRandomVelocity(-0.5f, 0.5f);
+
+        var planet = new Planet(physicalCharacteristics, velocity, angularVelocity);
+
+       // Debug.Log("[Body Generator] Velocity : " + velocity);
+
+        return planet;
+    }
+
+    public AstralBody GenerateBodyPhysicalProperties(AstralBodyType bodyType)
+    {
+        AstralBodyPhysicalCharacteristics bodyCharacteristics = GetCharacteristics(bodyType);
+
+        if (bodyCharacteristics == null) bodyCharacteristics = new AstralBodyPhysicalCharacteristics(100,2000,1000,2000);
+
+        BodyPhysicalCharacteristics physicalCharacteristics = bodyCharacteristics.GenerateRandomPhysicalCharacteristics();
+
+
+        Vector3 velocity = GenerateRandomVelocity(-0.5f, 0.5f);
+        Vector3 angularVelocity = GenerateRandomVelocity(-0.5f, 0.5f);
+        return new AstralBody(physicalCharacteristics, velocity, angularVelocity);
+    }
+
+
+    private AstralBody GenerateBodyPhysicalProperties(AstralBody body)
+    {
+
+        Debug.Log("[Body Generator] Generating Random physical characteristic");
+        //AstralBody astralBody = new AstralBody();
+
+        if (body is Planet)
+        {
+            Debug.Log("[Body Generator] Generating Random physical for planet");
+            var planet = body as Planet;
+
+            Planet newPlanet = new Planet(GenerateBodyPhysicalProperties(planet.PltType));
+
+            newPlanet.StartVelocity = body.StartVelocity;
+            newPlanet.StartAngularVelocity = body.StartAngularVelocity;
+            newPlanet.PltType = planet.PltType;
+            newPlanet.BodyType = AstralBodyType.Planet;
+            newPlanet.satellitesData = body.satellitesData;
+            return newPlanet;
+        }
+
+        else if (body is Star)
+        {
+            Debug.Log("[Body Generator] Generating Random physical for Star");
+            var star = body as Star;
+
+
+            Star newStar = new Star(GenerateBodyPhysicalProperties(star.StrType, star.SpectralType));
+
+            newStar.StartVelocity = body.StartVelocity;
+            newStar.StartAngularVelocity = body.StartAngularVelocity;
+            newStar.BodyType = AstralBodyType.Star;
+            newStar.StrType = star.StrType;
+            newStar.SpectralType = star.SpectralType;
+            newStar.satellitesData = body.satellitesData;
+            return newStar;
+        }
+
+        else
+        {
+            Debug.Log("[Body Generator] Generating Random physical for Other Body : " + body.BodyType);
+            AstralBody newAstralBody = GenerateBodyPhysicalProperties(body.BodyType);
+            newAstralBody.StartVelocity = body.StartVelocity;
+            newAstralBody.StartAngularVelocity = body.StartAngularVelocity;
+            newAstralBody.BodyType = body.BodyType;
+            newAstralBody.satellitesData = body.satellitesData;
+            return newAstralBody;
+        }
+    }
+         
+    public GeneratedBody GeneratedBodyFromCharacteristic(List<AstralBodyPhysicalCharacteristics> characteristics, AstralBody body) 
+    {
+        List< AstralBodyPhysicalCharacteristics > possibleCharacteristics = new List< AstralBodyPhysicalCharacteristics >(characteristics);
+
+        List<GeneratedBody> generatedBodies = new List<GeneratedBody>();
+
+        /*eliminate possibilities based on density*/
+      
+        var bodyDensity = body.Density;
+        List<AstralBodyPhysicalCharacteristics> possibleCharacteristicsClones = new List<AstralBodyPhysicalCharacteristics>(possibleCharacteristics);
+        foreach (var characteristic in possibleCharacteristicsClones) 
+        {
+            if (bodyDensity >= characteristic._minDensity && bodyDensity <= characteristic._maxDensity) continue;
+            
+            possibleCharacteristics.Remove(characteristic);
+        }
+
+
+        /*eliminate possibilities based on mass*/
+        var bodyMass = body.Mass;
+        possibleCharacteristicsClones = new List<AstralBodyPhysicalCharacteristics>(possibleCharacteristics);
+        foreach (var characteristic in possibleCharacteristicsClones)
+        {
+            if (bodyDensity >= characteristic._minMass && bodyDensity <= characteristic._maxMass) continue;
+            
+            possibleCharacteristics.Remove(characteristic);
+        }
+
+        /*eliminate possibilities based on composition*/
+        //TODO
+
+        if (possibleCharacteristics.Count == 0) return null;
+
+        /*for each possible characteristic get all the planets - and subtype */
+        possibleCharacteristicsClones = new List<AstralBodyPhysicalCharacteristics>(possibleCharacteristics);
+        foreach (var characteristic in possibleCharacteristicsClones)
+        {
+            if (characteristic.bodyType != AstralBodyType.Planet) continue;
+
+            var subType = characteristic.planetType;
+            Planet possiblePlanet = new Planet(body.Mass, body.Density, Vector3.zero, Vector3.zero, subType);
+            
+            generatedBodies.Add(new GeneratedBody(possiblePlanet));
+            possibleCharacteristics.Remove(characteristic);
+        }
+
+
+
+        /*for each possible characteristic get all the stars - and subtype */
+        possibleCharacteristicsClones = new List<AstralBodyPhysicalCharacteristics>(possibleCharacteristics);
+        foreach (var characteristic in possibleCharacteristicsClones)
+        {
+            if (characteristic.bodyType != AstralBodyType.Star) continue;
+
+            var subType = characteristic.starType;
+            var spectraType = characteristic.starSpectralType;
+
+            if (subType == StarType.MainSequenceStar) 
+            {
+                Star possibleStar = new Star(body.Mass, body.Density, Vector3.zero, Vector3.zero ,spectraType);
+                generatedBodies.Add(new GeneratedBody(possibleStar));
+                possibleCharacteristics.Remove(characteristic);
+            }
+
+            else 
+            {
+                Star possibleStar = new Star(body.Mass, body.Density, Vector3.zero, Vector3.zero, subType);
+                generatedBodies.Add(new GeneratedBody(possibleStar));
+                possibleCharacteristics.Remove(characteristic);
+            }
+        }
+
+        /*for each possible characteristic get all the other type */
+        possibleCharacteristicsClones = new List<AstralBodyPhysicalCharacteristics>(possibleCharacteristics);
+        foreach (var characteristic in possibleCharacteristicsClones)
+        {
+            var type = characteristic.bodyType;
+
+            AstralBody possibleBody = new AstralBody(body.Mass, body.Density, Vector3.zero, Vector3.zero, type);
+
+            generatedBodies.Add(new GeneratedBody(possibleBody));
+            possibleCharacteristics.Remove(characteristic);
+        }
+
+        if (generatedBodies.Count == 0) return null;
+
+        if (generatedBodies.Count == 1) return generatedBodies[0];
+
+        /*if more than one possibility get at random*/
+        int randomIndex = 0;//= UnityEngine.Random.Range((int)0, (int)(generatedBodies.Count-1));
+
+        return generatedBodies[randomIndex];
+    }
+
+    
+    public GeneratedBody GenerateBody(AstralBodyType bodyType, bool generateRandomPhysical = false) 
+    {
+        AstralBody newBody = new AstralBody(bodyType);
+        return GenerateBody(newBody, true);
+    }
+
+    public GeneratedBody GenerateBody(AstralBody body, bool generateRandomPhysical = false)
+    {
+        var defaultPrefab = _astralBodyDictionnary.Count > 0 ? _astralBodyDictionnary[0].bodyPrefab : null;
+
+        var bodyType = body.BodyType;
+
+        if (_showDebugLog) Debug.Log("[Body Generator] Generate Body  : " + bodyType);
+
+        GameObject prefab = GetBodyPrefab(bodyType);
+        if (!prefab)
+        {
+            if (_showDebugLog) Debug.Log("[Body Generator] No prefab found , using default one : " + defaultPrefab);
+            prefab = defaultPrefab;
+        }
+
+        if (_showDebugLog) Debug.Log("[Body Generator] Prefab found : " + prefab);
+
+        Material material = GetMaterial(body);
+
+        if (material != null) 
+        {
+            Debug.Log("[Body Generator] Material found : " + material);
+            prefab.GetComponent<Renderer>().material = material; 
+        }
+
+        else Debug.Log("[Body Generator] No Material found");
+        GeneratedBody generateBody = new GeneratedBody();
+        generateBody.prefab = prefab;
+
+        Debug.Log("[Body Generator] Generate random body characteristics ? " + generateRandomPhysical);
+
+    
+        
+        if (generateRandomPhysical) generateBody.astralBody = GenerateBodyPhysicalProperties(body);
+
+        else  generateBody.astralBody = body;
+
+        
+
+        generateBody.astralBody.InternalResistance = body.InternalResistance; //TODO: generate resistance based on body characterisitics 
+
+        Debug.Log("[Body Generator] Velocity : " + body.StartVelocity);
+        Debug.Log("[Body Generator] Resistance : " + body.InternalResistance);
+        return generateBody;
+    }
+
+    public GeneratedBody GenerateRandomBody(UniverseComposition universeComposition)
+    {
+
+        AstralBody astralBody = new AstralBody();
+
+        AstralBodyType bodyType = AstralBodyType.other;
+
+        do 
+        {
+            bodyType = GetBodyTypeFromPercentage(UnityEngine.Random.Range(0, 100), universeComposition);
+            
+
+            Debug.Log("[Body Generator] random body type : " + bodyType);
+                
+        } while (bodyType == AstralBodyType.other);
+
+
+        if (bodyType == AstralBodyType.Planet)
+        {
+            PlanetType planetType = PlanetType.none;
+            do
+            {
+                planetType = GetRandomEnumValue<PlanetType>();
+            
+            } while (planetType == PlanetType.none);
+
+            astralBody = GenerateBodyPhysicalProperties(planetType);
+            Planet planet = new Planet(astralBody.Mass, astralBody.Density, astralBody.StartVelocity, astralBody.StartAngularVelocity);
+            planet.PltType = planetType;
+            planet.BodyType = bodyType;
+            Debug.Log("[Body Generator] random planet type : " + planetType);
+            Debug.Log("[Body Generator] Velocity : " + planet.StartVelocity);
+   
+            return GenerateBody(planet);
+        }
+
+        else if (bodyType == AstralBodyType.Star)
+        {
+            StarType starType = StarType.none;
+            do {
+                starType = GetRandomEnumValue<StarType>();
+                
+            }while(starType == StarType.none);
+
+            Debug.Log("[Body Generator] random star type : " + starType);
+            StarSpectralType starSpectralType = StarSpectralType.none;
+
+            if (starType == StarType.MainSequenceStar)
+            {
+                do
+                {
+                    starSpectralType = GetRandomEnumValue<StarSpectralType>();
+                    
+                } while (starSpectralType == StarSpectralType.none);
+
+                Debug.Log("[Body Generator] random star spectral type : " + starSpectralType);
+            }
+
+           
+
+            astralBody = GenerateBodyPhysicalProperties(starType, starSpectralType);
+            Star star = new Star(astralBody);
+            star.BodyType = bodyType;
+            star.StrType = starType;
+            star.SpectralType = starSpectralType;
+            
+            return GenerateBody(star);
+        }
+
+        else
+        {
+            astralBody = GenerateBodyPhysicalProperties(bodyType);
+            astralBody.BodyType = bodyType;
+            
+            return GenerateBody(astralBody);
+        }
+    }
+    
+    public AstralBody CreateAstralBody(AstralBody body, PlanetType planetType, StarType starType, StarSpectralType starSpectralType)
+    {
+        if (body.BodyType == AstralBodyType.Planet)
+        {
+            if (planetType == PlanetType.none) 
+            {
+                do
+                {
+                    planetType = GetRandomEnumValue<PlanetType>();
+
+                }while (planetType == PlanetType.none);
+            }
+
+            Planet planet = new Planet(body);
+            planet.PltType = planetType;
+            
+            
+            return planet;
+        }
+
+        if(body.BodyType == AstralBodyType.Star) {
+            if (starType != StarType.none)
+            {
+                Star star = new Star(body);
+                star.StrType = starType;
+
+                if (starType == StarType.MainSequenceStar)
+                {
+                    if (starSpectralType == StarSpectralType.none)
+                    {
+                        do
+                        {
+                            starSpectralType = GetRandomEnumValue<StarSpectralType>();
+
+                        } while (starSpectralType == StarSpectralType.none);
+                    }
+
+                    star.SpectralType = starSpectralType;
+                }
+
+                return star;
+            }
+        }
+        
+        return body;
+    }
+
+  
+    #endregion
+    
+    #region Instantiate Body
+    
+    public AstralBodyHandler GenerateBody(Vector3 position, AstralBody body, GenerationPrefs prefs)
+    {
+        return GenerateBody(position, body, prefs.generateEverythingAtRandom, prefs.randomPhysicalCharacteristic,
+            prefs.randomVelocity, prefs.randomAngularVelocity);
+       
+    }
+    
+    public AstralBodyHandler GenerateBody(Vector3 position, AstralBody body, bool generateAtRandom, bool generateRandomPhysicalCharacteristic , bool randomVelocity, bool randomAngularVelocity) 
+    {
+       
+        if (generateAtRandom) 
+        {
+            return GenerateRandomBody(UniverseManager.Instance.universeComposition ,position, generateAtRandom, randomVelocity, randomAngularVelocity);
+        }
+        
+        else 
+        {
+            Debug.Log("[AstralBody Manager] random characteristic" + generateRandomPhysicalCharacteristic);
+            return GenerateBody(body, position,  generateRandomPhysicalCharacteristic, randomVelocity, randomAngularVelocity);
+        }
+    
+    }
+
+    public AstralBodyHandler GenerateBody(AstralBody body, Vector3 spawnPoint, bool generateRandomPhysicalCharacteristic = false , bool randomVelocity = false, bool randomAngularVelocity = false)
+    {
+        GeneratedBody generatedBody = GenerateBody(body, generateRandomPhysicalCharacteristic);
+        
+        return GenerateBody(generatedBody, spawnPoint, randomVelocity, randomAngularVelocity);
+    }
+    
+    
+        public AstralBodyHandler GenerateBody(GeneratedBody generatedBody,Vector3 spawnPoint,  bool randomVelocity = false, bool randomAngularVelocity = false)
     {
         var prefab = generatedBody.prefab;
 
@@ -931,7 +1150,7 @@ public class BodyGenerator : MonoBehaviour
         {
             Planet planet = (Planet)astralBody;
             bodyHandler.body = new Planet(planet);
-            Planet planetToSet = newBodyClone.GetComponent<AstralBodyHandler>().body as Planet;
+            Planet planetToSet = bodyHandler.body as Planet;
             Debug.Log("[AstralBodyManager] planet resistance: " + planet.InternalResistance);
 
             if (planetToSet != null)
@@ -946,7 +1165,7 @@ public class BodyGenerator : MonoBehaviour
         {
             Star star = (Star)astralBody;
             bodyHandler.body = new Star(star);
-            Star starToSet = newBodyClone.GetComponent<AstralBodyHandler>().body as Star;
+            Star starToSet = bodyHandler.body as Star;
             if (starToSet != null)
             {
                 starToSet.StrType = star.StrType;
@@ -960,54 +1179,27 @@ public class BodyGenerator : MonoBehaviour
             bodyHandler.body = new AstralBody(astralBody);
         }
         
-        bodyHandler.body.SetCanHaveSatellites();
-        bodyHandler.Satellites = GenerateSatellites(bodyHandler, 3);
+         bodyHandler.body.CreateSatelliteData(); 
+         bodyHandler.Satellites = GenerateSatellites(bodyHandler);
 
-        return newBodyClone.GetComponent<AstralBodyHandler>();
+        return bodyHandler;
 
     }
 
-    public AstralBodyHandler GenerateBody(AstralBody body, Vector3 spawnPoint, bool generateRandomPhysicalCharacteristic = false , bool randomVelocity = false, bool randomAngularVelocity = false)
-    {
-        GeneratedBody generatedBody = GenerateBody(body, generateRandomPhysicalCharacteristic);
-        
-        return GenerateBody(generatedBody, spawnPoint, randomVelocity, randomAngularVelocity);
-    }
-
-    public void GenerateBody(Vector3 position, AstralBody body, GenerationPrefs prefs)
-    {
-        GenerateBody(position, body, prefs.generateEverythingAtRandom, prefs.randomPhysicalCharacteristic,
-            prefs.randomVelocity, prefs.randomAngularVelocity);
-    }
-
-
-    public void GenerateBody(Vector3 position, AstralBody body, bool generateAtRandom, bool generateRandomPhysicalCharacteristic , bool randomVelocity, bool randomAngularVelocity) 
-    {
-       
-        if (generateAtRandom) 
+        public AstralBodyHandler GenerateRandomBody(UniverseComposition composition, Vector3 spawnPoint, GenerationPrefs generationPrefs, List<Vector3> spawnPoints = null)
         {
-            GenerateRandomBody(UniverseManager.Instance.universeComposition ,position, generateAtRandom, randomVelocity, randomAngularVelocity);
-        }
-        
-        else 
-        {
-            Debug.Log("[AstralBody Manager] random characteristic" + generateRandomPhysicalCharacteristic);
-            GenerateBody(body, position,  generateRandomPhysicalCharacteristic, randomVelocity, randomAngularVelocity);
-        }
-    
-    }
-
-    public void GenerateRandomBody(UniverseComposition composition, Vector3 spawnPoint, bool randomSpawnPoint = true, bool randomVelocity = true, bool randomAngularVelocity = true, List < Vector3> spawnPoints = null) 
-    {
-        float delta = 10;
+             float delta = 10;
         int maxIteration = 15;
 
         GeneratedBody generatedBody = GenerateRandomBody(composition);
         var prefab = generatedBody.prefab;
 
-        if (prefab == null) return;
+        if (prefab == null) return null;
         bool reSpawn = false;
-       
+
+        bool randomSpawnPoint = generationPrefs.randomSpawnPoint;
+        bool randomVelocity = generationPrefs.randomVelocity;
+        bool randomAngularVelocity = generationPrefs.randomAngularVelocity;
        
         int j = 0; // j is to track max number of try to set sapwn point , if reach that maybe space is saturated, so stop generating body
 
@@ -1022,7 +1214,7 @@ public class BodyGenerator : MonoBehaviour
             if (j >= maxIteration)
             {
                 Debug.Log("[AstralBodiesManager] Cant spawn body without collision. Generating body : " + generatedBody.astralBody.BodyType.ToString() + " :" + generatedBody.astralBody.ID + "cancelled");
-                return;
+                return null;
             }
 
         } while (reSpawn);
@@ -1038,17 +1230,17 @@ public class BodyGenerator : MonoBehaviour
         var astralBody = generatedBody.astralBody;
        
 
-        if (!randomVelocity) astralBody.StartVelocity = Vector3.zero;
-        if (!randomAngularVelocity) astralBody.StartAngularVelocity = Vector3.zero;
+        if (!randomVelocity) astralBody.StartVelocity = generationPrefs.startVelocity;
+        if (!randomAngularVelocity) astralBody.StartAngularVelocity = generationPrefs.startAngularVelocity;
 
         var bodyHandler = newBodyClone.GetComponent<AstralBodyHandler>();
 
-        if (bodyHandler == null) return;
+        if (bodyHandler == null) return null;
         
         if (astralBody is Planet)
         {
             Planet planet = (Planet)astralBody;
-            newBodyClone.GetComponent<AstralBodyHandler>().body = new Planet(planet);
+            bodyHandler.body = new Planet(planet);
             Planet planetToSet = newBodyClone.GetComponent<AstralBodyHandler>().body as Planet;
 
 
@@ -1059,7 +1251,7 @@ public class BodyGenerator : MonoBehaviour
         else if (astralBody is Star)
         {
             Star star = (Star)astralBody;
-            newBodyClone.GetComponent<AstralBodyHandler>().body = new Star(star);
+            bodyHandler.body = new Star(star);
             Star starToSet = newBodyClone.GetComponent<AstralBodyHandler>().body as Star;
             if (starToSet != null)
             {
@@ -1071,31 +1263,70 @@ public class BodyGenerator : MonoBehaviour
 
         else
         {
-            newBodyClone.GetComponent<AstralBodyHandler>().body = new AstralBody(astralBody);
+            bodyHandler.body = new AstralBody(astralBody);
         }
 
-    }
-    
-    public void GenerateRandomBodies(int numberOfBody, bool randomSpawnPoint = true, bool randomVelocity = true, bool randomAngularVelocity = true) 
+        bodyHandler.body.CreateSatelliteData(generationPrefs);
+        
+        bodyHandler.Satellites = GenerateSatellites(bodyHandler);
+        
+        return bodyHandler;
+        }
+
+        public AstralBodyHandler GenerateRandomBody(UniverseComposition composition, Vector3 spawnPoint, bool randomSpawnPoint = true, bool randomVelocity = true, bool randomAngularVelocity = true, List < Vector3> spawnPoints = null) 
     {
-        if (numberOfBody <= 0) return;
+      
+        var generationPrefs = new GenerationPrefs()
+        {
+            randomVelocity = randomVelocity,
+            randomAngularVelocity = randomAngularVelocity,
+            randomSpawnPoint = randomSpawnPoint,
+            generateSatellites = true,
+            generateRandomNumberOfSatellites = true
+        };
+        
+        return GenerateRandomBody(composition, spawnPoint, generationPrefs, spawnPoints);
+
+    }
+
+    public List<AstralBodyHandler> GenerateRandomBodies(int numberOfBody, GenerationPrefs generationPrefs)
+    {
+        if (numberOfBody <= 0) return null;
         List<Vector3> spawnPoints = new List<Vector3>();
         var spawnPoint = Vector3.zero;
 
+        List<AstralBodyHandler> bodyHandlers = new List<AstralBodyHandler>();
        
         for (int i = 0; i < numberOfBody; i++) 
         {
-            GenerateRandomBody(UniverseManager.Instance.universeComposition,spawnPoint,randomSpawnPoint,randomVelocity, randomAngularVelocity, spawnPoints);
+            var newHandler =  GenerateRandomBody(UniverseManager.Instance.universeComposition,spawnPoint,generationPrefs, spawnPoints);
+            if(newHandler)  bodyHandlers.Add(newHandler);
         }
+        
+        return bodyHandlers; 
     }
 
-     public string PredictSubtypeFromCharacteristic(AstralBody body, AstralBodyType bodyType) =>PredictSubtypeFromCharacteristic(AstralBodyCharacteristics, body, bodyType);
+    public List<AstralBodyHandler> GenerateRandomBodies(int numberOfBody, bool randomSpawnPoint = true, bool randomVelocity = true, bool randomAngularVelocity = true) 
+    {
+        if (numberOfBody <= 0) return null;
+        List<Vector3> spawnPoints = new List<Vector3>();
+        var spawnPoint = Vector3.zero;
 
-    public AstralBodyType PredictBodyTypeFromCharacteristic(AstralBody body) => PredictBodyTypeFromCharacteristic(AstralBodyCharacteristics, body);
+        List<AstralBodyHandler> bodyHandlers = new List<AstralBodyHandler>();
+       
+        for (int i = 0; i < numberOfBody; i++) 
+        {
+           var newHandler =  GenerateRandomBody(UniverseManager.Instance.universeComposition,spawnPoint,randomSpawnPoint,randomVelocity, randomAngularVelocity, spawnPoints);
+           if(newHandler)  bodyHandlers.Add(newHandler);
+        }
+        
+        return bodyHandlers; 
+    }
 
-    public Vector3 GenerateVelocity(float min, float max) => GenerateRandomVelocity(min, max);
+    
+   
 
-    public GameObject GenerateBody(AstralBodyType bodyType, Vector3 position, Quaternion rotation) 
+    public AstralBodyHandler GenerateBody(AstralBodyType bodyType, Vector3 position, Quaternion rotation) 
     {
         if (bodyType == AstralBodyType.Uninitialized) return null;
 
@@ -1114,8 +1345,9 @@ public class BodyGenerator : MonoBehaviour
 
         bodyHandler.body = new AstralBody(astralBody);
 
+        
 
-        return newBodyClone;
+        return bodyHandler;
     }
 
     public void GenerateBody(CollisionData collision)
@@ -1185,6 +1417,20 @@ public class BodyGenerator : MonoBehaviour
         } 
     }
 
+    #endregion
+    
+    #region SpawnPoint
+
+    public Vector3 GenerateRandomSpawnPoint(float min, float max)
+    {
+        float randomX = UnityEngine.Random.Range(min, max);
+        float randomY = UnityEngine.Random.Range(min, max);
+        float randomZ = UnityEngine.Random.Range(min, max);
+
+        return new Vector3(randomX, randomY, randomZ);
+    }
+
+   
     private bool CanSpawnAtPosition(Vector3 spawnPoint, List<Vector3> spawnPoints, float delta, AstralBody astralBody)
     {
         bool canSpawn = false;
@@ -1194,10 +1440,13 @@ public class BodyGenerator : MonoBehaviour
        
         return canSpawn;
     }
-
+    #endregion
 
     public void Awake()
     {
         _instance = this;
     }
+
+
+
 }

@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 
 [System.Serializable]
@@ -33,9 +34,11 @@ public class PhysicsProperties
     public double EnergyFactor => (.5f * MassFactor * VelocityFactor * VelocityFactor);
 
 
-    [SerializeField] private float _directGravityPullMultiplier = 1000;
-    public float DirectGravityPullMultiplier => _directGravityPullMultiplier;
+    [SerializeField] private float _bodiesDefaultInfluenceStrength = 1000;
+    public float BodiesDefaultInfluenceStrength => _bodiesDefaultInfluenceStrength;
 
+    [SerializeField] private float _directGravityPullMultiplier = 10;
+    public float DirectGravityPullMultiplier => _directGravityPullMultiplier;
 
 
     [SerializeField] private const double _gravitationnalPullFactor = 9.98621905187072E16;
@@ -52,6 +55,9 @@ public struct UniverseComposition
     public float planetPercentage;
     public float starPercentage;
     public float blackHolePercentage;
+
+    public bool Empty =>
+        (smallBodyPercentage + planetPercentage + planetoidPercentage + starPercentage + blackHolePercentage) == 0;
 }
 
 
@@ -128,6 +134,8 @@ public class UniverseManager : MonoBehaviour
    
 
     [Header("Generate Random Bodies")]
+    public GenerationPrefs generationPrefs = new GenerationPrefs();
+    
     public bool generateRandomBodies;
     public int numberOfBodyToGenerate;
     public float spawnZoneMin;
@@ -177,7 +185,7 @@ public class UniverseManager : MonoBehaviour
 
     private void UpdateInfluenceStrength(AstralBodyHandler obj)
     {
-        if(obj.BodyType != AstralBodyType.Fragment)  obj.SetInfluence(PhysicsProperties.DirectGravityPullMultiplier);
-        else obj.SetInfluence(PhysicsProperties.DirectGravityPullMultiplier/50);
+        if(obj.BodyType != AstralBodyType.Fragment)  obj.SetInfluence(PhysicsProperties.BodiesDefaultInfluenceStrength);
+        else obj.SetInfluence(PhysicsProperties.BodiesDefaultInfluenceStrength/50);
     }
 }

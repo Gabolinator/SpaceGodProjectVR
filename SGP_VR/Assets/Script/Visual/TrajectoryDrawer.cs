@@ -23,7 +23,8 @@ public class TrajectoryDrawer : LineDrawer
 
     public TrajectoryPredictor trajectoryPredictor;
     public float duration = .5f;
-
+    public float trailRefreshRate = .1f;
+    
     public List<TrajectoryPoint> debugList = new();
     private bool showTrajectory=> thisVisualHandler.showTrajectory;
     private bool showTrail => thisVisualHandler.showTrail;
@@ -123,7 +124,7 @@ public class TrajectoryDrawer : LineDrawer
             StartCoroutine(trajectoryPredictor.PredictTrajectoryCoroutine(delay, 5, .2f, astralBody));
 
             /*populate trail points*/
-            StartCoroutine(trajectoryPredictor.AddTrajectoryPointCoroutine(2, trajectoryPredictor.GetPassedTrajectoryPoints()));
+            StartCoroutine(trajectoryPredictor.AddTrajectoryPointCoroutine(trailRefreshRate, trajectoryPredictor.GetPassedTrajectoryPoints()));
         }
     }
 

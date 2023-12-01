@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Script.Physics;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -144,7 +145,7 @@ public struct OrbitingData
     public bool IsOrbiting => (centerOfRotation != null);
     public float distanceFromCenter;
     public bool isSatellite;
-    //public float currentAngle;
+    public bool IsSatellite => (IsOrbiting || isSatellite);
     public float orbitAngularVelocity;
 }
 
@@ -156,6 +157,7 @@ public struct SatellitesData
     public List<AstralBodyHandler> satellites;
     public bool canHaveSatellites;
     public bool HasSatellite => satellites.Count != 0;
+    public bool initialized; 
 }
 [System.Serializable]
 public struct RingsData
@@ -325,6 +327,7 @@ public class AstralBody
         set => satellitesData.satellites = value;
     }
 
+  
     public bool HasSatellite => satellitesData.HasSatellite;
   
     public RingsData ringsData = new RingsData();
@@ -341,7 +344,7 @@ public class AstralBody
         this(mass, density, velocity, angularVelocity)
     {
         BodyType = type;
-        SetCanHaveSatellites();
+     //   CreateSatelliteData();
         SetCanHaveRing();
 
     }
@@ -350,7 +353,7 @@ public class AstralBody
     {
        
         BodyType = type;
-        SetCanHaveSatellites();
+    //    CreateSatelliteData();
         SetCanHaveRing();
     }
 
@@ -369,7 +372,7 @@ public class AstralBody
 
 
         _bodyType = AstralBodyType.other;
-        SetCanHaveSatellites();
+       // CreateSatelliteData();
         SetCanHaveRing();
         
         if (ShowDebugLog)
@@ -394,7 +397,7 @@ public class AstralBody
 
         _bodyType = AstralBodyType.other;
 
-        SetCanHaveSatellites();
+       // CreateSatelliteData();
         SetCanHaveRing();
         
         if (ShowDebugLog)
@@ -424,7 +427,9 @@ public class AstralBody
         _physicalCharacteristics = astralBody._physicalCharacteristics;
 
         orbitingData = astralBody.orbitingData;
+        
         satellitesData = astralBody.satellitesData;
+        
         ringsData = astralBody.ringsData;
        
 
@@ -451,18 +456,61 @@ public class AstralBody
         _physicalCharacteristics = _physicalCharacteristics;
     }
 
-    public virtual void SetCanHaveSatellites()
+    public void CreateSatelliteData(GenerationPrefs pref)
     {
-        //TODO check if mass is large enough to keep satellites + change name 
-        int min = 0;
-        int max = 3;
 
-        if (BodyType == AstralBodyType.Fragment || BodyType == AstralBodyType.SmallBody) max = 0;
-            
-        satellitesData.maxNumberOfSatellites = UnityEngine.Random.Range(min, max);
-        satellitesData.canHaveSatellites = satellitesData.maxNumberOfSatellites != 0;
+        var satData = BodyGenerator.Instance.CreateSatelliteData(pref, this);
+
+        SetSatelliteData(satData);
     }
     
+
+    public void SetSatelliteData(SatellitesData satData)
+    {
+        satellitesData = satData;
+       // Debug.Log("Setting Sat Data : " + satellitesData.maxNumberOfSatellites);
+    }
+
+    public void CreateSatelliteData()
+    {
+        if(satellitesData.initialized) return;
+      
+        var satData = BodyGenerator.Instance.CreateSatelliteData( this);
+
+
+        SetSatelliteData(satData);
+        
+        
+    }
+
+    public void CreateOrbitData(AstralBodyHandler centerBody, float distance, float angularVelocity)
+    {
+
+        var orbitData = BodyGenerator.Instance.CreateOrbitData(centerBody, this, distance, angularVelocity);
+
+        SetOrbitData(orbitData);
+    }
+
+    public void SetOrbitData(OrbitingData orbitData)
+    {
+        orbitingData = orbitData;
+    }
+    
+    public void ResetOrbitingData()
+    {
+        var orbitData = new OrbitingData()
+        {
+            
+            
+        };
+
+        SetOrbitData(orbitData);
+
+    }
+    
+    private int DetermineMaxNumberOfSatellites() => BodyGenerator.Instance.DetermineMaxNumberOfSatellites(this);
+   
+
     public virtual void SetCanHaveRing()
     {
         if(BodyType == AstralBodyType.Fragment || BodyType == AstralBodyType.SmallBody) ringsData.canHaveRings = false || BodyType == AstralBodyType.BlackHole;

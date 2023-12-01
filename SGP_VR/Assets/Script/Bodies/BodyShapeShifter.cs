@@ -11,13 +11,16 @@ public struct GenerationPrefs
     public bool generateEverythingAtRandom;
     public bool randomPhysicalCharacteristic;
     public bool randomVelocity;
+    public Vector3 startVelocity;
     public bool randomAngularVelocity;
+    public Vector3 startAngularVelocity;
     public bool generateSatellites;
     public bool generateRandomNumberOfSatellites;
     public int numberOfSatellites;
     public int minNumberOfSatellites;
     public int maxNumberOfSatellites;
     public bool generateRingsAtRandom;
+    public bool randomSpawnPoint;
 }
 
 /// <summary>
@@ -63,7 +66,10 @@ public class BodyShapeShifter : MonoBehaviour
 
     public void Start()
     {
-       
+
+        Body.CreateSatelliteData(prefs);
+      
+        
         GenerateBody(transform.position, CreateBody(Body, PltType, StrType, SpectralType), prefs);
         this.gameObject.SetActive(false);
 

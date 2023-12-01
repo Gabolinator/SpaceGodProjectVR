@@ -245,13 +245,15 @@ MonoBehaviour:
     _temperature: 0
     orbitingData:
       currentRadiusOfTrajectory: 0
-      _centerOfRotation: {fileID: 0}
+      centerOfRotation: {fileID: 0}
       distanceFromCenter: 0
       isSatellite: 0
+      orbitAngularVelocity: 0
     satellitesData:
       maxNumberOfSatellites: 0
       satellites: []
       canHaveSatellites: 0
+      initialized: 0
     ringsData:
       rings: []
       canHaveRings: 0

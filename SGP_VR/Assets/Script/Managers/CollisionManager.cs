@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using DinoFracture;
+using Script.Physics;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
@@ -180,6 +181,9 @@ public class CollisionData
     {
 
         if(!body1 || !body2) return;
+
+        body1.gravityDisabled = true;
+        body2.gravityDisabled = true;
         
         var collidingBody1 = new CollidingBody(body1, contactPoint.normal, DetermineCollidingRole(body1, body2));
         var collidingBody2 = new CollidingBody(body2,contactPoint.normal, DetermineCollidingRole(body2, body1));
@@ -200,13 +204,9 @@ public class CollisionData
         }
 
         _impactParameters = new ImpactParameters(_targetBody, _projectileBody, CalculateImpactAngle(_projectileBody, contactPoint.normal ));
-      
         
-       //_collisionEnergy = _targetBody._impactEnergy + _projectileBody._impactEnergy;
-       
-        _collisionEnergy = _impactParameters.impactEnergy * 10000; //energy used to apply force to rb  
+        _collisionEnergy = _impactParameters.impactEnergy ; //energy used to apply force to rb  
         
-       
         _collisionEnergyDirection = (_targetBody._impactEnergyDirection + _projectileBody._impactEnergyDirection).normalized;
 
         _energyLoss = lossOfEnergy;
@@ -707,8 +707,7 @@ public class CollisionManager : MonoBehaviour
         collision._projectile.thisRb.velocity = collision._projectileBody._bodyImpactVelocity;
         collision._projectile.gravityDisabled = true;
         var visualIndicator = collision._projectile.GetComponent<VisualIndicatorHandler>();
-
-        visualIndicator.forceDisableTrail = visualIndicator.forceDisableTrajectory = true;
+        if(visualIndicator) visualIndicator.forceDisableTrail = visualIndicator.forceDisableTrajectory = true;
 
         var velocityLoss = MathF.Sqrt(collision._energyLoss / (float)collision._projectile.Mass);
         float velocityMagnitude = collision._projectileBody._bodyImpactVelocity.magnitude / 200 * (1 - velocityLoss);

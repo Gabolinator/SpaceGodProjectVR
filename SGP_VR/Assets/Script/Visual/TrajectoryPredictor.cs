@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Script.Physics;
 using UnityEngine;
 
 
@@ -89,7 +90,6 @@ public class TrajectoryPredictor
         if(timestep ==0) timestep = Time.fixedDeltaTime;
 
         for (float t = 0; t < duration; t += timestep)
-
         {
             lastPosition = currentPosition;
 
