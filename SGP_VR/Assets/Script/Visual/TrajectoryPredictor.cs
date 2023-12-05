@@ -53,6 +53,10 @@ public class TrajectoryPredictor
         while (true);
     }
 
+    public void PredictTrajectoryJob(float duration, float timestep)
+    {
+        ClearTrajectory(predictedTrajectoryPoints);
+    }
 
     public void PredictTrajectory(float duration, float timestep, AstralBodyHandler body)
     {
@@ -126,8 +130,9 @@ public class TrajectoryPredictor
     private Vector3 GetAcceleration(AstralBodyHandler body, Vector3 atPosition, float timeStep) => FormulaLibrary.GetAcceleration(body, atPosition, timeStep);
   
 
-    public void AddTrajectoryPoint(List<TrajectoryPoint> list, TrajectoryPoint point) 
+    public void AddTrajectoryPoint(List<TrajectoryPoint> list, TrajectoryPoint point)
     {
+        if (list == null) list = new List<TrajectoryPoint>();
         if (list.Contains(point)) return;
         //Debug.Log("[Trajectory Predictor] Adding trajectory point ");
         list.Add(point);
@@ -183,6 +188,15 @@ public class TrajectoryPredictor
 
     public void ClearTrajectory(List<TrajectoryPoint> list)
     {
+        if(list ==null) return;
+        if(list.Count == 0) return;
         list.Clear();
+    }
+
+    public void SetPredictedTrajectoryPoints(List<TrajectoryPoint> trajectoryPoints)
+    {
+        ClearTrajectory( predictedTrajectoryPoints);
+     //   Debug.Log("Setting trajectoryPoints"); 
+        predictedTrajectoryPoints = trajectoryPoints;
     }
 }

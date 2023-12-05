@@ -31,8 +31,8 @@ public class TrajectoryDrawer : LineDrawer
 
     private void DrawTrajectory(LineRenderer renderer , List<TrajectoryPoint> trajectoryPoints)
     {
-        //var trajectoryPoints = trajectoryPredictor.GetAllTrajectoryPoints();
-
+        if (trajectoryPoints == null) return;
+        
         if (trajectoryPoints.Count == 0 || trajectoryLineRenderer == null) return;
 
 

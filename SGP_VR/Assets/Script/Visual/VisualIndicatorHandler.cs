@@ -36,6 +36,7 @@ public class VisualIndicatorHandler : MonoBehaviour
     public bool forceDisableTrail;
     private List<AstralBodyHandler> _allBodiesInRange => _thisBody.allBodiesInRange;
 
+    public List<TrajectoryPoint> predictedPoints ; 
 
 
     private void Start()
