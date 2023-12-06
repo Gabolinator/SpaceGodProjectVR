@@ -1,8 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
+using Unity.VRTemplate;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit;
 
 public class GUIWristScrollController : GuiContainer
 {
@@ -15,10 +18,12 @@ public class GUIWristScrollController : GuiContainer
    
     [Range(0.1f, 10f)]
     public float _scrollSpeed;
+  
     
     [Header("FallBack Gui")]
     [SerializeField] private GameObject _fallBackPrefab;
     [SerializeField] private GameObject _fallBackGui;
+    
     
     public GameObject FallBackGui
     {
@@ -43,6 +48,33 @@ public class GUIWristScrollController : GuiContainer
         set => _fallBackGui = value;
     }
 
+    [Header("Shadow Gui")]
+    [SerializeField] private GameObject _guiShadowPrefab;
+    [SerializeField] private GameObject _guiShadow;
+    
+    public GameObject GuiShadow
+    {
+        get
+        {
+            if (!_guiShadow)
+            {
+                if (_guiShadowPrefab)
+                {
+                    Debug.Log("[WristMenu] instantiating FallBack GUI ");
+                    return _guiShadow = Instantiate(_guiShadowPrefab, this.transform);
+                }
+
+                
+                return null;
+            }
+
+            return _guiShadow;
+
+        }
+
+        set => _guiShadow = value;
+    }
+    
     [Header("Debug")]
     public bool testMode = false;
     public bool useIndex;
@@ -57,6 +89,8 @@ public class GUIWristScrollController : GuiContainer
 
     [SerializeField] private List<GameObject> _guis;
     private int numberOfTurn = 0;
+    public GUIBehaviour guiExiting;
+    public GUIBehaviour guiEntering;
     public List<GameObject> Guis { get => _guis; set => _guis = value; }
 
     public override GameObject CurrentGui {
@@ -219,17 +253,25 @@ public class GUIWristScrollController : GuiContainer
     {
         if (!newGui) return;
         /*check if already there ? */
-
-        _guis.Add(newGui);
-
+        
+        if(!makeCurrent)_guis.Add(newGui);
+        else _guis.Insert(_indexCurrentGui == 0 ? _indexCurrentGui : _indexCurrentGui-1, newGui);
+        
+        var guiBehaviour = newGui.GetComponent<GUIBehaviour>();
+        if (guiBehaviour) guiBehaviour.isInTrigger = true;
         newGui.transform.parent = this.transform;
         newGui.transform.localPosition = Vector3.zero;
+        newGui.transform.localScale = new Vector3(0.2f,0.2f,0.2f);
+       
         newGui.transform.localEulerAngles = new Vector3(0, 180, 0);
-
+       var turnToFace = newGui.GetComponent<TurnToFace>();
+       if (turnToFace) turnToFace.enabled = false;
         _angle = CalculateAngle(_guis);
 
         if (!makeCurrent) return;
 
+        
+        
         MakeCurrentGui(newGui);
         UpdateNeighbouringGuis(true);
     }
@@ -347,6 +389,7 @@ public class GUIWristScrollController : GuiContainer
         foreach (var gui in guis) 
         {
             if (!gui) continue;
+            gui.isInTrigger = true;
             guisList.Add(gui.gameObject);
             
         }
@@ -566,5 +609,161 @@ public class GUIWristScrollController : GuiContainer
         if ( _angleOffset != _cachedAngleOffset) UpdateGuisPosition(_angleOffset); //TODO: move to a coroutine ? 
     }
 
+
+    private void OnTriggerEnter(Collider other)
+    {
+       var guiEnteringTrigger = other.GetComponent<GUIBehaviour>();
+       if(!guiEnteringTrigger) return;
+       
+       if(Guis.Contains(guiEnteringTrigger.gameObject) ) return;
+       
+       if(guiEnteringTrigger.isInTrigger) return;
+       
+       
+       var grabHelper = guiEnteringTrigger.GetComponent<GrabHelper>();
+       if (grabHelper)
+       {
+           if(!grabHelper.IsGrabbed) return;
+          // Debug.Log("Trigger enter is grabbed: " + grabHelper.IsGrabbed);
+           grabHelper.OnThisObjectRelease += AddToWristMenu;
+       }
+
+       
+       guiEntering = guiEnteringTrigger;
+       guiEntering.isInTrigger = true;
+       
+       
+      
+       
+       ToggleAddedGuiShadow(true, guiEnteringTrigger);
+       //need to add a listener if object is released to add it to wrist menu
+    }
     
+
+    private void OnTriggerExit(Collider other)
+    {
+        var guiExitingTrigger = other.GetComponent<GUIBehaviour>();
+        if(!guiExitingTrigger) return;
+
+        Debug.Log("Exit");
+        var grabHelper = guiExitingTrigger.GetComponent<GrabHelper>();
+        
+        if(grabHelper)
+            if(!grabHelper.IsGrabbed) return;
+        
+        if (Guis.Contains(guiExitingTrigger.gameObject))
+        {
+            guiExiting = guiExitingTrigger;
+            
+          //  if (grabHelper) grabHelper.OnThisObjectRelease += ResetGuiExiting;
+            
+            var guiTransform = guiExiting.transform;
+            guiTransform.parent = GUIManager.Instance.UIsContainer.transform;
+            guiTransform.localRotation = Quaternion.identity;
+            guiTransform.localEulerAngles += new Vector3(0, 180, 0); 
+            
+            //guiTransform.localScale = Vector3.one;
+            var turnToFace = guiExitingTrigger.GetComponent<TurnToFace>();
+            if (turnToFace) turnToFace.enabled = true;
+            
+            GUIManager.Instance.activeGuis.Add(guiExitingTrigger.gameObject);
+            
+            
+            Guis.Remove(guiExitingTrigger.gameObject);
+            PrevGuiToCenter();
+
+            StartCoroutine(ResetGuiExiting(.1f)); 
+            
+            return;
+        }
+
+        guiExitingTrigger.isInTrigger = false;
+        ToggleAddedGuiShadow(false, guiExitingTrigger);
+        //if(guiEnteringTrigger)
+    }
+
+    private void ResetGuiExiting(SelectExitEventArgs obj)
+    {
+        throw new NotImplementedException();
+    }
+
+    private void AddToWristMenu(SelectExitEventArgs obj)
+    {
+        var gui = obj.interactableObject.transform.gameObject.GetComponent<GUIBehaviour>();
+        if(!gui) return;
+        if(!gui.isInTrigger) return;
+        
+        
+        ToggleAddedGuiShadow(false, gui);
+
+        if (GUIManager.Instance.activeGuis.Contains(gui.gameObject))
+            GUIManager.Instance.activeGuis.Remove(gui.gameObject);
+        
+        MakeCurrentGui(gui.gameObject);
+        
+        
+
+    }
+    
+    private IEnumerator ResetGuiExiting(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        guiExiting.isInTrigger = false;
+        guiExiting = null;
+
+    }
+
+    private void ToggleAddedGuiShadow(bool state, GUIBehaviour guiInTrigger)
+    {
+     
+        /*Make shadow gui current one */
+        if (!_guiShadow && state)
+        {
+            CurrentGui = GuiShadow;
+        }
+        
+        /*Enable or disable Gui visual*/
+        guiInTrigger.canvasGroup.GetComponent<Canvas>().enabled = !state;
+        var renderers = guiInTrigger.GetComponents<Renderer>();
+        if (renderers.Length > 0)
+        {
+            foreach (var renderer in renderers)
+            {
+                renderer.enabled = !state;
+            }
+        }
+        
+        /*If we have a line visual, move the attach point - using XRItoolkit*/
+        var lineAttach = FindChildObjectByName(state ? guiInTrigger.transform : _guiShadow ? _guiShadow.transform : null, "[Ray Interactor] Dynamic Attach");
+
+        if (lineAttach)
+        {
+            lineAttach.transform.parent = state ? _guiShadow.transform : guiInTrigger.transform;
+            lineAttach.transform.localPosition = state ? Vector3.zero :
+                guiInTrigger.SnapVolume ? guiInTrigger.SnapVolume.transform.localPosition : Vector3.zero;
+        }
+
+        
+        /*Destroy the shadow gui if not needed*/
+        if (CurrentGui == _guiShadow && !state)
+        {
+            DestroyCurrentGUI();
+        }
+
+
+
+    }
+    
+    public GameObject FindChildObjectByName(Transform parentTransform, string objectName)
+    {
+        if (!parentTransform) return null;
+        Transform childTransform = parentTransform.Find(objectName);
+
+        if (childTransform != null)
+        {
+            return childTransform.gameObject;
+        }
+
+        return null;
+    }
 }

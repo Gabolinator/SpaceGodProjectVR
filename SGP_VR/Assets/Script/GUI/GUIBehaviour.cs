@@ -2,12 +2,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.XR.Interaction.Toolkit;
 
 public class GUIBehaviour : MonoBehaviour
 {
-    public GuiBehaviour guiBehaviour;
+    public EGuiBehaviour guiBehaviour;
     public CanvasGroup canvasGroup;
     public Image backGround;
 
@@ -25,11 +27,17 @@ public class GUIBehaviour : MonoBehaviour
     public float FadeDuration { get => overrideFadeValues ? fadeDuration : GUIManager.Instance.FadeDuration; }
     public float DelayFade { get => overrideFadeValues ? delayFade : GUIManager.Instance.DelayFade; }
 
+    [SerializeField] private GameObject _snapVolume;
+    public GameObject SnapVolume => _snapVolume;
+
     public float maxAlpha = 1;
     public float minAlpha = 0;
     public float currentAlpha;
     public bool isNotClosable;
+    public Vector3 snapVolumeStartPosition;
 
+    public bool isInTrigger = false;
+    
     public virtual void Fade(CanvasGroup canvasGroup, bool fadeIn, float fadeDuration = 1, float delay = 0.0f)
     {
 
@@ -118,4 +126,12 @@ public class GUIBehaviour : MonoBehaviour
         //}
     }
 
+    public virtual void Awake()
+    {
+        if (!SnapVolume) _snapVolume = GetComponent<XRInteractableSnapVolume>().GameObject();
+       
+        if (!SnapVolume) _snapVolume = GetComponentInChildren<XRInteractableSnapVolume>().GameObject();
+
+        
+    }
 }

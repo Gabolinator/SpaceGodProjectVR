@@ -2,6 +2,7 @@ using Sirenix.OdinInspector;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -15,7 +16,7 @@ public enum GuiLocation
     none
 }
 
-public enum GuiBehaviour
+public enum EGuiBehaviour
 {
     FollowPlayer,
     DestroyIfPlayerTooFar,
@@ -41,8 +42,8 @@ public class GUIManager : MonoBehaviour
     private static GUIManager _instance;
     public static GUIManager Instance => _instance;
 
-    [SerializeField] private GuiBehaviour _defaultGuiBehaviour;
-    public GuiBehaviour DefaultGuiBehaviour => _defaultGuiBehaviour;
+    [SerializeField] private EGuiBehaviour _defaultGuiBehaviour;
+    public EGuiBehaviour DefaultGuiBehaviour => _defaultGuiBehaviour;
     [SerializeField] private float _distanceToDestroy;
     public float DistanceToDestroy => _distanceToDestroy;
 
@@ -556,7 +557,7 @@ public class GUIManager : MonoBehaviour
 
 
             /*destroy*/
-            if (_defaultGuiBehaviour == GuiBehaviour.DestroyIfPlayerTooFar)
+            if (_defaultGuiBehaviour == EGuiBehaviour.DestroyIfPlayerTooFar)
             {
                 CheckGuisForDestroy(DistanceToDestroy, activeGuis);
 
@@ -687,10 +688,24 @@ public class GUIManager : MonoBehaviour
             ToggleWristMenu(true);
         }
 
-
+        if (UIsContainer) activeGuis = GetGuisInContainer(UIsContainer);
     }
 
- 
+    private List<GameObject> GetGuisInContainer(GameObject container)
+    {
+        List<GameObject> guiGos = new List<GameObject>();
+        if (!container) return guiGos;
+
+        var guis = container.GetComponentsInChildren<GUIBehaviour>();
+        if(guis.Length == 0) return guiGos;
+        foreach (var gui in guis)
+        {
+            guiGos.Add(gui.gameObject);
+        }
+
+        return guiGos;
+    }
+
 
     private void OnEnable()
     {

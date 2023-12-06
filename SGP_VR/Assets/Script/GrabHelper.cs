@@ -16,7 +16,12 @@ public class GrabHelper : MonoBehaviour
     public Action<SelectEnterEventArgs> OnGrab => EventBus.OnObjectGrabbed;
     public Action<SelectExitEventArgs> OnRelease => EventBus.OnObjectReleased;
 
+    public Action<SelectExitEventArgs> OnThisObjectRelease ;
+    public Action<SelectEnterEventArgs> OnThisObjectGrab;
 
+    private bool _isGrabbed;
+    public bool IsGrabbed => _isGrabbed;
+    
     private void ToggleTwoHandScale(bool state, AstralBodyHandler bodyHandler)
     {
         _xrGrabTransformer.allowTwoHandedScaling = state;
@@ -25,11 +30,15 @@ public class GrabHelper : MonoBehaviour
 
     private void OnObjectGrabbed(SelectEnterEventArgs arg)
     {
+        _isGrabbed = true;
+        OnThisObjectGrab?.Invoke(arg);
         OnGrab?.Invoke(arg);
     }
 
     private void OnObjectReleased(SelectExitEventArgs arg)
     {
+        _isGrabbed = false;
+        OnThisObjectRelease?.Invoke(arg);
        OnRelease?.Invoke(arg);
     }
 
