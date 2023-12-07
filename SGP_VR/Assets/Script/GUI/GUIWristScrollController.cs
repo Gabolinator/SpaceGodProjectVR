@@ -586,7 +586,7 @@ public class GUIWristScrollController : GuiContainer
         
         DestroyWristGui(CurrentGui);
         //CurrentGui = null;
-        Debug.Log("Guis count: " + _guis.Count);
+        //Debug.Log("Guis count: " + _guis.Count);
         
         if (Guis.Count == 1)
         {
@@ -595,7 +595,7 @@ public class GUIWristScrollController : GuiContainer
            
             UpdateGuisPosition(_angleOffset = 0);
             SetMaxGuiAlpha(CurrentGui, 1, false);
-            Debug.Log("Last Guis : " + CurrentGui);
+            //Debug.Log("Last Guis : " + CurrentGui);
         }
 
      
@@ -699,13 +699,17 @@ public class GUIWristScrollController : GuiContainer
     private void ToggleComponents()
     {
         if(Guis.Count == 0) return;
-        
-        List<Type> comps = new List<Type>() { typeof(XRBaseInteractable), typeof(TrackedDeviceGraphicRaycaster) }; // disable grabbing and interaction on guis that are not current
+        List<Type> comps = new List<Type>() { typeof(XRBaseInteractable), typeof(TrackedDeviceGraphicRaycaster) };
+  
+         // disable grabbing and interaction on guis that are not current
         foreach (var gui in Guis)
         {
-            ToggleComponents(comps, CurrentGui == gui, gui);
+           ToggleComponents(comps, CurrentGui == gui, gui);
         }
        
+       
+
+        
     }
 
     private void ToggleComponents(List<Type> comps, bool state, List<GameObject> gos)
