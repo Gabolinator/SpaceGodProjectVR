@@ -6,8 +6,9 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.XR.Interaction.Toolkit;
+using Object = UnityEngine.Object;
 
-public class GUIBehaviour : MonoBehaviour
+public class GUIBehaviour : SGPScreen
 {
     public EGuiBehaviour guiBehaviour;
     public CanvasGroup canvasGroup;
@@ -29,6 +30,15 @@ public class GUIBehaviour : MonoBehaviour
 
     [SerializeField] private GameObject _snapVolume;
     public GameObject SnapVolume => _snapVolume;
+
+    [SerializeField]
+    private GameObject _rootPrefab;
+
+    public GameObject RootPrefab
+    {
+        get => _rootPrefab;
+        set => _rootPrefab = value;
+    }
 
     public float maxAlpha = 1;
     public float minAlpha = 0;
@@ -92,12 +102,14 @@ public class GUIBehaviour : MonoBehaviour
 
     public virtual void Start() 
     {
+        GUIManager.Instance.RegisterGui(this.gameObject);
         if (FadeIn) FadeGuiIn();
+       
     }
 
     public virtual void OnDestroy() 
     {
-     
+        GUIManager.Instance.UnRegisterGui(this.gameObject, true);
     }
 
     public virtual void SetMaxAlpha(float alpha)
@@ -126,12 +138,15 @@ public class GUIBehaviour : MonoBehaviour
         //}
     }
 
-    public virtual void Awake()
+    public override void Awake()
     {
+        base.Awake();
+        
         if (!SnapVolume) _snapVolume = GetComponent<XRInteractableSnapVolume>().GameObject();
        
         if (!SnapVolume) _snapVolume = GetComponentInChildren<XRInteractableSnapVolume>().GameObject();
-
         
     }
+
+    
 }

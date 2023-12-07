@@ -112,4 +112,6 @@ public class BodyDescriptorGUI : GUIConfigurator
         EventBus.OnBodyEdit -= SwitchToEditMode;
         EventBus.OnPredictBody -= UpdatePredictBody;
     }
+
+  
 }

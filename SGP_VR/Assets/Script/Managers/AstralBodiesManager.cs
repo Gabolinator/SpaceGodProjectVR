@@ -296,7 +296,14 @@ public class AstralBodiesManager : MonoBehaviour
         Destroy(body.gameObject);
     }
 
-
+    public void DestroyAllBodies()
+    {
+        if(_allBodies.Count ==0) return;
+        foreach (var body in _allBodies)
+        {
+            DestroyBody(body);
+        }
+    }
     private IEnumerator DestroyBodyCoroutine(AstralBodyHandler body, float delay)
     {
         yield return new WaitForSeconds(delay);
@@ -531,5 +538,6 @@ public class AstralBodiesManager : MonoBehaviour
         
     }
 
-  
+
+   
 }

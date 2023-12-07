@@ -2,9 +2,11 @@ using Sirenix.OdinInspector;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data.SqlTypes;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.Serialization;
 using UnityEngine.XR.Interaction.Toolkit;
 
@@ -13,6 +15,7 @@ public enum GuiLocation
     OnObject,
     OnWrist,
     BothWristAndObject,
+    InFrontOfPlayer,
     none
 }
 
@@ -35,6 +38,12 @@ public enum GuiSpawnCondition
 
 }
 
+ [System.Serializable]
+public struct GuiScreen
+{
+    public GameObject screenPrefab;
+    public string screenName;
+}
 
 
 public class GUIManager : MonoBehaviour
@@ -59,6 +68,12 @@ public class GUIManager : MonoBehaviour
     public float _maxDetectionRange = 10f;
     private GuiSpawnCondition _chachedGuiSpawnCondition;
 
+    [Header("Screens")]
+    [SerializeField] private List<GuiScreen> _screens = new List<GuiScreen>();
+    public List<GuiScreen> Screens => _screens;
+    
+    
+    
     [Header("Main Menu")]
     [SerializeField] private GameObject _mainMenu;
     public GameObject MainMenu
@@ -67,7 +82,8 @@ public class GUIManager : MonoBehaviour
         set => _mainMenu = value;
     }
     
-
+    
+    
     /*wrist gui*/
     [Header("Wrist Menu")]
     [SerializeField] private GUIWristScrollController _wristMenu;
@@ -103,9 +119,11 @@ public class GUIManager : MonoBehaviour
     [Header("All Active UIs")]
     [SerializeField] private GameObject _uisContainer;
     public GameObject UIsContainer => _uisContainer;
-    public List<GameObject> activeGuis = new List<GameObject>();
+    public List<GameObject> guisInWord = new List<GameObject>();
     public List<GameObject> objectWithGuisAttached = new List<GameObject>();
-
+    public List<GameObject> allGuis = new List<GameObject>();
+    
+    
     private Transform _mainCamera;
     [FormerlySerializedAs("keepMainMenuOn")] public bool forceMainMenuOn = true;
 
@@ -121,7 +139,7 @@ public class GUIManager : MonoBehaviour
 
         if (guiClone == null) return null;
 
-        RegisterGui(guiClone, activeGuis);
+        RegisterGui(guiClone, guisInWord);
 
         return guiClone;
     }
@@ -371,7 +389,12 @@ public class GUIManager : MonoBehaviour
         if (gui == null) return;
         guiList.Add(gui);
     }
-
+    public void RegisterGui(GameObject gui)
+    {
+        RegisterGui(gui, allGuis);
+    }
+    
+    
     public void RegisterGuis(List<GameObject> guis)
     {
         if (guis.Count == 0) return;
@@ -405,6 +428,11 @@ public class GUIManager : MonoBehaviour
         return true;
     }
 
+    public bool UnRegisterGui(GameObject gui, bool instant = false)
+    {
+        return UnRegisterGui(gui, allGuis, instant);
+    }
+    
     private IEnumerator UnRegisterGuiCoroutine(GameObject gui, List<GameObject> guiList)
     {
         var guiBehaviour = gui.GetComponent<GUIBehaviour>();
@@ -475,7 +503,7 @@ public class GUIManager : MonoBehaviour
     public void ToggleGui(AstralBodyHandler body, bool state) 
     {
         if (!body) return;
-        if (activeGuis.Count == 0) return;
+        if (guisInWord.Count == 0) return;
 
         var bodyGO = body.gameObject;
         var index = 0;
@@ -486,7 +514,7 @@ public class GUIManager : MonoBehaviour
         {
             if (obj == body.gameObject)
             {
-                ToggleGui(activeGuis[index], state);
+                ToggleGui(guisInWord[index], state);
                
             }
             index++;
@@ -495,9 +523,9 @@ public class GUIManager : MonoBehaviour
 
     public void ToggleGuis(bool state) 
     {
-        if (activeGuis.Count == 0) return;
+        if (guisInWord.Count == 0) return;
 
-        foreach (var gui in activeGuis)
+        foreach (var gui in guisInWord)
         {
             gui.SetActive(state);
         }
@@ -506,7 +534,7 @@ public class GUIManager : MonoBehaviour
     private void DestroyGui(AstralBodyHandler body)
     {
         if (!body) return;
-        if (activeGuis.Count == 0) return;
+        if (guisInWord.Count == 0) return;
 
         var bodyGO = body.gameObject;
         var index = 0;
@@ -517,7 +545,7 @@ public class GUIManager : MonoBehaviour
         {
             if (obj == body.gameObject)
             {
-                if(UnRegisterGui(activeGuis[index], activeGuis, true)) objectWithGuisAttached.Remove(obj);
+                if(UnRegisterGui(guisInWord[index], guisInWord, true)) objectWithGuisAttached.Remove(obj);
             }
         }
     }
@@ -527,9 +555,9 @@ public class GUIManager : MonoBehaviour
 
         if (DistanceFromPlayer(gui) <= distanceToDestroy) return;
 
-        int index = activeGuis.IndexOf(gui);
+        int index = guisInWord.IndexOf(gui);
         if(index < objectWithGuisAttached.Count && index >= 0 ) objectWithGuisAttached.RemoveAt(index);
-        UnRegisterGui(gui, activeGuis);
+        UnRegisterGui(gui, guisInWord);
 
 
     }
@@ -559,7 +587,7 @@ public class GUIManager : MonoBehaviour
             /*destroy*/
             if (_defaultGuiBehaviour == EGuiBehaviour.DestroyIfPlayerTooFar)
             {
-                CheckGuisForDestroy(DistanceToDestroy, activeGuis);
+                CheckGuisForDestroy(DistanceToDestroy, guisInWord);
 
             }
 
@@ -662,8 +690,36 @@ public class GUIManager : MonoBehaviour
 
     #endregion
 
-   
+    public GameObject GetScreenPrefab(string screenName)
+    {
+        if (Screens.Count == 0) return null;
+        if (string.IsNullOrEmpty(screenName)) return null;
+        
+        foreach (var screen in Screens)
+        {
+            if (screen.screenName == screenName) return screen.screenPrefab;
+        }
 
+        Debug.Log("[GuiManager] No screen found by name : " + screenName);
+        return null;
+    }
+
+    public bool AreFromSamePrefab(GameObject obj1, GameObject obj2)
+    {
+        GameObject prefab1 = PrefabUtility.GetCorrespondingObjectFromSource(obj1);
+        GameObject prefab2 = PrefabUtility.GetCorrespondingObjectFromSource(obj2);
+
+        return prefab1 != null && prefab1 == prefab2;
+    }
+
+    // Check if a GameObject is instantiated from a specific prefab
+    public bool IsInstantiatedFromPrefab(GameObject obj, GameObject prefab)
+    {
+        GameObject prefabObj = PrefabUtility.GetCorrespondingObjectFromSource(obj);
+        Debug.Log("PrefabObj :" + prefabObj);
+        return prefabObj != null && prefabObj == prefab;
+    }
+    
     public void ToggleMainMenu()
     {
         if(forceMainMenuOn) return;
@@ -688,7 +744,7 @@ public class GUIManager : MonoBehaviour
             ToggleWristMenu(true);
         }
 
-        if (UIsContainer) activeGuis = GetGuisInContainer(UIsContainer);
+        if (UIsContainer) guisInWord = GetGuisInContainer(UIsContainer);
     }
 
     private List<GameObject> GetGuisInContainer(GameObject container)
@@ -706,6 +762,75 @@ public class GUIManager : MonoBehaviour
         return guiGos;
     }
 
+     public GameObject GuiAlreadyPresent(GameObject screen)
+    {
+        if (allGuis.Count == 0) return null;
+        var isPrefab = PrefabUtility.IsPartOfAnyPrefab(screen);
+        
+        List<GameObject> allObjectFromPrebab = new List<GameObject>();
+        /*Is a prefab check all object that have been instantiated from it*/
+        if (isPrefab)
+        {
+            foreach (var gui in allGuis)
+            {
+                var guiB = gui.GetComponent<GUIBehaviour>();
+                if(!guiB) continue;
+                 if(guiB.RootPrefab != null && guiB.RootPrefab == screen) allObjectFromPrebab.Add(gui);
+            }
+        }
+
+        /*Is instantiated - get all object that have the same prefab*/
+        else
+        {
+            foreach (var gui in allGuis)
+            {
+                if(AreFromSamePrefab(gui, screen)) allObjectFromPrebab.Add(gui);
+            }
+        }
+
+        return allObjectFromPrebab.Count == 0 ? null : allObjectFromPrebab[0]; //returning first object for now
+    }
+
+    public void OpenScreen(string screenName) //TODO- for now only on wristMenu - eventually add option to open elsewhere than wristmenu 
+    {
+        if (screenName == "All")
+        {
+         OpenAllScreens();
+         return;
+        }
+        
+            var screen = GetScreenPrefab(screenName);
+            if (!screen) return;
+
+            var guiAlreadyPresent = GuiAlreadyPresent(screen);
+            if (guiAlreadyPresent)
+            {
+                WristGui = guiAlreadyPresent;
+                return;
+            }
+
+            var newScreen = Instantiate(screen);
+            if (!newScreen) return;
+
+            var gui = newScreen.GetComponent<GUIBehaviour>();
+            if (gui) gui.RootPrefab = screen;
+            WristGui = newScreen;
+        
+        
+    }
+
+    private void OpenAllScreens()
+    {
+        if (Screens.Count == 0) return;
+      
+        foreach (var screen in Screens)
+        {
+            OpenScreen(screen.screenName);
+        }
+
+        
+    }
+    
 
     private void OnEnable()
     {
@@ -732,4 +857,6 @@ public class GUIManager : MonoBehaviour
         
         //EventBus.OnAstralBodyStartToExist -= AssignGuiToBody;
     }
+
+   
 }

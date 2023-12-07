@@ -21,8 +21,13 @@ public class GUIWristScrollController : GuiContainer
     public float _scrollSpeed;
   
     
+    
+    private GameObject FallBackPrefab => GetPrefabByName("FallBack");
+
+    private GameObject GetPrefabByName(string name) => GUIManager.Instance.GetScreenPrefab(name);
+   
+    
     [Header("FallBack Gui")]
-    [SerializeField] private GameObject _fallBackPrefab;
     [SerializeField] private GameObject _fallBackGui;
     
     
@@ -32,12 +37,14 @@ public class GUIWristScrollController : GuiContainer
         {
             if (!_fallBackGui)
             {
-                if (_fallBackPrefab)
+                if (FallBackPrefab)
                 {
                     Debug.Log("[WristMenu] instantiating FallBack GUI ");
-                    _fallBackGui = Instantiate(_fallBackPrefab, this.transform);
+                    _fallBackGui = Instantiate(FallBackPrefab, this.transform);
                     
                     ToggleComponent(typeof(XRBaseInteractable),false,_fallBackGui);
+                    var gui = _fallBackGui.GetComponent<GUIBehaviour>();
+                    if(gui) gui.RootPrefab = FallBackPrefab;
                     Guis.Add(_fallBackGui);
 
                     return _fallBackGui;
@@ -616,8 +623,8 @@ public class GUIWristScrollController : GuiContainer
         
         ToggleAddedGuiShadow(false, gui);
 
-        if (GUIManager.Instance.activeGuis.Contains(gui.gameObject))
-            GUIManager.Instance.activeGuis.Remove(gui.gameObject);
+        if (GUIManager.Instance.guisInWord.Contains(gui.gameObject))
+            GUIManager.Instance.guisInWord.Remove(gui.gameObject);
         
         MakeCurrentGui(gui.gameObject);
        
@@ -835,7 +842,7 @@ public class GUIWristScrollController : GuiContainer
             var turnToFace = guiExitingTrigger.GetComponent<TurnToFace>();
             if (turnToFace) turnToFace.enabled = true;
             
-            GUIManager.Instance.activeGuis.Add(guiExitingTrigger.gameObject);
+            GUIManager.Instance.guisInWord.Add(guiExitingTrigger.gameObject);
             
             
             Guis.Remove(guiExitingTrigger.gameObject);

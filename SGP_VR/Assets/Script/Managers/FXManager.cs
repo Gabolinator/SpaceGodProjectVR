@@ -251,6 +251,14 @@ public class FXManager : MonoBehaviour
         fx.DestroySelf();
     }
 
+    public void DestroyAllFX()
+    {
+        if(activeFX.Count == 0) return;
+        foreach (var fx in activeFX)
+        {
+           DestroyFX(fx);
+        }
+    }
 
     private void OnEnable()
     {
