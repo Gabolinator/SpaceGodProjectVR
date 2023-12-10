@@ -9169,7 +9169,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e86261e181e6cb64ea64272e7aba0e2c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  keyboardMount: {fileID: 0}
+  _keyboardMount: {fileID: 0}
+  canBeDocked: 0
   guiBehaviour: 3
   canvasGroup: {fileID: 7121552870273461890}
   backGround: {fileID: 876145355406082836}
@@ -9186,7 +9187,6 @@ MonoBehaviour:
   currentAlpha: 0
   isNotClosable: 0
   snapVolumeStartPosition: {x: 0, y: 0, z: 0}
-  isInTrigger: 0
 --- !u!114 &5744654682176289217
 MonoBehaviour:
   m_ObjectHideFlags: 0

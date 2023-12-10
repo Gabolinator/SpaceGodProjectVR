@@ -282,7 +282,8 @@ public class GUIWristScrollController : GuiContainer
         else Guis.Insert(_indexCurrentGui == 0 ? _indexCurrentGui : _indexCurrentGui-1, newGui);
         
         var guiBehaviour = newGui.GetComponent<GUIBehaviour>();
-        if (guiBehaviour) guiBehaviour.isInTrigger = true;
+        if (guiBehaviour) guiBehaviour.Container = this;
+        
         newGui.transform.parent = this.transform;
         newGui.transform.localPosition = Vector3.zero;
         newGui.transform.localScale = new Vector3(0.2f,0.2f,0.2f);
@@ -408,7 +409,7 @@ public class GUIWristScrollController : GuiContainer
         foreach (var gui in guis) 
         {
             if (!gui) continue;
-            gui.isInTrigger = true;
+            gui.Container = this;
             guisList.Add(gui.gameObject);
             
         }
@@ -616,6 +617,7 @@ public class GUIWristScrollController : GuiContainer
            
             UpdateGuisPosition(_angleOffset = 0);
             SetMaxGuiAlpha(CurrentGui, 1, false);
+            numberOfTurn = 0;
             //Debug.Log("Last Guis : " + CurrentGui);
         }
 
@@ -632,7 +634,7 @@ public class GUIWristScrollController : GuiContainer
     {
         var gui = obj.interactableObject.transform.gameObject.GetComponent<GUIBehaviour>();
         if(!gui) return;
-        if(!gui.isInTrigger) return;
+        if(!gui.isDocked) return;
         
         
         ToggleAddedGuiShadow(false, gui);
@@ -652,7 +654,7 @@ public class GUIWristScrollController : GuiContainer
     private IEnumerator ResetGuiExiting(float delay)
     {
         yield return new WaitForSeconds(delay);
-        guiExiting.isInTrigger = false;
+        guiExiting.Container = null;
         guiExiting = null;
         CurrentGui = null;
 
@@ -818,9 +820,10 @@ public class GUIWristScrollController : GuiContainer
        if(!guiEnteringTrigger) return;
        
        
-       
+       //TODO make method for that
        if(Guis.Contains(guiEnteringTrigger.gameObject) ) return;
-       if(guiEnteringTrigger.isInTrigger) return;
+       if(guiEnteringTrigger.isDocked) return;
+       if(!guiEnteringTrigger.canBeDocked) return; 
        
        
        var grabHelper = guiEnteringTrigger.GetComponent<GrabHelper>();
@@ -832,7 +835,7 @@ public class GUIWristScrollController : GuiContainer
 
        
        guiEntering = guiEnteringTrigger;
-       guiEntering.isInTrigger = true;
+       guiEntering.Container = this;
 
        ToggleAddedGuiShadow(true, guiEnteringTrigger);
        //need to add a listener if object is released to add it to wrist menu
@@ -843,8 +846,9 @@ public class GUIWristScrollController : GuiContainer
     {
         var guiExitingTrigger = other.GetComponent<GUIBehaviour>();
         if(!guiExitingTrigger) return;
-
-        Debug.Log("Exit");
+        if(!guiExitingTrigger.canBeDocked) return;
+        
+        //Debug.Log("Exit");
         var grabHelper = guiExitingTrigger.GetComponent<GrabHelper>();
         
         if(grabHelper)
@@ -876,7 +880,7 @@ public class GUIWristScrollController : GuiContainer
             return;
         }
 
-        guiExitingTrigger.isInTrigger = false;
+        guiExitingTrigger.Container = null;
         ToggleAddedGuiShadow(false, guiExitingTrigger);
         //if(guiEnteringTrigger)
     }

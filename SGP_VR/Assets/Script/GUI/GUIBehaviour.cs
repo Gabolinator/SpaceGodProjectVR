@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 using UnityEngine.XR.Interaction.Toolkit;
 using Object = UnityEngine.Object;
@@ -46,7 +47,7 @@ public class GUIBehaviour : SGPScreen
     public bool isNotClosable;
     public Vector3 snapVolumeStartPosition;
 
-    public bool isInTrigger = false;
+    
     
     public virtual void Fade(CanvasGroup canvasGroup, bool fadeIn, float fadeDuration = 1, float delay = 0.0f)
     {

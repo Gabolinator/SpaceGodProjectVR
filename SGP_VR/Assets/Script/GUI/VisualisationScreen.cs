@@ -24,8 +24,9 @@ public class VisualisationScreen : GUIBehaviour
 
    public void SetColorPickerColor(FlexibleColorPicker colorPicker, Color color)
    {
-       if(colorPicker) return;
-
+       if(!colorPicker) return;
+       Debug.Log("Setting picker " +  colorPicker.name+ " color : " + color); 
+       
        colorPicker.SetColor(color);
 
    }
@@ -34,10 +35,14 @@ public class VisualisationScreen : GUIBehaviour
    {
        bool state =  _trajectoryColorPicker.gameObject.activeSelf;
        //_trajectoryColorButton.gameObject.SetActive(state);
-       if(state) SetButtonColor(_trajectoryColorButton, _trajectoryColorPicker.color);
+      
        
        ToggleTrajectoryColorPicker(!state);
-
+      
+       if (state) SetButtonColor(_trajectoryColorButton, _trajectoryColorPicker.color);
+       
+       else SetColorPickerColor(_trajectoryColorPicker, _trajectoryColorButton.colors.normalColor);   
+        
    }
    
    public void OnTrailColorButtonClick()
@@ -47,7 +52,8 @@ public class VisualisationScreen : GUIBehaviour
       
        
        ToggleTrailColorPicker(!state);
-
+       if(state) SetButtonColor(_trailColorButton, _trailColorPicker.color);
+       else SetColorPickerColor(_trailColorPicker, _trailColorButton.colors.normalColor);   
    }
 
    public void ToggleTrailColorPicker(bool state)
@@ -65,10 +71,12 @@ public class VisualisationScreen : GUIBehaviour
            if(canvas) canvas.worldCamera = null;
        }
        _trailColorPicker.gameObject.SetActive(state);
-       if (state) SetColorPickerColor(_trailColorPicker, _trailColorButton.image.color); 
+      // SetColorPickerColor(_trailColorPicker, _trailColorButton.image.color); 
+       
       
        SubsribeToColorPickerEvent(_trailColorPicker, state, UpdateTrailButtonColor);
        SubsribeToColorPickerEvent(_trailColorPicker, state, UpdateTrailColor);
+      
    }
 
    private void UpdateTrailButtonColor(Color color)
@@ -96,10 +104,12 @@ public class VisualisationScreen : GUIBehaviour
        }
 
        _trajectoryColorPicker.gameObject.SetActive(state);
-       if (state) SetColorPickerColor(_trajectoryColorPicker, _trajectoryColorButton.image.color); 
+      
        
        SubsribeToColorPickerEvent(_trajectoryColorPicker, state, UpdateTrajectoryColor);
        SubsribeToColorPickerEvent(_trajectoryColorPicker, state, UpdateTrajectoryButtonColor);
+       
+    
    }
    private void SubsribeToColorPickerEvent(FlexibleColorPicker colorPicker, bool state, UnityAction<Color> colorEvent)
    {

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.XR.OpenVR;
 using UnityEngine;
 
 public class GuiContainer : MonoBehaviour
@@ -19,6 +20,10 @@ public class GuiContainer : MonoBehaviour
         get => _currentGui;
         set => _currentGui = value;
     }
+
+    [SerializeField]
+    private Transform _keyboardMount;
+    public Transform KeyboardMount => _keyboardMount ? _keyboardMount : this.transform;
 
     public void ToggleGui(GameObject gui, bool state, bool fade = false)
     {

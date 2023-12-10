@@ -7,6 +7,7 @@ using TMPro;
 using UI;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public class SGPScreen : MonoBehaviour
@@ -22,8 +23,21 @@ public class SGPScreen : MonoBehaviour
    // public List<DropdownField> GetAllDropdown() => GetAllComponentsOfType<DropdownField>();
   
    private TMP_InputField _currentlySelectedTextInput;
-   [SerializeField] private Transform keyboardMount;
+
+   [FormerlySerializedAs("keyboardMount")] [SerializeField]
+   private Transform _keyboardMount;
+   public Transform KeyboardMount => isDocked ? _guiContainer.KeyboardMount: _keyboardMount ?_keyboardMount : this.transform ;
    
+   public bool isDocked => Container !=null ;
+   private GuiContainer _guiContainer;
+
+   public GuiContainer Container
+   {
+	   get => _guiContainer;
+	   set => _guiContainer = value;
+   }
+
+   public bool canBeDocked =true;
    
    private List<T> GetAllComponentsOfType<T>()
    {
@@ -107,10 +121,10 @@ public class SGPScreen : MonoBehaviour
 		_currentlySelectedTextInput = textInput;
 		Debug.Log($"Selected text input {textInput.name}");
 		
-		UIKeyboard.Instance.gameObject.transform.parent = keyboardMount ? keyboardMount : transform;
+		UIKeyboard.Instance.gameObject.transform.parent = KeyboardMount ;
 		
 		UIKeyboard.Instance.gameObject.transform.localPosition = Vector3.zero;
-		//UIKeyboard.Instance.gameObject.transform.localScale = Vector3.one;
+		UIKeyboard.Instance.gameObject.transform.localScale = Vector3.one;
 		
 		UIKeyboard.Show(textInput, textInput.text,KeyboardType.Full);
 		
