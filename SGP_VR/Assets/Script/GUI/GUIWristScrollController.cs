@@ -104,7 +104,13 @@ public class GUIWristScrollController : GuiContainer
     private int numberOfTurn = 0;
     public GUIBehaviour guiExiting;
     public GUIBehaviour guiEntering;
-    public List<GameObject> Guis { get => _guis; set => _guis = value; }
+
+    public List<GameObject> Guis
+    {
+        get => _guis != null ? _guis : new List<GameObject>(); 
+        set => _guis = value;
+        
+    }
 
     public override GameObject CurrentGui {
 
@@ -122,6 +128,7 @@ public class GUIWristScrollController : GuiContainer
             {
                 UpdateGuisPosition(_angleOffset);
                 MoveGuiToCentralPosition(value);
+                UpdateGuisPosition(_angleOffset);
             }
 
             else
@@ -130,6 +137,7 @@ public class GUIWristScrollController : GuiContainer
                 base.CurrentGui =  Guis.Count > 0 ? _previousGui : FallBackGui;
                 UpdateGuisPosition(_angleOffset);
                 MoveGuiToCentralPosition(base.CurrentGui);
+                UpdateGuisPosition(_angleOffset);
                 
             }
         }
@@ -270,8 +278,8 @@ public class GUIWristScrollController : GuiContainer
         if (!newGui) return;
         /*check if already there ? */
         
-        if(!makeCurrent)_guis.Add(newGui);
-        else _guis.Insert(_indexCurrentGui == 0 ? _indexCurrentGui : _indexCurrentGui-1, newGui);
+        if(!makeCurrent)Guis.Add(newGui);
+        else Guis.Insert(_indexCurrentGui == 0 ? _indexCurrentGui : _indexCurrentGui-1, newGui);
         
         var guiBehaviour = newGui.GetComponent<GUIBehaviour>();
         if (guiBehaviour) guiBehaviour.isInTrigger = true;
@@ -282,12 +290,13 @@ public class GUIWristScrollController : GuiContainer
         newGui.transform.localEulerAngles = new Vector3(0, 180, 0);
        var turnToFace = newGui.GetComponent<TurnToFace>();
        if (turnToFace) turnToFace.enabled = false;
-        _angle = CalculateAngle(_guis);
-
-        if (!makeCurrent) return;
-
         
-        
+       _angle = CalculateAngle(Guis);
+       
+       _startAngleOffset = _angle / 2;
+       
+       if (!makeCurrent) return;
+
         MakeCurrentGui(newGui);
         UpdateNeighbouringGuis(true);
     }
@@ -326,9 +335,10 @@ public class GUIWristScrollController : GuiContainer
 
     private void HideAll()
     {
-        if (_guis.Count == 0) return;
+        if(Guis == null) return;
+        if (Guis.Count == 0) return;
 
-        foreach(var gui in _guis) 
+        foreach(var gui in Guis) 
         {
             if (!gui) continue;
             ToggleGui(gui, false);
@@ -339,20 +349,7 @@ public class GUIWristScrollController : GuiContainer
     private void OrganizeGuis(List<GameObject> allGuis, float radius, float offset = 0, float spread = 0f)
     {
         if (allGuis.Count == 0) return;
-        if (allGuis.Count == 1)
-        {
-            /*dont need to organise if just one element*/
-            if (!allGuis[0])
-            {
-               // allGuis[0] = CurrentGui; //make sure the element is not missing - > CurrentGui is gonna be fallback if null
-                //TODO solve this
-                return;
-            }
-
-            
-            if(allGuis[0].transform.localPosition != Vector3.zero) allGuis[0].transform.localPosition = Vector3.zero;
-            return;
-        }
+      
 
         int numberOfElements = allGuis.Count;
         float angleStep = 360f / numberOfElements; 
@@ -371,6 +368,12 @@ public class GUIWristScrollController : GuiContainer
        
         offset += _startAngleOffset;
 
+        if (allGuis.Count == 1)
+        {
+            _angleOffset = 0;
+            if(allGuis[0].transform.localPosition != Vector3.zero) allGuis[0].transform.localPosition = Vector3.zero;
+            return;
+        }
 
         for (int i = 0; i < numberOfElements; i++)
         {
@@ -401,7 +404,7 @@ public class GUIWristScrollController : GuiContainer
         var guis = GetComponentsInChildren<GUIBehaviour>();
         List<GameObject> guisList = new List<GameObject>();
 
-        if(guis.Length== 0 ) return null;
+        if(guis.Length== 0 ) return guisList;
         foreach (var gui in guis) 
         {
             if (!gui) continue;
@@ -428,17 +431,20 @@ public class GUIWristScrollController : GuiContainer
     {
         if (Guis.Count == 0) return ;
         
-        OrganizeGuis(Guis, _radius,  _angleOffset = value);
+       
 
         if (Guis.Count == 1)
         {
             //Todo solve this 
-            //_currentGui = Guis[0];
-            //ToggleComponents();
+            if (_currentGui != Guis[0]) _currentGui = Guis[0];
+            OrganizeGuis(Guis, _radius,  _angleOffset = 0);
+            SetMaxGuiAlpha(CurrentGui, 1f);
+            ToggleComponents();
             return;
         
         }
-            
+        OrganizeGuis(Guis, _radius,  _angleOffset = value);
+       
         MakeCurrentGui(GetCurrentGuiByPosition(_radius, _angleTolerance = _startAngleOffset));
         
         SetMaxGuiAlpha(CurrentGui, 1f);
@@ -454,29 +460,30 @@ public class GUIWristScrollController : GuiContainer
 
     public void MoveGuiToCentralPosition(int index)
     {
-        if (_guis.Count == 0|| _guis.Count == 1) return;
+        //Debug.Log(_guis.Count);
+        if (Guis.Count == 0|| Guis.Count == 1) return;
         //if (_guis.Count == 1) index = 0;
         
 
         /* Make sure index is in range*/
-        if (index > _guis.Count) index %= _guis.Count;
-        else if( index < 0) index %= -_guis.Count;
+        if (index > Guis.Count) index %= Guis.Count;
+        else if( index < 0) index %= -Guis.Count;
  
 
         int destinationIndex = index;
-        float offset = (_guis.Count -2) *_startAngleOffset/2; // to have the gui centered - else its a bit offset 
+        float offset = (Guis.Count -2) *_startAngleOffset/2; // to have the gui centered - else its a bit offset 
        
         
         //Debug.Log("Destination Index : " + destinationIndex);
         float destinationAngle = -(destinationIndex * _angle) + offset;
         
         /*Count the number of turn  - numberOfTurn > 0 : turn left : numberOfTurn < 0 turn right*/
-        if (index - _indexCurrentGui == _guis.Count -1 )
+        if (index - _indexCurrentGui == Guis.Count -1 )
         {
             numberOfTurn++;
         }
         
-        else if (index - _indexCurrentGui == -(_guis.Count -1) )
+        else if (index - _indexCurrentGui == -(Guis.Count -1) )
         {
             numberOfTurn--;
         }
@@ -493,9 +500,16 @@ public class GUIWristScrollController : GuiContainer
 
     public void MoveGuiToCentralPosition(GameObject gui) 
     {
-        if (!_guis.Contains(gui)) AddGuiToWristMenu(gui, true);
+        if (Guis.Count != 0)
+        {
+            if (!Guis.Contains(gui))
+            {
+                AddGuiToWristMenu(gui, true);
+            }
+        }
 
-        int destinationIndex = _guis.IndexOf(gui);
+
+        int destinationIndex = Guis.IndexOf(gui);
         
         MoveGuiToCentralPosition(destinationIndex);
     }
@@ -548,7 +562,7 @@ public class GUIWristScrollController : GuiContainer
     {
         if(!gui) return;
        
-        if(!_guis.Contains(gui)) return;
+        if(!Guis.Contains(gui)) return;
         
         if(gui == CurrentGui) return;
 
@@ -557,8 +571,8 @@ public class GUIWristScrollController : GuiContainer
 
     public void DestroyWristGui(GameObject gui)
     {
-        if(!_guis.Contains(gui)) ;
-        _guis.Remove(gui);
+        if(!Guis.Contains(gui)) ;
+        Guis.Remove(gui);
         Destroy(gui);
         
         CurrentGui =null;
@@ -626,8 +640,9 @@ public class GUIWristScrollController : GuiContainer
         if (GUIManager.Instance.guisInWord.Contains(gui.gameObject))
             GUIManager.Instance.guisInWord.Remove(gui.gameObject);
         
-        MakeCurrentGui(gui.gameObject);
-       
+        
+        MoveGuiToCentralPosition(gui.gameObject);
+        UpdateGuisPosition(_angleOffset);
         var grabHelper = obj.interactableObject.transform.gameObject.GetComponent<GrabHelper>();
        
         if(grabHelper) grabHelper.OnThisObjectRelease -= AddToWristMenu;
@@ -639,6 +654,7 @@ public class GUIWristScrollController : GuiContainer
         yield return new WaitForSeconds(delay);
         guiExiting.isInTrigger = false;
         guiExiting = null;
+        CurrentGui = null;
 
     }
 
@@ -695,13 +711,7 @@ public class GUIWristScrollController : GuiContainer
         return null;
     }
     
-    void Awake()
-    {
-        Guis = GetGuisInTransform();
-
-       ToggleComponents(typeof(TurnToFace), false, Guis);
-     
-    }
+  
 
     private void ToggleComponents()
     {
@@ -763,10 +773,22 @@ public class GUIWristScrollController : GuiContainer
 
         monoScript.enabled = state;
     }
+    
+    
+    void Awake()
+    {
+        Guis = GetGuisInTransform();
+       
+        ToggleComponents(typeof(TurnToFace), false, Guis);
+     
+    }
 
     private void Start()
     {
-        
+        if (Guis.Count > 0) CurrentGui = Guis[0];
+        else CurrentGui = FallBackGui;
+        UpdateGuisPosition(_angleOffset);
+        HideAllExcept(Guis, GetGuisToShow());
     }
 
     private void OnEnable()
@@ -795,8 +817,9 @@ public class GUIWristScrollController : GuiContainer
        var guiEnteringTrigger = other.GetComponent<GUIBehaviour>();
        if(!guiEnteringTrigger) return;
        
-       if(Guis.Contains(guiEnteringTrigger.gameObject) ) return;
        
+       
+       if(Guis.Contains(guiEnteringTrigger.gameObject) ) return;
        if(guiEnteringTrigger.isInTrigger) return;
        
        

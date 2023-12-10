@@ -272,8 +272,21 @@ public class CollisionManager : MonoBehaviour
 
     public  Action<CollisionData> OnImpact => EventBus.OnCollision;
     public  Action<CollisionData> OnAfterImpact => EventBus.OnCollisionProcessed;
+
+    
+    [SerializeField]
+    private bool _forceDisableCollisions;
+
+    public bool ForceDisableCollisions
+    {
+        get => _forceDisableCollisions;
+        set => _forceDisableCollisions = value;
+    }
+
+
     public void CreatingCollision(AstralBodyHandler body1, AstralBodyHandler body2, Collision collision)
     {
+        
         if (!body1 || !body2) return;
 
         CollisionData collisionData = new CollisionData(body1, body2, collision.GetContact(0), collision.impulse,

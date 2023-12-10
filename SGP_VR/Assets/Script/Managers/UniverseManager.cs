@@ -144,10 +144,23 @@ public class UniverseManager : MonoBehaviour
 
     public void ScaleUniverseWhenCloseToPlanet(AstralBodyHandler body, float distance) 
     {
-        ScaleUniverse(UniverseContainer, ScaleMultiplier/distance, MaxUniverseScale, ClampScale);
+        MultiplyScaleUniverse(UniverseContainer, ScaleMultiplier/distance, MaxUniverseScale, ClampScale);
     }
 
-    public void ScaleUniverse(GameObject universeContainer, float scaleMultiplier, float maxScale, bool clampScale) 
+    public void ScaleUniverse(float value)
+    {
+        ScaleUniverse(_universeContainer, value, _maxUniverseScale, ClampScale);
+    }
+
+    public void ScaleUniverse(GameObject universeContainer, float scale, float maxScale, bool clampScale)
+    {
+        if (!universeContainer || scale <= 0) return;
+        scale = !clampScale ?scale : scale > maxScale ? maxScale : scale;
+        
+        universeContainer.transform.localScale = Vector3.one*scale;
+    }
+    
+    public void MultiplyScaleUniverse(GameObject universeContainer, float scaleMultiplier, float maxScale, bool clampScale) 
     {
         if (!universeContainer || scaleMultiplier <= 0) return;
 

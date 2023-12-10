@@ -989,7 +989,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: c6984c48aed9a154294088f4265d8478, type: 3}
       propertyPath: m_Name
-      value: GuiShadow
+      value: GUI_Shadow
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: c6984c48aed9a154294088f4265d8478, type: 3}
       propertyPath: m_Layer
@@ -1102,7 +1102,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_InteractionManager: {fileID: 0}
-  m_Colliders: []
+  m_Colliders:
+  - {fileID: 6327593955139950348}
   m_InteractionLayerMask:
     serializedVersion: 2
     m_Bits: 1
@@ -1298,6 +1299,7 @@ MonoBehaviour:
   delayFade: 0
   isFading: 0
   _snapVolume: {fileID: 0}
+  _rootPrefab: {fileID: 0}
   maxAlpha: 1
   minAlpha: 0
   currentAlpha: 0

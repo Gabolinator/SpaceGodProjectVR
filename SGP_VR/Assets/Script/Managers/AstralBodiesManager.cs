@@ -299,7 +299,10 @@ public class AstralBodiesManager : MonoBehaviour
     public void DestroyAllBodies()
     {
         if(_allBodies.Count ==0) return;
-        foreach (var body in _allBodies)
+        var cachedList = new List<AstralBodyHandler>();
+        cachedList.AddRange(_allBodies);
+        
+        foreach (var body in cachedList)
         {
             DestroyBody(body);
         }

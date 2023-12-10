@@ -264,7 +264,7 @@ public class GUIManager : MonoBehaviour
             if (index == 0 && guiLocation != GuiLocation.OnObject)
             {
                 WristGui = gui;
-                WristGui.transform.localScale = new Vector3(.002f, .002f, .002f);
+                WristGui.transform.localScale = new Vector3(.2f, .2f, .2f);
             }
 
             index++;

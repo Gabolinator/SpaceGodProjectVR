@@ -1,14 +1,24 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class GuiContainer : MonoBehaviour
 {
-    [SerializeField] private GameObject _guiMount; 
-    public GameObject GuiMount { get => _guiMount ? _guiMount : gameObject; }
+    [SerializeField] private GameObject _guiMount;
 
-    [SerializeField] protected  GameObject _currentGui;
-    public virtual GameObject CurrentGui { get => _currentGui; set => _currentGui = value; }
+    public GameObject GuiMount
+    {
+        get => _guiMount ? _guiMount : gameObject;
+    }
+
+    [SerializeField] protected GameObject _currentGui;
+
+    public virtual GameObject CurrentGui
+    {
+        get => _currentGui;
+        set => _currentGui = value;
+    }
 
     public void ToggleGui(GameObject gui, bool state, bool fade = false)
     {
@@ -34,7 +44,7 @@ public class GuiContainer : MonoBehaviour
         if (!go) return null;
         return go.GetComponent<GUIBehaviour>();
     }
-    
+
     public void SetGuiAlpha(GameObject gui, float alpha)
     {
         if (!gui) return;
@@ -45,6 +55,7 @@ public class GuiContainer : MonoBehaviour
         guiLogic.SetAlpha(alpha);
 
     }
+
     public void SetMaxGuiAlpha(GameObject gui, float alpha, bool fade = true)
     {
         if (!gui) return;
@@ -58,4 +69,30 @@ public class GuiContainer : MonoBehaviour
 
     }
 
+
+    public virtual void SnapGuiOnTriggerEnter(GUIBehaviour gui)
+    {
+        
+    }
+
+
+    public virtual void ReleaseGui(GUIBehaviour gui)
+    {
+    }
+
+    public virtual bool IsAllowedToSnap(GUIBehaviour gui)
+    {
+       
+        return true;
+    }
+
+    public void OnTriggerEnter(Collider other)
+    {
+      
+    }
+
+    public void OnTriggerExit(Collider other)
+    {
+       
+    }
 }

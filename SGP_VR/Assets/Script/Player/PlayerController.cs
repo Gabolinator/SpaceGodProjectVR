@@ -120,7 +120,12 @@ public class PlayerController : MonoBehaviour
         ScalePlayer(Vector3.one * scale);
     }
 
-    
+    public void ScalePlayer(float scale)
+    {
+
+        ScalePlayer(scale, .165f, 100, true);
+    }
+
     private void ScalePlayer(Vector3 scale)
     {
         transform.localScale = scale;

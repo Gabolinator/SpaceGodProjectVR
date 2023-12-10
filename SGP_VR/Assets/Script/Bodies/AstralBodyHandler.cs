@@ -166,7 +166,7 @@ public class AstralBodyHandler : MonoBehaviour
 
     public bool EnableCollision
     {
-        get => _enableCollision;
+        get => _enableCollision && !CollisionManager.Instance.ForceDisableCollisions;
         set => _enableCollision = value;
     }
 

@@ -253,8 +253,11 @@ public class FXManager : MonoBehaviour
 
     public void DestroyAllFX()
     {
-        if(activeFX.Count == 0) return;
-        foreach (var fx in activeFX)
+        if (activeFX.Count == 0) return;
+        var cachedList = new List<FXHandler>();
+        cachedList.AddRange(activeFX);
+            
+        foreach (var fx in cachedList)
         {
            DestroyFX(fx);
         }
@@ -287,7 +290,7 @@ public class FXManager : MonoBehaviour
         string keyword = collisionData.processed ?  collisionData._collisionType.ToString() : "Impact";
        
         
-       ToggleFX(FXCategory.Collision, FXElement.All, keyword ,position, rotation, collisionData._target.transform, false);
+       ToggleFX(FXCategory.Collision, FXElement.All, keyword ,position, rotation, collisionData._target ? collisionData._target.transform : null , false);
     }
 
     private bool CanPlayerSee(Vector3 position)

@@ -65,7 +65,7 @@ public class VisualIndicatorManager : MonoBehaviour
     private void OnShowTrajectoryChanged(bool state)
     {
 
-        
+       // Debug.Log("On show trajectory changed: " + state);
         if (state) ShowAllTrajectory(allVisHandlers);
         else HideAllTrajectory(allVisHandlers);
     }
@@ -85,7 +85,7 @@ public class VisualIndicatorManager : MonoBehaviour
 
     private void OnShowTrailChanged(bool state)
     {
-       
+       // Debug.Log("On show trail changed: " + state);
         if (state) ShowAllTrails(allVisHandlers);
         else HideAllTrails(allVisHandlers);
     }
@@ -378,7 +378,7 @@ public class VisualIndicatorManager : MonoBehaviour
         int numberOfDrawers = trajectoryDrawers.Count;
         
         /*Set duration of prediction (sec) - every timestep we re-calculate - we calculate until the number of points reaches maxValues or duration is reached*/
-        float duration = 5;
+        float duration = 10;
         float timeStep = 0.2f;
         int maxValues = (int)(duration / timeStep);
       //  Debug.Log("PredictTrajectory job max value : " +maxValues +"/max number of points :" +  maxNumberOfPoints );
