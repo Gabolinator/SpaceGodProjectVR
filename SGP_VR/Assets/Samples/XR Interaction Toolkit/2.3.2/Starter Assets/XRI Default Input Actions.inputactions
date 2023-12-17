@@ -2140,7 +2140,7 @@
                     "name": "",
                     "id": "72d13a3a-3efe-4661-bf62-000141257a9a",
                     "path": "<XRController>{RightHand}/triggerPressed",
-                    "interactions": "",
+                    "interactions": "Hold",
                     "processors": "",
                     "groups": "",
                     "action": "CreateProtoBody",
