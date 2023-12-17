@@ -6,7 +6,15 @@ public class LineDrawer : MonoBehaviour
 {
     public LineRenderer lineRenderer;
 
-    
+
+    public virtual void ToggleRenderer(LineRenderer renderer, bool state)
+    {
+        if (!renderer) { Debug.Log("No renderer"); return; }
+        
+        renderer.enabled = state;
+
+    }
+
     public virtual void UpdateLineColor(Color startColor, Color endColor, bool endAlphaToZero)
     {
       

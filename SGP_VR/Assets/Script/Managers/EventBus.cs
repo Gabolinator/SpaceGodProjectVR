@@ -40,6 +40,10 @@ public class EventBus : MonoBehaviour
     public static Action<AstralBodyHandler, Vector3, Vector3> OnAstralBodyAnyVelocitiesChanged;
     public static Action<AstralBodyHandler, Vector3> OnAstralBodyAngularVelocityChange;
 
+    public static Action<AstralBodyHandler, bool> OnAstralBodyVisibilityChanged;
+    
+    public static Action<AstralBodyHandler, bool> OnAstralWithinDistanceOfPlayerChanged;
+    
     #endregion
 
     #region AstralBody Edit events
@@ -82,15 +86,16 @@ public class EventBus : MonoBehaviour
     #endregion
 
     #region Collision event
-    
+
     public static Action<CollisionData> OnCollision;
     public static Action<CollisionData> OnCollisionProcessed;
-    
+
     #endregion
-    
+
     #region GUIEvents
 
     public static Action OnToggleMainMenu;
 
     #endregion
+
 }

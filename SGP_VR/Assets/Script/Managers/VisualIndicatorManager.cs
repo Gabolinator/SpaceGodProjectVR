@@ -78,7 +78,7 @@ public class VisualIndicatorManager : MonoBehaviour
 
         set { 
             OnShowTrailChanged(value); 
-            _showTrajectory = value;
+            _showTrail = value;
             
         }
     }
@@ -120,6 +120,7 @@ public class VisualIndicatorManager : MonoBehaviour
 
     public List<VisualIndicatorHandler> allVisHandlers = new List<VisualIndicatorHandler>();
     public List<TrajectoryDrawer> allTrajectoryDrawers = new List<TrajectoryDrawer>();
+    List<TrajectoryDrawer> drawersToShow = new List<TrajectoryDrawer>();
     //public List<TrajectoryDrawer>
     
     [Header("Debug")]
@@ -170,6 +171,7 @@ public class VisualIndicatorManager : MonoBehaviour
         foreach (var visualIndicatorHandler in visualIndicatorHandlers)
         {
             visualIndicatorHandler.ShowTrajectory();
+            visualIndicatorHandler.UpdateTrajectoryColor(_trajectoryColor);
         }
     }
     
@@ -188,6 +190,7 @@ public class VisualIndicatorManager : MonoBehaviour
         foreach (var visualIndicatorHandler in visualIndicatorHandlers)
         {
             visualIndicatorHandler.ShowTrail();
+            visualIndicatorHandler.UpdateTrailColor(_trailColor);
         }
     }
     
@@ -360,6 +363,7 @@ public class VisualIndicatorManager : MonoBehaviour
        
     }
     
+    //not using jobs - will probably be removed 
     private void PredictTrajectories(List<TrajectoryDrawer> trajectoryDrawers)
     {
         if(trajectoryDrawers.Count == 0) return;
@@ -374,14 +378,14 @@ public class VisualIndicatorManager : MonoBehaviour
     {
         if(trajectoryDrawers.Count == 0) return;
         
-        //Debug.Log("PredictTrajectory job");
+       
         int numberOfDrawers = trajectoryDrawers.Count;
         
         /*Set duration of prediction (sec) - every timestep we re-calculate - we calculate until the number of points reaches maxValues or duration is reached*/
         float duration = 10;
         float timeStep = 0.2f;
         int maxValues = (int)(duration / timeStep);
-      //  Debug.Log("PredictTrajectory job max value : " +maxValues +"/max number of points :" +  maxNumberOfPoints );
+   
         maxValues = maxNumberOfPoints < maxValues ? maxNumberOfPoints : maxValues;
         
         /* Initialize NativeArray to be used by job*/
@@ -403,8 +407,6 @@ public class VisualIndicatorManager : MonoBehaviour
             var body = trajectoryDrawers[i].astralBody;
             if(!body) continue;
 
-           // Debug.Log("PredictTrajectory job : " + body );
-            
             /*Initialize values for each body*/
             currentPositionsArray[i] = body.transform.position;
             currentVelocitiesArray[i] = body.Velocity;
@@ -436,9 +438,7 @@ public class VisualIndicatorManager : MonoBehaviour
             maxValues = maxValues
         };
 
-      // Debug.Log("PredictTrajectory job handle predictedPositions.lenght : " +  trajectoryJob.predictedPositions.Length);
-      //  Debug.Log("PredictTrajectory job handle predictedTimes.lenght : " +  trajectoryJob.predictedTimes.Length);
-        
+    
         /*Schedule the job */
         JobHandle jobHandle = trajectoryJob.Schedule(numberOfDrawers, 64); // Adjust the batch size (64 is an example) 
 
@@ -446,6 +446,7 @@ public class VisualIndicatorManager : MonoBehaviour
         List<NativeArray<Vector3>> v3Arrays = new List<NativeArray<Vector3>>();
         
         
+        /*array of native arrays, for disposing later */
         floatArrays.Add(massesArray);
         floatArrays.Add(influencesStrengths);
         floatArrays.Add(predictedTimesArrays);
@@ -454,7 +455,7 @@ public class VisualIndicatorManager : MonoBehaviour
         v3Arrays.Add(currentForcesArray);
         v3Arrays.Add(predictedPositionsArrays);
 
-       StartCoroutine(WaitThenCompletePredictionJob(.1f, jobHandle, trajectoryDrawers, trajectoryJob, floatArrays, v3Arrays));
+       StartCoroutine(WaitThenCompletePredictionJob(.01f, jobHandle, trajectoryDrawers, trajectoryJob, floatArrays, v3Arrays));
     }
 
     private IEnumerator WaitThenCompletePredictionJob(float delay, JobHandle jobHandle, List<TrajectoryDrawer> trajectoryDrawers, TrajectoryPredictionJob trajectoryJob, List<NativeArray<float>> floatArrays,  List<NativeArray<Vector3>> v3Arrays)
@@ -464,11 +465,13 @@ public class VisualIndicatorManager : MonoBehaviour
        
         jobHandle.Complete();
 
-       if (trajectoryDrawers.Count == 0) yield return null;
+        var trajectoryDrawersClone = new List<TrajectoryDrawer>(trajectoryDrawers);    
+            
+       if (trajectoryDrawersClone.Count == 0) yield return null;
         
-        for (int i = 0; i < trajectoryDrawers.Count; i++)
+        for (int i = 0; i < trajectoryDrawersClone.Count; i++)
         {
-            var drawer = trajectoryDrawers[i];
+            var drawer = trajectoryDrawersClone[i];
             var body = drawer.astralBody;
           
             List<TrajectoryPoint> trajectoryPoints = new List<TrajectoryPoint>();
@@ -542,10 +545,71 @@ public class VisualIndicatorManager : MonoBehaviour
     private void PredictTrajectories(bool useJob = false)
     {
         if(!ShowTrajectory) return;
-        if(useJob) PredictTrajectoriesJob(allTrajectoryDrawers);
-        else PredictTrajectories(allTrajectoryDrawers);
-       
+        if(useJob) PredictTrajectoriesJob(GetTrajectoryDrawersToShow(allTrajectoryDrawers));
+        else PredictTrajectories(drawersToShow);
+        
+        
 
+    }
+
+    private void ToggleDrawers( AstralBodyHandler body, bool state)
+    {
+        if(!body) return;
+
+        var visHandler = body.GetComponent<VisualIndicatorHandler>();
+        if(!visHandler) return;
+
+        if (state)
+        {
+            visHandler.ShowTrajectory();
+            visHandler.ShowTrail();
+        
+            AddToDrawersToShow(visHandler._trajectoryDrawer);
+        }
+        
+        else
+        {
+            visHandler.HideTrajectory();
+            visHandler.HideTrail();
+            
+            RemoveFromDrawersToShow(visHandler._trajectoryDrawer);
+        }
+        
+        
+       
+    }
+    
+    public void AddToDrawersToShow(TrajectoryDrawer drawer)
+    {
+        if(!drawer) return;
+        
+        if(drawersToShow.Contains(drawer)) return;
+        
+        drawersToShow.Add(drawer);
+        
+    }
+
+    public void RemoveFromDrawersToShow(TrajectoryDrawer drawer)
+    {
+        if(!drawer) return;
+        
+        if(!drawersToShow.Contains(drawer)) return;
+        
+        drawersToShow.Remove(drawer);
+    }
+    
+    private List<TrajectoryDrawer> GetTrajectoryDrawersToShow(List<TrajectoryDrawer> drawers)
+    {
+
+        List<TrajectoryDrawer> newDrawersToShow = new List<TrajectoryDrawer>();
+        
+        foreach (var drawer in drawers)
+        {
+            if(!drawer.ShowTrajectory) continue;
+            newDrawersToShow.Add(drawer);
+        }
+
+        return newDrawersToShow;
     }
 
     private void UpdateTrajectories(List<TrajectoryDrawer> trajectoryDrawers)
@@ -576,16 +640,12 @@ public class VisualIndicatorManager : MonoBehaviour
         _instance = this;
     }
 
- 
 
     private void Start()
     {
-        
-
-    //    StartCoroutine(AddIndicatorHandlerCoroutine(_refreshRate));
-
-
+        drawersToShow = allTrajectoryDrawers;
     }
+
 
     private void Update()
     {
@@ -608,8 +668,12 @@ public class VisualIndicatorManager : MonoBehaviour
         EventBus.OnAstralBodyDestroyed += UnRegisterIndicatorHandler;
         EventBus.OnObjectGrabbed += DestroyTrajectoryDrawer;
         EventBus.OnBodyEdit += DestroyTrajectoryDrawer;
-        EventBus.OnObjectReleased += AddTrajectoryDrawer; 
+        EventBus.OnObjectReleased += AddTrajectoryDrawer;
+        EventBus.OnAstralBodyVisibilityChanged += ToggleDrawers;
+        EventBus.OnAstralWithinDistanceOfPlayerChanged += ToggleDrawers;
     }
+
+    
 
 
     private void OnDisable()
@@ -618,6 +682,8 @@ public class VisualIndicatorManager : MonoBehaviour
         EventBus.OnAstralBodyDestroyed -= UnRegisterIndicatorHandler;
         EventBus.OnObjectGrabbed -= DestroyTrajectoryDrawer;
         EventBus.OnBodyEdit -= DestroyTrajectoryDrawer;
+        EventBus.OnAstralBodyVisibilityChanged -= ToggleDrawers;
+        EventBus.OnAstralWithinDistanceOfPlayerChanged -= ToggleDrawers;
         
     }
 

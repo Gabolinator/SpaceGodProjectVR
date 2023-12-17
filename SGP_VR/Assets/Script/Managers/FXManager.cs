@@ -278,11 +278,27 @@ public class FXManager : MonoBehaviour
     private void ToggleCollisionFX(CollisionData collisionData)
     {
         var position = collisionData._impactPoint.point;
+        bool canPlayerSee = false;
+        
+        if (!collisionData._target)
+        {
+            Debug.LogWarning("[FX manager] Trying to access collisionData._target but its been destroyed " );
+        }
+        else
+        {
+            canPlayerSee = collisionData._target.CanPlayerSee();
+        }
+
         
         /*dont do any fx if player not there*/
-        if( !CanPlayerSee(position)) return;
+        if( !canPlayerSee) return;
 
-        var angle = collisionData._projectile.Velocity.normalized *-1;
+        if (!collisionData._projectile)
+         {
+             Debug.LogWarning("[FX manager] Trying to access collisionData._projectile but its been destroyed " );
+         }
+           
+        var angle = collisionData._projectile ? collisionData._projectile.Velocity.normalized *-1 : collisionData._impactPoint.normal*-1;
 
         Quaternion rotation = Quaternion.Euler(angle);
         
@@ -293,10 +309,6 @@ public class FXManager : MonoBehaviour
        ToggleFX(FXCategory.Collision, FXElement.All, keyword ,position, rotation, collisionData._target ? collisionData._target.transform : null , false);
     }
 
-    private bool CanPlayerSee(Vector3 position)
-    {
-        return true;
-    }
-
- 
+   
+   
 }

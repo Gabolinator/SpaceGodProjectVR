@@ -488,8 +488,21 @@ public class GUIManager : MonoBehaviour
     #region Toggle/Destroy Gui
     private void ToggleGuisWithPlayerMovement(bool isPlayerMoving)
     {
-        //ToggleGuis(!isPlayerMoving);
-        ToggleGui(_wristGui, !isPlayerMoving);
+        
+        var gui = _wristGui;
+        
+        var screen = gui.GetComponent<SGPScreen>();
+        if (screen)
+        {
+            gui = screen.Container.gameObject;
+            if(screen.Container.forceKeepOpen) return;
+        }
+
+      
+       
+     
+        
+        ToggleGui(gui, !isPlayerMoving);
     }
 
     public void ToggleGui(GameObject gui , bool state)

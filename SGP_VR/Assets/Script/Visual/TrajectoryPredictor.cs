@@ -33,7 +33,7 @@ public class TrajectoryPredictor
     Vector3 currentAcceleration;
     private Quaternion currentRotation;
     private float currentTime;
-    private bool showTrajectory => trajectoryDrawer.thisVisualHandler.showTrajectory;
+    private bool showTrajectory => trajectoryDrawer.thisVisualHandler.ShouldShowTrajectory;
 
     public TrajectoryPredictor(Rigidbody rb, AstralBodyHandler body, TrajectoryDrawer drawer )
     {

@@ -26,8 +26,8 @@ public class TrajectoryDrawer : LineDrawer
     public float trailRefreshRate = .1f;
     
     public List<TrajectoryPoint> debugList = new();
-    private bool showTrajectory=> thisVisualHandler.showTrajectory;
-    private bool showTrail => thisVisualHandler.showTrail;
+    public bool ShowTrajectory=> thisVisualHandler.ShouldShowTrajectory;
+    public bool ShowTrail => thisVisualHandler.ShouldShowTrail;
 
     private void DrawTrajectory(LineRenderer renderer , List<TrajectoryPoint> trajectoryPoints)
     {
@@ -50,14 +50,18 @@ public class TrajectoryDrawer : LineDrawer
 
     public void DrawTrajectory()
     {
-        if (showTrajectory)
+        if (ShowTrajectory)
             DrawTrajectory(trajectoryLineRenderer, debugList = trajectoryPredictor.GetPredictedTrajectoryPoints());
+        
+        ToggleRenderer(trajectoryLineRenderer, ShowTrajectory);
     }
 
 
     public void DrawTrail()
     {
-        if (showTrail)  DrawTrajectory(trailLineRenderer, trajectoryPredictor.GetPassedTrajectoryPoints());
+        if (ShowTrail)  DrawTrajectory(trailLineRenderer, trajectoryPredictor.GetPassedTrajectoryPoints());
+        
+        ToggleRenderer(trailLineRenderer, ShowTrajectory);
     }
 
     public void UpdateSpline(List<TrajectoryPoint> trajectoryPoints, bool clearData = true)
@@ -101,7 +105,7 @@ public class TrajectoryDrawer : LineDrawer
         ResetTrajectoryPoints(trailLineRenderer, trajectoryPredictor.GetPassedTrajectoryPoints());
     }
 
-    private void ResetTrajectoryPoints(LineRenderer lineRenderer , List<TrajectoryPoint> trajectoryPoints)
+    public void ResetTrajectoryPoints(LineRenderer lineRenderer , List<TrajectoryPoint> trajectoryPoints)
     {
         lineRenderer.positionCount = 0; 
         trajectoryPoints.Clear();

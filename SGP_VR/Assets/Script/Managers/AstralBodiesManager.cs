@@ -364,9 +364,43 @@ public class AstralBodiesManager : MonoBehaviour
         bodyHandler.firstUpdate = false;
         
         AddGravityPullToBody(bodyHandler);
-       //EvaluateIfBecomesSatellite(bodyHandler, _allBodies, 100);
+
+        bodyHandler.IsInView = IsInView(bodyHandler);
+
+       bodyHandler.IsWithinDistance = IsWithinDistance(bodyHandler.transform.position, Camera.main.transform.position, 100);
+
+        //EvaluateIfBecomesSatellite(bodyHandler, _allBodies, 100);
 
     }
+
+    private bool IsInView(AstralBodyHandler bodyHandler) =>
+        IsObjectInCameraFrustum(bodyHandler.gameObject, Camera.main);
+  
+    
+    bool IsObjectInCameraFrustum(GameObject obj, Camera camera)
+    {
+        if (obj == null || camera == null)
+        {
+            Debug.LogWarning("Object or main camera is null.");
+            return false;
+        }
+
+        Renderer objectRenderer = obj.GetComponent<Renderer>();
+
+        if (objectRenderer == null)
+        {
+            Debug.LogWarning("Object doesn't have a renderer.");
+            return false;
+        }
+
+        Bounds objectBounds = objectRenderer.bounds;
+
+        // Check if the object's bounds intersect with the camera's frustum planes
+        bool isIntersecting = GeometryUtility.TestPlanesAABB(GeometryUtility.CalculateFrustumPlanes(camera), objectBounds);
+
+        return isIntersecting;
+    }
+    
 
     private void ManageBodies(List<AstralBodyHandler> bodies)
     {

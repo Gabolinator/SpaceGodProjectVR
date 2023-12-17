@@ -23,6 +23,8 @@ public class GuiContainer : MonoBehaviour
 
     [SerializeField]
     private Transform _keyboardMount;
+
+    public bool forceKeepOpen = true;
     public Transform KeyboardMount => _keyboardMount ? _keyboardMount : this.transform;
 
     public void ToggleGui(GameObject gui, bool state, bool fade = false)

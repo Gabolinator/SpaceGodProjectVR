@@ -1,12 +1,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using DinoFracture;
 using Script.Physics;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Serialization;
+using Debug = UnityEngine.Debug;
 
 [System.Serializable]
 public struct StartPreferences
@@ -201,8 +203,59 @@ public class AstralBodyHandler : MonoBehaviour
     [Header("Grab")] 
     public bool isGrabbed = false;
 
-    #region Events
+    //[Header("Optimization")] 
+    private bool _isInView = true;
 
+    public bool IsInView
+    {
+        get => _isInView;
+        set
+        {
+            if(value == _isInView) return;
+            
+            OnIsInViewChanged(value);
+            _isInView = value;
+        }
+
+    }
+
+    private void OnIsInViewChanged(bool value)
+    {
+       Debug.Log("[BodyHandler] Body : " + this.ID + " new visibility :" + value);
+       OnAstralVisibilityChanged?.Invoke(this, value);
+    }
+
+    private bool _isWithinDistance = true;
+
+    public bool IsWithinDistance
+    {
+        get => _isWithinDistance;
+        set
+        {
+            if(value == _isWithinDistance) return;
+            OnIsWithinDistanceChanged(value);
+            _isWithinDistance = value;
+            
+        }
+    }
+
+    
+    private void OnIsWithinDistanceChanged(bool value)
+    {
+        Debug.Log("[BodyHandler] Body : " + this.ID + " IsWithinDistance changed :" + value);
+        OnAstralWithinDistanceOfPlayerChanged?.Invoke(this, value);
+    }
+
+
+    public bool CanPlayerSee() => IsInView && IsWithinDistance;
+  
+
+
+    #region Events
+    Action<AstralBodyHandler, bool> OnAstralVisibilityChanged => EventBus.OnAstralBodyVisibilityChanged;
+    
+    Action<AstralBodyHandler, bool> OnAstralWithinDistanceOfPlayerChanged => EventBus.OnAstralWithinDistanceOfPlayerChanged;
+    
     Action<AstralBodyHandler> OnAstralBodyStartToExist => EventBus.OnAstralBodyStartToExist;
     Action<AstralBody> OnBodyUpdate => EventBus.OnBodyUpdated;
 
@@ -215,17 +268,22 @@ public class AstralBodyHandler : MonoBehaviour
     #endregion
  
     
+    
+    //TODO create data structure and clean data after a while  
     [Header("Debug")]
-    public List<AstralBodyHandler> allBodiesInRange = new List<AstralBodyHandler>();
+   // public List<AstralBodyHandler> allBodiesInRange = new List<AstralBodyHandler>();
     public List<Vector3> positions = new List<Vector3>();
     public List<Vector3> velocities = new List<Vector3>();
     public List<Vector3> accelerations = new List<Vector3>();
    
+    
+    
     private float timeElapsed;
     public bool firstUpdate = true;
     public bool gravityDisabled;
     public bool ShowDebugLog => AstralBodiesManager.Instance._showDebugLog;
-    
+   
+
     public void UpdateMass(double delta)
     {
         // Debug.Log("[Body Handler] Updating mass : " + ((Mass * delta) * UniverseManager.Instance.PhysicsProperties.MassFactor));
@@ -520,28 +578,28 @@ public class AstralBodyHandler : MonoBehaviour
 
     private void RegisterSelf() => AstralBodiesManager.Instance.RegisterBody(this);
 
-    private IEnumerator CalculateGravityPullCoroutine(float delay, int numFrames)
-    {
-
-        for (int i = 0; i < numFrames; i++)
-        {
-            yield return new WaitForEndOfFrame();
-        }
-
-        
-        do
-        {
-            float range = InfluenceRange < 0 ? MaxDetectionRange : InfluenceRange;
-
-            allBodiesInRange = GetAllBodyInRange(range, allBodiesInRange, transform.position);
-
-            totalForceOnObject = CalculateTotalGravityPull(allBodiesInRange, this.transform.position);
-            
-
-            yield return new WaitForSeconds(delay);
-
-        } while (true);
-    }
+    // private IEnumerator CalculateGravityPullCoroutine(float delay, int numFrames)
+    // {
+    //
+    //     for (int i = 0; i < numFrames; i++)
+    //     {
+    //         yield return new WaitForEndOfFrame();
+    //     }
+    //
+    //     
+    //     do
+    //     {
+    //         float range = InfluenceRange < 0 ? MaxDetectionRange : InfluenceRange;
+    //
+    //         allBodiesInRange = GetAllBodyInRange(range, allBodiesInRange, transform.position);
+    //
+    //         totalForceOnObject = CalculateTotalGravityPull(allBodiesInRange, this.transform.position);
+    //         
+    //
+    //         yield return new WaitForSeconds(delay);
+    //
+    //     } while (true);
+    // }
 
     public double CalculateBodyEnergy() => FormulaLibrary.CalculateKineticEnergy(Mass, Velocity);
 
@@ -712,28 +770,11 @@ public class AstralBodyHandler : MonoBehaviour
 
         OnAstralBodyStartToExist?.Invoke(this);
 
-        //StartCoroutine(CalculateGravityPullCoroutine(_processRate, DelayStart));
+      
 
         StartCoroutine(CollectData(_processRate,DelayStart));
         
         
-    }
-
-//moved it to astralbody manager for optimization 
-    protected virtual void FixedUpdate()
-    {
-        // UpdateVelocities(firstUpdate);
-        // firstUpdate = false;
-        //
-        //
-        //                 
-        // if (thisRb && EnableGravity && totalForceOnObject != Vector3.zero)
-        // {
-        //     var ratioMass = Mass / thisRb.mass; // if we lost mass cause of the cast to float , compensate force applied
-        //
-        //     thisRb.AddForce(totalForceOnObject =
-        //         ratioMass == 1 ? totalForceOnObject : totalForceOnObject / (float)ratioMass);
-        // }
     }
 
 

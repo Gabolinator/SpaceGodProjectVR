@@ -470,7 +470,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: bacf46d930564d04194bc99d83db6bf5, type: 2}
+  - {fileID: 2100000, guid: 08a0907af9378df4a94753a8b7179006, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -608,7 +608,6 @@ MonoBehaviour:
     _enableCollisionDelay: 0
   _enableCollision: 0
   isGrabbed: 0
-  allBodiesInRange: []
   positions: []
   velocities: []
   accelerations: []
@@ -629,6 +628,7 @@ MonoBehaviour:
   _guiMount: {fileID: 5753482744190002060}
   _currentGui: {fileID: 0}
   _keyboardMount: {fileID: 0}
+  forceKeepOpen: 1
 --- !u!114 &774464203943016157
 MonoBehaviour:
   m_ObjectHideFlags: 0

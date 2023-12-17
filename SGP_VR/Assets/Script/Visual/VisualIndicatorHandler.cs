@@ -9,15 +9,14 @@ public class VisualIndicatorHandler : MonoBehaviour
     public VisualIndicatorManager _indicatorManager; 
 
     public bool ShowTotaPullLine => _indicatorManager.ShowTotalPullLine && !_thisBody.isGrabbed;
+    
     public bool ShowIndividualLine => _indicatorManager.ShowIndividualPullLine && !_thisBody.isGrabbed;
 
     public GameObject linePrefab;
 
     public List<VectorLine> _objectPullLines = new ();
     public VectorLine _totalPullLine;
-
-    //public bool ShowTrajectory => _indicatorManager.showTrajectory && !_thisBody.isGrabbed;
-
+    
     public GameObject trajectoryPrefab;
     public GameObject trailPrefab;
 
@@ -26,16 +25,15 @@ public class VisualIndicatorHandler : MonoBehaviour
     public Color _trailColor;
     public float trajectoryRefresh => _indicatorManager._refreshRate;
 
-    public bool showTrajectory => _indicatorManager.ShowTrajectory && !_thisBody.isGrabbed && !forceDisableTrajectory;
+    public bool ShouldShowTrajectory => _indicatorManager.ShowTrajectory && !_thisBody.isGrabbed && !forceDisableTrajectory &&  _thisBody.IsInView && _thisBody.IsWithinDistance;
     public float _duration = 1;
     public bool forceDisableTrajectory;
-
+    
+    public bool ShouldShowTrail => _indicatorManager.ShowTrail && !_thisBody.isGrabbed && !forceDisableTrail && _thisBody.IsInView  && _thisBody.IsWithinDistance;
+    public bool forceDisableTrail;
+   
     public AstralBodyHandler _thisBody;
     public Vector3 _totalPull = Vector3.zero;
-    public bool showTrail => _indicatorManager.ShowTrail && !_thisBody.isGrabbed && !forceDisableTrail;
-    public bool forceDisableTrail;
-    private List<AstralBodyHandler> _allBodiesInRange => _thisBody.allBodiesInRange;
-
     public List<TrajectoryPoint> predictedPoints ; 
 
 
@@ -93,7 +91,7 @@ public class VisualIndicatorHandler : MonoBehaviour
 
     public void HandleTrajectory()
     {
-        if (showTrajectory)
+        if (ShouldShowTrajectory)
         {
             if (_trajectoryDrawer == null)
             {
@@ -110,7 +108,7 @@ public class VisualIndicatorHandler : MonoBehaviour
             if (_trajectoryDrawer != null) _trajectoryDrawer.trajectoryLineRenderer.enabled = false;
         }
 
-        if (showTrail)
+        if (ShouldShowTrail)
         {
             if (_trajectoryDrawer == null)
             {
@@ -285,7 +283,7 @@ public class VisualIndicatorHandler : MonoBehaviour
 
     public void HideTrajectory()
     {
-        if (!showTrail)
+        if (!ShouldShowTrail)
         {
             DestroyTrajectory(); 
             return;
@@ -297,7 +295,7 @@ public class VisualIndicatorHandler : MonoBehaviour
     public void HideTrail()
     {
         
-        if (!showTrajectory)
+        if (!ShouldShowTrajectory)
         {
             DestroyTrajectory(); 
             return;

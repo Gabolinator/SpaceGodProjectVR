@@ -43,6 +43,7 @@ public struct TrajectoryPredictionJob : IJobParallelFor
         
         //predicted index
         int j = 0;
+       
         for (float t = 0; t < duration; t += timeStep, j++)
         {
             if(j > maxValues) break;
@@ -52,12 +53,19 @@ public struct TrajectoryPredictionJob : IJobParallelFor
             var newPosition = currentPosition + currentVelocity * timeStep;
             var newVelocity = currentVelocity + acceleration * timeStep;
             var newTime = currentTime + t;
-
-            var newForce = currentForce;   //TODO need to predict force at new position
+            
+        
+           // Debug.Log("PredictedForce : " + newForce);
+            
             
             float distance = 0;
-            if(j>1) distance = Vector3.Distance(currentPositions[index],
+            if(j>1) {
+                distance = Vector3.Distance(currentPositions[index],
                 newPosition);
+             
+            }
+
+            
             
             //Update values
             if ((index * maxValues + j) < predictedPositions.Length)
@@ -70,15 +78,66 @@ public struct TrajectoryPredictionJob : IJobParallelFor
             if (j < predictedTimes.Length) predictedTimes[j] = newTime;
             
             
-            
-            
-            
+            var newForce =  CalculatePredictedGravityPullAtPosition( GetBodiesPredictedPositionsArray(j, currentPositions.Length, maxValues),  currentVelocities, masses, currentForces, influences , index, timeStep);
+
             currentPosition = newPosition;
             currentVelocity = newVelocity;
             currentForce = newForce;
             currentTime = newTime;
         }
         
+    }
+    
+    private Vector3 CalculatePredictedGravityPullAtPosition(NativeArray<Vector3> currentPositions,  NativeArray<Vector3> currentVelocities, NativeArray<float> masses, NativeArray<Vector3> currentForces,NativeArray<float> influences ,int index, float timeStep)
+    {
+        
+        int numberOfBodies = currentPositions.Length;
+
+        //update all positions - then recaluculate force for each of those new positions
+        NativeArray<Vector3> predictedPositions = new NativeArray<Vector3>(numberOfBodies, Allocator.Temp);
+        NativeArray<Vector3> predictedVelocities = new NativeArray<Vector3>(numberOfBodies, Allocator.Temp);
+        NativeArray<Vector3> predictedForces = new NativeArray<Vector3>(numberOfBodies, Allocator.Temp);
+        
+        // Update predicted positions, velocities, forces, and times
+        for(int i = 0; i< currentPositions.Length ; i++)
+        {
+            var mass = masses[i];
+            var predictedForce = currentForces[i];
+            var predictedPosition = currentPositions[i];
+            var predictedVelocity = currentVelocities[i];
+            
+            var acceleration = predictedForce / mass;
+            var newPosition = predictedPosition + predictedVelocity * timeStep;
+            var newVelocity = predictedVelocity + acceleration * timeStep;
+
+            predictedPositions[i] = newPosition;
+            predictedVelocities[i] = newVelocity;
+            
+            for (int j = 0; j < numberOfBodies; j++)
+            {
+                if (j != i)
+                {
+                    predictedForces[i] += CalculateGravityPullJob(gConstant, newPosition, mass, predictedPositions[j], masses[j])* influences[j];
+                }
+            }
+           
+        }
+    
+
+        return  predictedForces[index] * directGravityMultiplier *  influences[index];
+    }
+    
+    public static Vector3 CalculateGravityPullJob(double G, Vector3 thisPosition, float thisMass, Vector3 otherPosition, float otherMass)
+    {
+        
+        Vector3 direction = otherPosition - thisPosition;
+        float distance = direction.magnitude;
+        float forceMagnitude =  (float)(G* thisMass * otherMass / (distance * distance));
+        
+        Vector3 force = direction.normalized * forceMagnitude ;
+      //  Debug.Log("Force: " + forceMagnitude + " : this position : " + thisPosition + " : other position : "+ otherPosition +" : distance : " + distance + ": G:  " + G + " : thisMass : " + thisMass + "otherMass : " + otherMass );
+            
+        return force;
     }
     
     private void PrintArray(NativeArray<Vector3> array)
@@ -91,8 +150,26 @@ public struct TrajectoryPredictionJob : IJobParallelFor
             i++;
         }
     }
-    
-    
+
+    public NativeArray<Vector3> GetBodiesPredictedPositionsArray(int t, int numBodies, int maxValues)
+    {
+        // get the position at predicted time t of all the bodies. 
+        NativeArray<Vector3> newArray = new NativeArray<Vector3>(numBodies, Allocator.Temp);
+
+
+        for (int i = 0; i < numBodies; i++)
+        {
+
+            var index = i * maxValues; 
+            if (index >= predictedPositions.Length) break;
+            newArray[i] = predictedPositions[index];
+        }
+
+
+        
+        return newArray;
+    }
+
     public NativeArray<Vector3> GetPredictedPositionsArray( int index)
     {
         var startIndex = index * maxValues;
@@ -101,7 +178,7 @@ public struct TrajectoryPredictionJob : IJobParallelFor
         NativeArray<Vector3> newArray = new NativeArray<Vector3>(endIndex - startIndex, Allocator.Temp);
         for (int i = startIndex; i < endIndex; i++)
         {
-            newArray[i - startIndex] = predictedPositions[i];
+            if(i - startIndex < newArray.Length && i < predictedPositions.Length) newArray[i - startIndex] = predictedPositions[i];
         }
         return newArray;
     }
@@ -113,29 +190,12 @@ public struct TrajectoryPredictionJob : IJobParallelFor
         NativeArray<float> newArray = new NativeArray<float>(endIndex - startIndex, Allocator.Temp);
         for (int i = startIndex; i < endIndex; i++)
         {
-            newArray[i - startIndex] = distanceOfLine[i];
+            if(i - startIndex < newArray.Length && i < distanceOfLine.Length) newArray[i - startIndex] = distanceOfLine[i];
         }
         return newArray;
     }
- 
-    private Vector3 CalculatePredictedGravityPullAtPosition(Vector3 newPosition, double mass, NativeArray<Vector3> currentPositions,  NativeArray<Vector3> currentVelocities, NativeArray<float> masses, NativeArray<Vector3> currentForces,NativeArray<float> influences ,int index, float f)
-    {
-        
-        int numberOfBodies = currentPositions.Length;
 
-        GravityCalculationJob gravityJob = new GravityCalculationJob
-        {
-            positions = currentPositions,
-            masses = masses,
-            totalForces = currentForces,
-            influenceStrength = influences,
-            directGravityMultiplier = directGravityMultiplier,
-            gConstant = gConstant
-        };
+  
 
-        JobHandle jobHandle = gravityJob.Schedule(numberOfBodies, 64); // Adjust the batch size (64 is an example)
-        jobHandle.Complete();
-
-        return gravityJob.totalForces[index];
-    }
+    
 }
