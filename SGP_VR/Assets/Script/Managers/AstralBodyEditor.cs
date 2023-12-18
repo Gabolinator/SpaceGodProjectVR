@@ -50,13 +50,19 @@ public class AstralBodyEditor : MonoBehaviour
     public float massInjectionMultiplicator = 100;
     private float startMassInjectionMultiplicator;
 
+    [Header("Body Creation")] 
+    public float startIncrement;
+
+    public float limit = 1000;
+    
     [Header("Debug")]
     public bool isGrabbing;
     public bool editModeOn;
    
     private bool injectionStarted;
     private GeneratedBody predictedBody;
-  
+    private bool timerActive;
+
 
     public Action<bool, AstralBodyHandler> OnBodyEdit => EventBus.OnBodyEdit;
     public Action<AstralBodyHandler, float> OnInjectMass => EventBus.OnInjectMass;
@@ -279,11 +285,69 @@ public class AstralBodyEditor : MonoBehaviour
     }
     #endregion
 
+    public void StartCreateProtoBody()
+    {
+        
+        if (_grabbedBodyHandler)
+        {
+            return;
+        } 
+
+        HandSide handSide = HandSide.Left;
+        var hand = handSide == HandSide.Left ? LeftHand : RightHand;
+        
+        FXManager.Instance.ToggleFX(FXCategory.BodyEditing, FXElement.All, "inject", hand.BodySpawnPoint.transform.position,hand.BodySpawnPoint.transform.rotation, hand.BodySpawnPoint.transform, true, true);
+        
+        if (timerActive) return;
+        StartCoroutine(CreationTimer());
+        
+    }
+
+    private IEnumerator CreationTimer()
+    {
+
+        timerActive = true;
+        while (startIncrement < limit && timerActive)
+        {
+           
+            yield return new WaitForSeconds(.1f);
+            float surroundingMatterDensity = 1; //TODO set in universe manager or something like that. ZOnes that are more rich than others
+            startIncrement += surroundingMatterDensity;
+        }
+
+        if( timerActive) CreateProtoBody();
+        timerActive = false;
+         
+        StopCreateProtoBody();
+    }
+
+    public void StopCreateProtoBody()
+    {
+        startIncrement = 0;
+        
+        HandSide handSide = HandSide.Left;
+        var hand = handSide == HandSide.Left ? LeftHand : RightHand;
+    
+        FXManager.Instance.ToggleOffFX(hand.BodySpawnPoint.transform, "inject");
+
+        if (timerActive)
+        {
+       
+            StopCoroutine(CreationTimer());
+       
+            timerActive = false;
+        }
+        
+    }
+
     public void CreateProtoBody() 
     {
         Debug.Log("[Editor]Create proto ");
+        StopCreateProtoBody();
         if (_grabbedBodyHandler) return; 
 
+       
+        
         HandSide handSide = HandSide.Left;
         var hand = handSide == HandSide.Left ? LeftHand : RightHand;
 
@@ -361,6 +425,8 @@ public class AstralBodyEditor : MonoBehaviour
         EventBus.OnPlayerStart += GetControllerHands;
         EventBus.OnCreateProtoBody += CreateProtoBody;
         EventBus.OnDoubleGrab += DoubleGrabBody;
+        EventBus.OnCreateProtoBodyStarted += StartCreateProtoBody;
+        EventBus.OnCreateProtoBodyStopped += StopCreateProtoBody;
     }
 
     
@@ -377,6 +443,8 @@ public class AstralBodyEditor : MonoBehaviour
         EventBus.OnPlayerStart -= GetControllerHands;
         EventBus.OnCreateProtoBody -= CreateProtoBody;
         EventBus.OnDoubleGrab -= DoubleGrabBody;
+        EventBus.OnCreateProtoBodyStarted -= StartCreateProtoBody;
+        EventBus.OnCreateProtoBodyStopped -= StopCreateProtoBody;
     }
 
    

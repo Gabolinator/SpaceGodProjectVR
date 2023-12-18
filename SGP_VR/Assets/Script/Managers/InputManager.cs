@@ -24,7 +24,8 @@ public class InputManager : MonoBehaviour
 
     [SerializeField] InputActionReference _toggleMainMenuRef;
     private InputAction _toggleMainMenuInput;
-    
+    private PlayerController _player;
+
     Action OnToggleEditMode => EventBus.OnToggleEditModeInput;
     Action<float> OnInjectMassInput => EventBus.OnInjectInput;
 
@@ -32,7 +33,8 @@ public class InputManager : MonoBehaviour
     Action OnInjectStopped => EventBus.OnInjectionStopped;
 
     Action OnCreateProtoBody => EventBus.OnCreateProtoBody;
-    
+    Action OnCreateProtoBodyStarted => EventBus.OnCreateProtoBodyStarted;
+    Action OnCreateProtoBodyStopped => EventBus.OnCreateProtoBodyStopped;
     Action OnToggleMainMenu => EventBus.OnToggleMainMenu;
 
     //from  ActionBasedControllerManager
@@ -69,9 +71,31 @@ public class InputManager : MonoBehaviour
     private void CreateProtoBody(InputAction.CallbackContext obj)
     {
         
+        
         Debug.Log("Input create proto");
         OnCreateProtoBody?.Invoke();
     }
+    
+    private void CreateProtoBodyStarted(InputAction.CallbackContext obj)
+    {
+        // start to increment value- like we are gattering mass around - when valu is reached , create body  
+        //make live in body editor
+        
+        
+        Debug.Log("Input create proto started");
+        OnCreateProtoBodyStarted?.Invoke();
+    }
+
+    private void CreateProtoBodyStopped(InputAction.CallbackContext obj)
+    {
+        // stop increment value, reset it
+        //make live in body editor
+        Debug.Log("Input create proto stopped");
+        OnCreateProtoBodyStopped?.Invoke();
+        
+    }
+
+  
 
     private void InjectMass(float input)
     {
@@ -100,9 +124,13 @@ public class InputManager : MonoBehaviour
     }
 
     private void DisableAnchorTransform(bool state, AstralBodyHandler arg2) => DisableAnchorTransform(state);
-   
-   
-    
+
+    private void DisableCreateBodyInput(bool state)
+    {
+        ToggleAction(_createProtoBodyRef, !state);
+        
+    }
+
     public void Awake()
     {
         _editModeInput = GetInputAction(_toggleEditModeRef);
@@ -125,25 +153,37 @@ public class InputManager : MonoBehaviour
         _injectMassInput.performed += InjectMass;
         _injectMassInput.canceled += InjectionStopped;
         
-        _createProtoBodyInput.performed += CreateProtoBody;
+        _createProtoBodyInput.started += CreateProtoBodyStarted;
+       // _createProtoBodyInput.performed += CreateProtoBody;
+        _createProtoBodyInput.canceled += CreateProtoBodyStopped;
         _toggleMainMenuInput.performed += ToggleMainMenu;
        
         EventBus.OnBodyEdit += DisableAnchorTransform;
+        
+        EventBus.OnPointingGui += DisableCreateBodyInput;
+
+       // EventBus.OnPlayerStart += ListenToPlayerEvents;
+        
     }
 
-   
+  
 
-   
 
     private void OnDisable()
     {
         _editModeInput.performed -= ToggleEditMode;
-        EventBus.OnBodyEdit -= DisableAnchorTransform;
         _injectMassInput.performed -= InjectionStarted;
-        _createProtoBodyInput.performed -= CreateProtoBody;
+      //  _createProtoBodyInput.performed -= CreateProtoBody;
         _toggleMainMenuInput.performed -= ToggleMainMenu;
+        
+        EventBus.OnBodyEdit -= DisableAnchorTransform;
+        EventBus.OnPointingGui -= DisableCreateBodyInput;
+        
+        //EventBus.OnPlayerStart -= ListenToPlayerEvents;
+        //StopListeningToPlayerEvents();
     }
 
+  
 
     // private void Update()
     // {

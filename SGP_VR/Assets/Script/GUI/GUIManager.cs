@@ -489,11 +489,15 @@ public class GUIManager : MonoBehaviour
     private void ToggleGuisWithPlayerMovement(bool isPlayerMoving)
     {
         
-        var gui = _wristGui;
+        var gui = WristGui;
+        
+        
         
         var screen = gui.GetComponent<SGPScreen>();
         if (screen)
         {
+            if(!screen.Container) return;
+            
             gui = screen.Container.gameObject;
             if(screen.Container.forceKeepOpen) return;
         }

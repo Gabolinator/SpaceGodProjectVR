@@ -57,6 +57,8 @@ public class EventBus : MonoBehaviour
     public static Action OnInjectionStopped;
     public static Action OnInjectionStarted;
     public static Action<AstralBodyHandler, GeneratedBody> OnPredictBody;
+    public static Action OnCreateProtoBodyStarted;
+    public static Action OnCreateProtoBodyStopped;
     public static Action OnCreateProtoBody;
 
     #endregion
@@ -96,6 +98,10 @@ public class EventBus : MonoBehaviour
 
     public static Action OnToggleMainMenu;
 
+    public static Action<bool> OnPointingGui;
+    
     #endregion
+
+   
 
 }

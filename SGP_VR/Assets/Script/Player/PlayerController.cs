@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Samples.StarterAssets;
+using UnityEngine.XR.Interaction.Toolkit.UI;
 
 
 public enum HandSide 
@@ -90,22 +92,35 @@ public class PlayerController : MonoBehaviour
 
     private void CheckRayCastHitInternal()
     {
-        if(!InteractorRay) 
-        { 
-            Debug.LogWarning("[Player Controller] No Interactor Ray Set"); 
+        if (!InteractorRay)
+        {
+            Debug.LogWarning("[Player Controller] No Interactor Ray Set");
             return;
-        } 
+        }
 
         RaycastHit hit;
 
         InteractorRay.TryGetCurrent3DRaycastHit(out hit);
-       // Debug.Log("Ray Hit : " + hit);
+        // Debug.Log("Ray Hit : " + hit);
         if (!hit.collider) return;
 
-       //Debug.Log("Ray Hit : " + hit.collider);
+        //Debug.Log("Ray Hit : " + hit.collider);
         var bodyHandler = hit.collider.gameObject.GetComponent<AstralBodyHandler>();
-        if (bodyHandler) EventBus.OnAstralBodyRayHit?.Invoke(bodyHandler);
+        if (bodyHandler)
+        {
+            Debug.Log("Ray Hit body: " + bodyHandler);
+            
+            EventBus.OnAstralBodyRayHit?.Invoke(bodyHandler);
+        }
 
+        var gui = hit.transform.gameObject.GetComponent<SGPScreen>();
+        if (gui)
+        {
+            Debug.Log("Ray Hit gui: " + gui);
+            //EventBus.OnPointingGui?.Invoke(true);
+        }
+
+        //else EventBus.OnPointingGui?.Invoke(false);
     }
 
     public void ScalePlayer(float scale,  float minScale, float maxScale, bool clampScale = false) 
@@ -151,8 +166,36 @@ public class PlayerController : MonoBehaviour
 
     }
 
+    private void OnStoppedPointingObject(HoverExitEventArgs arg)
+    {
+        Debug.Log("[Player] Ray hover stops ");
+    }
+    
+    private void OnPointingObject(HoverEnterEventArgs arg)
+    {
+        //Debug.Log("[Player] Ray hover starts " + arg.interactableObject);
+       
+        var bodyHandler = arg.interactableObject.transform.GetComponent<AstralBodyHandler>();
+        
+        if (bodyHandler)
+        {
+            Debug.Log("[Player] Ray hover body: " + bodyHandler);
+            
+            EventBus.OnAstralBodyRayHit?.Invoke(bodyHandler);
+        }
+    }
 
-
+    
+    private void OnPointingGui(UIHoverEventArgs arg)
+    {
+       // Debug.Log("[Player] Ray hover ui starts " + arg.uiObject);
+        EventBus.OnPointingGui?.Invoke(true);
+    }
+    private void OnStoppedPointingGui(UIHoverEventArgs arg)
+    {
+       // Debug.Log("[Player] Ray hover ui stops ");
+        EventBus.OnPointingGui?.Invoke(false);
+    }
     public void Start()
     {
         _initialPlayerScale = transform.localScale;
@@ -161,13 +204,42 @@ public class PlayerController : MonoBehaviour
 
         EventBus.OnPlayerStart?.Invoke(this);
 
-
-
-        StartCoroutine(CheckRayCastHit(1.0f));
+        
+       // StartCoroutine(CheckRayCastHit(1.0f));
     }
     private void Update()
     {
        
     }
 
+    private void OnEnable()
+    {
+        if (!InteractorRay)
+        {
+            Debug.Log("[Player] No interactor ray set");
+            return;
+        }
+
+        InteractorRay.uiHoverEntered.AddListener(OnPointingGui);
+        InteractorRay.uiHoverExited.AddListener(OnStoppedPointingGui);
+        InteractorRay.hoverEntered.AddListener(OnPointingObject);
+        InteractorRay.hoverExited.AddListener(OnStoppedPointingObject);
+    }
+
+ 
+
+    
+
+    private void OnDisable()
+    {
+        if (!InteractorRay)
+        {
+            Debug.Log("[Player] No interactor ray set");
+            return;
+        }
+        InteractorRay.uiHoverEntered.RemoveListener(OnPointingGui);
+        InteractorRay.uiHoverExited.RemoveListener(OnStoppedPointingGui);
+        InteractorRay.hoverEntered.RemoveListener(OnPointingObject);
+        InteractorRay.hoverExited.RemoveListener(OnStoppedPointingObject);
+    }
 }
