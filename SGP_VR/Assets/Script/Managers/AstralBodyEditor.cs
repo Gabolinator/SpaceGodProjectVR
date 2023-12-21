@@ -48,12 +48,13 @@ public class AstralBodyEditor : MonoBehaviour
 
     [Header("Mass injection")]
     public float massInjectionMultiplicator = 100;
+    public float massInjectionAcceleration = 1.005f;
+    public float maxInjectRate = 5f;
     private float startMassInjectionMultiplicator;
 
     [Header("Body Creation")] 
     public float startIncrement;
-
-    public float limit = 1000;
+    public float limit = 100;
     
     [Header("Debug")]
     public bool isGrabbing;
@@ -189,9 +190,8 @@ public class AstralBodyEditor : MonoBehaviour
     public void InjectMass(AstralBodyHandler bodyHandler, double delta, float multiplier)
     {
         if (bodyHandler == null) return;
-        Debug.Log("delta : " + delta);
-
-        delta = delta*multiplier > 5 ? 5 : delta * multiplier;
+       
+        delta = delta*multiplier > maxInjectRate ? maxInjectRate : delta * multiplier;
         delta = delta < 0 ? -1 / delta : delta; //if we are removing mass 
 
         bodyHandler.UpdateMass(delta);
@@ -201,7 +201,7 @@ public class AstralBodyEditor : MonoBehaviour
     public void InjectMass(float input)
     {
         //Debug.Log($"[{(typeof)}] Injecting mass : " + input );
-        massInjectionMultiplicator *= 1.005f;
+        massInjectionMultiplicator *= massInjectionAcceleration;
 
         InjectMass(_grabbedBodyHandler, input, massInjectionMultiplicator);
     }

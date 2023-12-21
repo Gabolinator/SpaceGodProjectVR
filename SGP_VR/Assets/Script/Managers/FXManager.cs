@@ -22,13 +22,33 @@ public enum FXElement
 }
 
 [System.Serializable]
+public enum SelectionMode
+{
+    Random,
+    PlayAll,
+    TakeFirst,
+    TakeLast,
+    None
+}
+
+[System.Serializable]
+public struct FXComponents
+{
+    public GameObject fxPrefab;
+    public AudioClip audio;
+}
+
+
+[System.Serializable]
 public struct FX
 {
-
+  //  public List<FXComponents> fxElements; //TODO to sure yet hw to properly organise... one fx handler has all the sounds or ... ? 
     public List<GameObject> fxPrefabs;
+    public SelectionMode particleSelectionMode;
     public List<AudioClip> audios;
-    //public List<ParticleSystem> particleSystems;
+    public SelectionMode audioSelectionMode;
     public string keyword;
+    
     [HideInInspector]
     public FXCategory category;
 
@@ -72,7 +92,7 @@ public class FXManager : MonoBehaviour
         Debug.Log("[FX Manager] Keyword : " + keyword);
         
         var fxList = new List<FX>();
-        //FXCategory[] categories = (FXCategory[])System.Enum.GetValues(typeof(FXCategory));  
+      
         foreach (var entry in fxDictionnairy)
         {
             if (entry.category != category) continue;
@@ -122,7 +142,6 @@ public class FXManager : MonoBehaviour
             foreach (var handler in fxHandlers) 
             {
 
-
                 if(!string.IsNullOrEmpty(keyword)) if(handler.fx.keyword != keyword) continue;
              
                 if(activeFXClone.Contains(handler)) 
@@ -150,55 +169,71 @@ public class FXManager : MonoBehaviour
         if (fxList.Count == 0) return;
 
         int index = 0;
+        
+        
+        
         if (fxList.Count != 1) index = UnityEngine.Random.Range((int)0, (int)(fxList.Count - 1));
 
+        
+        
         ToggleFX(fxList[index], whatToToggle, position, rotation, transform ,parent, state, destroyAfterPlay);
     }
 
     public void ToggleFX(FX fx, FXElement whatToToggle, Vector3 position, Quaternion rotation, Transform transform, bool parent ,bool state,bool destroyAfterPlay) 
     {
-        FXHandler fxHandler;
+        /*Create fx handler*/
+       
+        if(fx.particleSelectionMode == SelectionMode.None && fx.audioSelectionMode == SelectionMode.None) return; 
+        
+        var newFXHandlerGO = new GameObject("FXHandler_" + fx.keyword);
+        FXHandler fxHandler = newFXHandlerGO.AddComponent<FXHandler>();
+        var fxTransform = fxHandler.transform;
+                        
+        if (parent)
+        {
+            fxTransform.parent = transform;
+            fxTransform.localPosition = Vector3.zero;
+            fxTransform.localRotation = Quaternion.identity;
+        }
+        else
+        {
+            fxTransform.localPosition = position;
+            fxTransform.localRotation = rotation;
+        }
+        
         switch (whatToToggle)
         {
-
+            
             case FXElement.All:
                 if(fx.fxPrefabs.Count == 0) return;
-                foreach (var fxPrefab in fx.fxPrefabs)
-                {
-                    if(parent) fxHandler = SpawnFXPrefab(fxPrefab,transform);
-                    else fxHandler = SpawnFXPrefab(fxPrefab, position, rotation);
-                    fxHandler.Initialize(fx);
-                    //PlayAudio(fx.audios, true);
-                    fxHandler.PlayAudio();
-                    activeFX.Add(fxHandler);
-                }
                 
-
-                break;
+                //We toggle everything 
+                //so we dont change anything in FX 
+                    break;
 
             case FXElement.Audio:
-                PlayAudio(transform.GetComponent<AudioSource>(), fx.audios, true);
 
+                /*wont play any fx prefab to keep only audio*/
+                fx.particleSelectionMode = SelectionMode.None;
                 break;
+            
             case FXElement.Visual:
                 if(fx.fxPrefabs.Count == 0) return;
-                foreach (var fxPrefab in fx.fxPrefabs)
-                {
-                    if (parent) fxHandler = SpawnFXPrefab(fxPrefab, transform);
-                    else fxHandler = SpawnFXPrefab(fxPrefab, position, rotation);
-                    fxHandler.Initialize(fx);
-                    activeFX.Add(fxHandler);
-                }
-
+                /*wont play any audio to play only visual*/
+                fx.audioSelectionMode = SelectionMode.None;
+                    
                 break;
 
             default:
                 break;
 
-                fxHandler.InitiateDestroy();
-            
         }
+        
+        fxHandler.Initialize(fx);
+        activeFX.Add(fxHandler);
     }
+
+  
 
     public void ToggleFX(FX fx, FXElement whatToToggle, Transform transform, bool parent ,bool state,bool destroyAfterPlay) 
     {
@@ -207,10 +242,7 @@ public class FXManager : MonoBehaviour
        
     }
 
-    public void ToggleParticulesSystems(List<ParticleSystem> partSystems, bool state) 
-    {
-        
-    }
+   
 
     public void PlayAudio(AudioSource source, List<AudioClip> audioClips, bool state)
     {
@@ -261,6 +293,11 @@ public class FXManager : MonoBehaviour
         {
            DestroyFX(fx);
         }
+    }
+
+    public void Start()
+    {
+      // ToggleFX(FXCategory.Other, FXElement.All, "testing",transform.position,transform.rotation,transform, true, true);
     }
 
     private void OnEnable()
